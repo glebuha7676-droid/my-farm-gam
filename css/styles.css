@@ -359,8 +359,6 @@
         .pot-btn:disabled { background: #95a5a6; box-shadow: 0 4px 0 #7f8c8d; cursor: not-allowed; }
         .pet-list { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
         .pet-badge { background: #fff; border: 2px solid var(--wood-base); border-radius: 12px; padding: 5px 10px; font-size: 14px; font-weight: bold; display: flex; align-items: center; gap: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .active-pets-area { position:absolute; top: 10px; right: 10px; display:flex; flex-direction:column; gap:5px; z-index: 20; }
-        .active-pet { background:rgba(255,255,255,0.86); border-radius:50%; width:30px; height:30px; display:flex; justify-content:center; align-items:center; font-size:18px; box-shadow:0 2px 5px rgba(0,0,0,0.3); }
         .bank-area { text-align: center; padding: 15px; background: rgba(241, 196, 15, 0.2); border-radius: 12px; border: 2px solid #f1c40f; }
 
         .toast-container { position: fixed; top: 110px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 8px; z-index: 9999; pointer-events: none; width: 90%; align-items: center;}

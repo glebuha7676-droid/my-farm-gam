@@ -1272,12 +1272,11 @@ function init() {
 
     function renderPets() {
         const list = document.getElementById('pet-list');
-        const activeArea = document.getElementById('active-pets-area');
         const shop = document.getElementById('egg-shop');
         const nestView = document.getElementById('nest-view');
         const dots = document.getElementById('nest-dots');
         const equipSlots = document.getElementById('equip-slots');
-        if (!list || !activeArea || !shop || !nestView || !dots || !equipSlots) return;
+        if (!list || !shop || !nestView || !dots || !equipSlots) return;
 
         shop.innerHTML = Object.values(EGG_RARITIES).map(egg => `
             <button class="egg-buy rarity-${egg.id} ${egg.locked ? 'locked' : ''}" ${egg.locked ? 'disabled' : ''} onclick="startEgg('${egg.id}')">
@@ -1355,12 +1354,6 @@ function init() {
         const emptySlotsHtml = Array.from({ length: Math.max(0, 8 - inventory.length) }, (_, i) => `<div class="pet-card mini-pet-card inventory-empty"><div class="mini-pet-portrait">＋</div><span>Место ${inventory.length + i + 1}</span></div>`).join('');
         list.innerHTML = petCardsHtml + emptySlotsHtml;
 
-        activeArea.innerHTML = player.equippedPets.map(uid => {
-            const pet = uid ? getPetInstance(uid) : null;
-            if (!pet) return '';
-            const def = PET_DEFS[pet.id];
-            return `<button class="active-pet" type="button" title="${petDisplayName(pet)}">${slimeHTML(def, pet, 'active')}<span>${pet.level}</span></button>`;
-        }).join('');
     }
 
     function calcOfflineBank() {
