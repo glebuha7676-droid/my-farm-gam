@@ -912,7 +912,7 @@
             border: 2px solid rgba(74,35,11,0.18);
             background: rgba(255,255,255,0.62);
             box-shadow: inset 0 2px 0 rgba(255,255,255,0.55), 0 2px 0 rgba(74,35,11,0.12);
-            padding: 7px 8px;
+            padding: 6px 8px 7px;
             display: grid;
             grid-template-columns: 24px 1fr;
             grid-template-rows: auto auto;
@@ -934,6 +934,7 @@
             font-weight: 1000;
             font-size: 13px;
             box-shadow: inset 0 -2px 0 rgba(0,0,0,0.16);
+            margin-top: -2px;
         }
 
         .diary-stat strong {
@@ -943,6 +944,7 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            margin-top: -1px;
         }
 
         .diary-stat small {
@@ -950,6 +952,7 @@
             font-weight: 900;
             line-height: 1.1;
             color: rgba(62,27,4,0.7);
+            margin-top: 1px;
         }
 
         .diary-mutations {
@@ -7869,18 +7872,68 @@
         }
 
         /* Полив для декоративных стилей */
-        .garden.style-farmer .tile.wet { background: #3d2817 !important; box-shadow: inset 0 10px 18px rgba(0,0,0,0.68), 0 4px 0 rgba(35,18,8,0.42) !important; }
-        .garden.style-candy .tile.wet { background: #8f4f6f !important; box-shadow: inset 0 10px 18px rgba(74,20,54,0.52), 0 4px 0 rgba(74,20,54,0.35) !important; }
+        .garden.style-farmer .tile.wet {
+            background:
+                linear-gradient(rgba(52,34,20,0.26), rgba(52,34,20,0.26)),
+                repeating-linear-gradient(90deg, rgba(255,255,255,0.05) 0 5px, transparent 5px 11px),
+                var(--soil) !important;
+            box-shadow: inset 0 10px 18px rgba(0,0,0,0.68), 0 4px 0 rgba(35,18,8,0.42) !important;
+        }
+        .garden.style-candy .tile.wet {
+            background:
+                linear-gradient(rgba(77,31,57,0.22), rgba(77,31,57,0.22)),
+                repeating-linear-gradient(45deg, rgba(255,255,255,0.08) 0 6px, transparent 6px 13px),
+                #6a3f2c !important;
+            box-shadow: inset 0 10px 18px rgba(74,20,54,0.52), 0 4px 0 rgba(74,20,54,0.35) !important;
+        }
         .garden.style-vip .tile.wet { background: #1f120d !important; box-shadow: inset 0 10px 18px rgba(0,0,0,0.74), 0 0 10px rgba(255,212,59,0.28) !important; }
-        .garden.style-pixel .tile.wet { background: repeating-linear-gradient(45deg, #332119 0 8px, #23140f 8px 16px) !important; }
-        .garden.style-block .tile.wet { background: repeating-linear-gradient(45deg, #4f2e20 0 7px, #351f16 7px 14px) !important; }
-        .garden.style-popit .tile.wet { filter: brightness(0.68) saturate(1.12); box-shadow: inset 0 8px 16px rgba(0,0,0,0.34), 0 3px 0 rgba(0,0,0,0.22) !important; }
+        .garden.style-pixel .tile.wet {
+            background:
+                linear-gradient(rgba(30,18,12,0.22), rgba(30,18,12,0.22)),
+                repeating-linear-gradient(45deg, #332119 0 8px, #23140f 8px 16px) !important;
+        }
+        .garden.style-block .tile.wet {
+            background:
+                linear-gradient(rgba(43,24,17,0.18), rgba(43,24,17,0.18)),
+                repeating-linear-gradient(45deg, #4f2e20 0 7px, #351f16 7px 14px) !important;
+        }
+        .garden.style-popit .tile.wet {
+            background:
+                radial-gradient(circle at 50% 42%, rgba(0,0,0,0.16) 0 19px, rgba(0,0,0,0.28) 20px 24px, transparent 25px),
+                #d778c1 !important;
+            box-shadow: inset 0 8px 16px rgba(0,0,0,0.34), 0 3px 0 rgba(0,0,0,0.22) !important;
+        }
         .garden.style-pink .tile.wet { background: #bc5f89 !important; border-color: #8c315b !important; box-shadow: inset 0 10px 18px rgba(111,34,72,0.42), 0 4px 0 rgba(111,34,72,0.28) !important; }
-        .garden.style-backrooms .tile.wet { background: #8b7a35 !important; box-shadow: inset 0 10px 18px rgba(58,50,18,0.56), 0 4px 0 rgba(58,50,18,0.28) !important; }
-        .garden.style-paints .tile.wet { background: color-mix(in srgb, var(--paint-color), #25180f 42%) !important; box-shadow: inset 0 10px 18px rgba(0,0,0,0.45), 0 3px 0 rgba(0,0,0,0.22) !important; }
-        .garden.style-glass .tile.wet { background: rgba(64,95,115,0.54) !important; box-shadow: inset 0 0 14px rgba(12,35,48,0.58), 0 0 10px rgba(116,185,255,0.28) !important; }
-        .garden.style-toyblocks .tile.wet { background: #8f2f2e !important; box-shadow: inset 0 10px 18px rgba(80,18,18,0.5), 0 4px 0 rgba(70,18,18,0.28) !important; }
-        .garden.style-beach .tile.wet { background: #b68d4c !important; box-shadow: inset 0 9px 16px rgba(72,52,20,0.38), 0 3px 0 rgba(72,52,20,0.25) !important; }
+        .garden.style-backrooms .tile.wet {
+            background:
+                linear-gradient(rgba(24,20,8,0.34), rgba(24,20,8,0.34)),
+                repeating-linear-gradient(90deg, rgba(65,51,26,0.18) 0 6px, transparent 6px 13px),
+                linear-gradient(135deg, #9c8c49, #6f6233) !important;
+            box-shadow: inset 0 10px 18px rgba(20,18,7,0.62), 0 4px 0 rgba(80,68,30,0.46) !important;
+        }
+        .garden.style-paints .tile.wet {
+            background:
+                linear-gradient(rgba(37,24,15,0.18), rgba(37,24,15,0.18)),
+                color-mix(in srgb, var(--paint-color), #25180f 42%) !important;
+            box-shadow: inset 0 10px 18px rgba(0,0,0,0.45), 0 3px 0 rgba(0,0,0,0.22) !important;
+        }
+        .garden.style-glass .tile.wet {
+            background:
+                linear-gradient(rgba(12,35,48,0.16), rgba(12,35,48,0.16)),
+                rgba(64,95,115,0.54) !important;
+            box-shadow: inset 0 0 14px rgba(12,35,48,0.58), 0 0 10px rgba(116,185,255,0.28) !important;
+        }
+        .garden.style-toyblocks .tile.wet {
+            background:
+                linear-gradient(rgba(65,18,18,0.18), rgba(65,18,18,0.18)),
+                radial-gradient(circle at 28% 28%, rgba(255,255,255,0.28) 0 5px, transparent 6px),
+                radial-gradient(circle at 72% 28%, rgba(255,255,255,0.24) 0 5px, transparent 6px),
+                radial-gradient(circle at 28% 72%, rgba(0,0,0,0.12) 0 5px, transparent 6px),
+                radial-gradient(circle at 72% 72%, rgba(0,0,0,0.1) 0 5px, transparent 6px),
+                linear-gradient(135deg, #bd6a4d, #7f4438) !important;
+            box-shadow: inset 0 10px 18px rgba(80,18,18,0.5), 0 4px 0 rgba(70,18,18,0.28) !important;
+        }
+        .garden.style-beach .tile.wet { background: linear-gradient(rgba(72,52,20,0.28), rgba(72,52,20,0.28)), #a97f3d !important; box-shadow: inset 0 9px 16px rgba(72,52,20,0.38), 0 3px 0 rgba(72,52,20,0.25) !important; }
 
         .fx-alien,
         .tile.alien-hit::after {
