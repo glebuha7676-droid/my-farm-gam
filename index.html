@@ -1,0 +1,142 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Grow a Farm: Mobile Edition</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="holy-bg-rays"></div>
+    <div class="hell-bg-fire"></div>
+    <div class="weather-overlay"></div>
+    <div class="bg-emitters" id="bg-emitters"></div>
+    <div class="toast-container" id="toasts"></div>
+
+    <div class="big-mutation-overlay" id="mut-overlay">
+        <div class="mut-rays"></div>
+        <div id="mut-icon" style="font-size: 80px; filter: drop-shadow(0 0 20px #fff); margin-bottom: 20px;">✨</div>
+        <div class="mut-title" id="mut-text">ЗОЛОТОЕ!<br><span style="font-size:20px; color:#f1c40f;">x2 Доход</span></div>
+    </div>
+
+    <div class="top-bar">
+        <div class="stat-group">
+            <div class="stat stat-coins">💰 <span id="ui-coins">50</span></div>
+            <div class="level-stat">
+                <div class="stat stat-level">⭐ <span id="ui-lvl">1</span></div>
+                <div class="xp-mini-bar" aria-hidden="true"><div id="ui-xp-fill"></div></div>
+            </div>
+        </div>
+        <div class="state-indicator" id="state-indicator">☀️ День</div>
+        <button class="btn-icon" type="button" onclick="toggleMenu()">📋 Меню <span id="menu-badge" class="menu-badge"></span></button>
+    </div>
+
+    <div class="admin-panel">
+        <button onclick="startEvent('day')" title="День">☀️</button>
+        <button onclick="startEvent('rain')" title="Дождь">🌧️</button>
+        <button onclick="startEvent('storm')" title="Буря">⚡</button>
+        <button onclick="startEvent('toxic')" title="Токсины">☣️</button>
+        <button onclick="startEvent('starfall')" title="Звездопад">🌠</button>
+        <button onclick="startEvent('holy')" title="Солнце">🔆</button>
+        <button onclick="startEvent('hell')" title="Жар">🔥</button>
+        <button onclick="startEvent('candy')" title="Конфеты">🍬</button>
+        <button onclick="startEvent('bee')" title="Пчелы">🐝</button>
+        <button onclick="startEvent('alien')" title="Вторжение">🛸</button>
+        <button onclick="addTestCoins()" title="Монеты">💰</button>
+    </div>
+    
+    <div class="game-area">
+        <div class="view-content active" id="view-garden">
+            <div class="garden" id="garden"></div>
+            <div id="active-pets-area" class="active-pets-area"></div>
+        </div>
+    </div>
+
+    <div class="bottom-ui">
+        <div class="actions-row">
+            <div class="action-btn active" data-tool="water" onclick="selectAction('water')">💧</div>
+            <div class="action-btn" data-tool="harvest" onclick="selectAction('harvest')">🖐🏻</div>
+            <div class="action-btn" data-tool="shovel" onclick="selectAction('shovel')">⛏️</div>
+        </div>
+        <div class="seeds-carousel">
+            <button class="nav-arrow disabled" id="btn-left" onclick="scrollSeeds(-1)">&#10094;</button>
+            <div class="seeds-window" id="seeds-window">
+                <div class="seeds-track" id="seeds-track"></div>
+            </div>
+            <button class="nav-arrow" id="btn-right" onclick="scrollSeeds(1)">&#10095;</button>
+        </div>
+    </div>
+
+    <div class="side-menu" id="side-menu">
+        <div class="menu-header">
+            <div>
+                <span>Садовая книжка</span>
+                <small>Урожай, задания и помощники</small>
+            </div>
+            <button class="menu-close" onclick="toggleMenu()">✕</button>
+        </div>
+        <div class="menu-content">
+            <section class="menu-panel showcase-area" id="showcase-area">
+                <div class="panel-title"><span>🏆</span><strong>Витрина</strong></div>
+                <p class="showcase-desc">Добавь растения для получения прибыли пока находишься в АФК.</p>
+                <div class="showcase-slots" id="showcase-slots"></div>
+                <div class="showcase-summary">
+                    <div><span id="showcase-rate">+0/ч</span><small>доход</small></div>
+                    <div><span id="bank-coins">0</span><small>накоплено</small></div>
+                </div>
+                <button class="pot-btn bank-btn" onclick="claimBank()">Забрать прибыль</button>
+                <div class="showcase-picker" id="showcase-picker"></div>
+            </section>
+
+            <button class="menu-fold-btn" type="button" onclick="toggleMenuSection('diary')">
+                <span>📖</span><strong>Дневник</strong><em id="diary-fold-mark">＋</em>
+            </button>
+            <section class="menu-panel diary-panel menu-fold" id="diary-section">
+                <div class="diary-stats" id="diary-stats"></div>
+                <div class="diary-mutations" id="diary-mutations"></div>
+            </section>
+
+            <button class="menu-fold-btn" type="button" onclick="toggleMenuSection('pets')">
+                <span>🐾</span><strong>Питомцы</strong><em id="pets-fold-mark">＋</em>
+            </button>
+            <section class="menu-panel helper-house pet-incubator-panel menu-fold" id="pets-section">
+                <div class="incubator slime-focus">
+                    <button class="nest-arrow" type="button" onclick="switchNest(-1)">❮</button>
+                    <div class="nest-view" id="nest-view"></div>
+                    <button class="nest-arrow" type="button" onclick="switchNest(1)">❯</button>
+                </div>
+                <div class="nest-dots" id="nest-dots"></div>
+                <div class="compact-incubator">
+                    <div class="panel-title mini"><span>🥚</span><strong>Яйца</strong></div>
+                    <div class="egg-shop" id="egg-shop"></div>
+                    <div class="equip-slots" id="equip-slots"></div>
+                </div>
+                <div class="panel-title mini"><span>🎒</span><strong>Инвентарь 8 мест</strong></div>
+                <div class="pet-list" id="pet-list"></div>
+            </section>
+
+            <button class="menu-fold-btn decor-fold-btn" type="button" onclick="toggleMenuSection('decor')">
+                <span>🎨</span><strong>Декор</strong><em id="decor-fold-mark">＋</em>
+            </button>
+            <section class="menu-panel decor-panel menu-fold" id="decor-section">
+                <div class="decor-shop" id="decor-shop"></div>
+            </section>
+
+            <section class="menu-panel">
+                <div class="panel-title"><span>📋</span><strong>Задания</strong></div>
+                <div id="quests-container" class="quests-list"></div>
+            </section>
+            <button class="menu-exit-btn" type="button" onclick="toggleMenu()">Выход</button>
+        </div>
+    </div>
+    <div class="pet-reveal" id="pet-reveal">
+        <div class="pet-reveal-card" id="pet-reveal-card"></div>
+    </div>
+    <div class="pet-sell-modal" id="pet-sell-modal">
+        <div class="pet-sell-card" id="pet-sell-card"></div>
+    </div>
+    <script src="js/data.js" defer></script>
+    <script src="js/audio.js" defer></script>
+    <script src="js/game.js" defer></script>
+</body>
+</html>
