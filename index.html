@@ -43,6 +43,7 @@
         <button onclick="startEvent('bee')" title="Пчелы">🐝</button>
         <button onclick="startEvent('alien')" title="Вторжение">🛸</button>
         <button onclick="addTestCoins()" title="Монеты">💰</button>
+        <button onclick="resetProgress()" title="Сброс">↺</button>
     </div>
     
     <div class="game-area">
@@ -110,7 +111,7 @@
                     <div class="egg-shop" id="egg-shop"></div>
                     <div class="equip-slots" id="equip-slots"></div>
                 </div>
-                <div class="panel-title mini"><span>🎒</span><strong>Инвентарь 8 мест</strong></div>
+                <div class="panel-title mini"><span>🎒</span><strong id="pet-inventory-title">Инвентарь 8 мест</strong></div>
                 <div class="pet-list" id="pet-list"></div>
             </section>
 
@@ -133,6 +134,13 @@
     </div>
     <div class="pet-sell-modal" id="pet-sell-modal">
         <div class="pet-sell-card" id="pet-sell-card"></div>
+    </div>
+    <div class="tutorial-overlay" id="tutorial-overlay">
+        <div class="tutorial-card">
+            <b id="tutorial-title">Обучение</b>
+            <p id="tutorial-text"></p>
+            <small id="tutorial-step"></small>
+        </div>
     </div>
     <script src="js/data.js" defer></script>
     <script src="js/audio.js" defer></script>

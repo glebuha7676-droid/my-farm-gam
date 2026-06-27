@@ -1,20 +1,22 @@
 ﻿let player = {
-        coins: 50, lvl: 1, xp: 0, xpNeed: 100,
+        coins: BALANCE.startCoins || 50, lvl: 1, xp: 0, xpNeed: BALANCE.xpNeedStart || 100,
         rares: {}, unlockedMutations: [],
         pets: [], petLevels: {}, petInventory: [], equippedPets: [null, null, null], unlockedPetSlots: 1,
         incubator: [null, null, null], quests: [], lastSaved: Date.now(), bank: 0,
         plotStyle: 'default', ownedDecor: ['default'], decorPaintColor: '#ff7675',
         showcase: [null, null, null],
-        stats: { totalEarned: 0, maxWeight: 0, bestSale: 0, harvested: 0 }
+        stats: { totalEarned: 0, maxWeight: 0, bestSale: 0, harvested: 0 },
+        tutorial: { done: false, step: 'seed_select', tileId: null }
     };
 
     let env = { ticks: 0, currentEvent: 'day', eventTimer: 0, potTimer: 0, potActive: false, activeNest: 0, activeEquip: 0, petPatCooldowns: {}, openMenuSections: { diary: false, pets: false, decor: false }, backroomsLampTimer: null, backroomsLampEndTimer: null };
     let eventActions = []; 
     let tiles = Array(12).fill().map((_, i) => ({ id: i, active: false, plantId: null, growth: 0, water: 0, hasWeed: false, mutations: [], scale: 1, weight: 5, weightMult: 1, sizeTier: 'normal', beeLock: 0 }));
     let currentTool = 'water';
-    const TEST_HATCH_INSTANT = true;
+    const TEST_HATCH_INSTANT = false;
     const BIG_CROP_CHANCE = 0.08;
     const HUGE_CROP_CHANCE = 0.01;
+    const WATER_DURATION = 15;
     
     const seedKeys = Object.keys(PLANTS);
     const DECOR_PAINT_COLORS = ['#ff7675', '#fdcb6e', '#55efc4', '#74b9ff', '#a29bfe', '#2ecc71'];
@@ -22,10 +24,105 @@
         big: { id: 'big', name: 'Большой', icon: 'B', mult: 'x1.5+' },
         huge: { id: 'huge', name: 'Огромный', icon: '!', mult: 'x3.5+' }
     };
+    const TUTORIAL_STEPS = {
+        seed_select: { title: 'Первые семена', text: 'Нажми на пакетик семян снизу. С него начнем посадку.', progress: '1 / 6' },
+        plant_tile: { title: 'Посади растение', text: 'Теперь нажми на подсвеченную грядку.', progress: '2 / 6' },
+        water_tool: { title: 'Выбери полив', text: 'Отлично. Теперь выбери инструмент полива.', progress: '3 / 6' },
+        water_tile: { title: 'Полей грядку', text: 'Нажми на ту же грядку, чтобы полить растение.', progress: '4 / 6' },
+        wait_growth: { title: 'Растет', text: 'Сейчас росток быстро дозреет. Секундочку.', progress: '4 / 6' },
+        harvest_tool: { title: 'Собери урожай', text: 'Выбери руку, чтобы собрать готовое растение.', progress: '5 / 6' },
+        harvest_tile: { title: 'Забери урожай', text: 'Нажми на готовую грядку и собери урожай.', progress: '5 / 6' },
+        shovel_tool: { title: 'Последний инструмент', text: 'Теперь выбери кирку. Ею можно убирать растения с грядки.', progress: '6 / 6' }
+    };
 
     function getHelperCost() {
         const ownedCount = player.petInventory ? player.petInventory.length : player.pets.length;
         return BALANCE.magicSeedCost + ownedCount * BALANCE.helperCostStep;
+    }
+
+    function ensureTutorialState() {
+        if (!player.tutorial || typeof player.tutorial !== 'object') {
+            player.tutorial = { done: false, step: 'seed_select', tileId: null };
+        }
+        if (!player.tutorial.step) player.tutorial.step = 'seed_select';
+        if (typeof player.tutorial.done !== 'boolean') player.tutorial.done = false;
+        if (player.stats && player.stats.harvested > 0 && player.tutorial.done !== true && !player.tutorial.force) {
+            player.tutorial.done = true;
+        }
+    }
+
+    function tutorialIsActive() {
+        ensureTutorialState();
+        return !player.tutorial.done;
+    }
+
+    function tutorialStep() {
+        ensureTutorialState();
+        return player.tutorial.step;
+    }
+
+    function tutorialTileId() {
+        return Number.isInteger(player.tutorial.tileId) ? player.tutorial.tileId : 0;
+    }
+
+    function tutorialNudge() {
+        refreshTutorial();
+        sfx.play('error');
+    }
+
+    function setTutorialStep(step) {
+        ensureTutorialState();
+        player.tutorial.step = step;
+        refreshTutorial();
+    }
+
+    function finishTutorial() {
+        ensureTutorialState();
+        player.tutorial.done = true;
+        player.tutorial.force = false;
+        player.tutorial.step = 'done';
+        player.tutorial.tileId = null;
+        refreshTutorial();
+        showToast('Обучение завершено!', '#f1c40f');
+    }
+
+    function getTutorialTarget() {
+        const step = tutorialStep();
+        if (step === 'seed_select') return document.querySelector('.seed-packet:not(.locked)');
+        if (step === 'plant_tile') return document.getElementById(`tile-${tutorialTileId()}`);
+        if (step === 'water_tool') return document.querySelector('.action-btn[data-tool="water"]');
+        if (step === 'water_tile') return document.getElementById(`tile-${tutorialTileId()}`);
+        if (step === 'harvest_tool') return document.querySelector('.action-btn[data-tool="harvest"]');
+        if (step === 'harvest_tile') return document.getElementById(`tile-${tutorialTileId()}`);
+        if (step === 'shovel_tool') return document.querySelector('.action-btn[data-tool="shovel"]');
+        return null;
+    }
+
+    function refreshTutorial() {
+        const overlay = document.getElementById('tutorial-overlay');
+        const title = document.getElementById('tutorial-title');
+        const text = document.getElementById('tutorial-text');
+        const stepText = document.getElementById('tutorial-step');
+        document.querySelectorAll('.tutorial-focus').forEach(el => el.classList.remove('tutorial-focus'));
+        if (!overlay || !title || !text || !stepText) return;
+        if (!tutorialIsActive()) {
+            overlay.classList.remove('active');
+            return;
+        }
+        const step = tutorialStep();
+        const cfg = TUTORIAL_STEPS[step] || TUTORIAL_STEPS.seed_select;
+        title.textContent = cfg.title;
+        text.textContent = cfg.text;
+        stepText.textContent = cfg.progress;
+        overlay.classList.add('active');
+        const target = getTutorialTarget();
+        if (target) target.classList.add('tutorial-focus');
+    }
+
+    function resetTilesState() {
+        tiles.forEach((tile, index) => {
+            Object.assign(tile, { id: index, active: false, plantId: null, growth: 0, water: 0, hasWeed: false, mutations: [], scale: 1, weight: 5, weightMult: 1, sizeTier: 'normal', beeLock: 0 });
+        });
     }
 
     function getBuffs() {
@@ -173,10 +270,11 @@
     function cropSaleValue(plantId, mutations, weight, coinMult = 0) {
         const p = PLANTS[plantId];
         if (!p) return 0;
-        const mutationMult = (mutations || []).reduce((sum, mId) => {
+        let mutationMult = 1;
+        (mutations || []).forEach(mId => {
             const m = MUTATIONS[mId];
-            return sum + (m ? m.mult - 1 : 0);
-        }, 1);
+            if (m) mutationMult *= m.mult;
+        });
         return Math.floor(p.reward * mutationMult * (1 + coinMult) * getWeightMultiplier(weight));
     }
 
@@ -286,6 +384,7 @@ function init() {
         generateQuestsIfNeeded();
         calcOfflineBank();
         updateUI();
+        refreshTutorial();
         document.getElementById('seeds-window').addEventListener('scroll', updateCarouselArrows);
         document.getElementById('garden').addEventListener('pointerdown', handleGardenDecorTap);
         setInterval(gameTick, 1000);
@@ -345,7 +444,11 @@ function init() {
             const el = document.createElement('div');
             el.className = `seed-packet ${locked ? 'locked' : ''} ${currentTool === p.id ? 'active' : ''}`;
             el.style.setProperty('--pkt-color', p.color);
-            el.onclick = () => { if(locked) { showToast(`Нужен уровень ${p.lvl}`, 'gray'); return; } selectAction(p.id); };
+            el.onclick = () => {
+                if (locked) { showToast(`Нужен уровень ${p.lvl}`, 'gray'); return; }
+                if (tutorialIsActive() && tutorialStep() !== 'seed_select') { tutorialNudge(); return; }
+                selectAction(p.id);
+            };
             el.innerHTML = `<div class="pkt-top"></div><div class="pkt-bg"></div><div class="seed-name">${p.name}</div><div class="seed-icon">${seedIcon(p.id)}</div><div class="seed-price">${p.cost}$</div>`;
             container.appendChild(el);
         });
@@ -365,16 +468,61 @@ function init() {
     }
 
     function selectAction(tool) {
+        if (tutorialIsActive()) {
+            const step = tutorialStep();
+            const allowed = (
+                (step === 'seed_select' && PLANTS[tool]) ||
+                (step === 'water_tool' && tool === 'water') ||
+                (step === 'harvest_tool' && tool === 'harvest') ||
+                (step === 'shovel_tool' && tool === 'shovel')
+            );
+            if (!allowed) { tutorialNudge(); return; }
+        }
         currentTool = tool; decorSfx('pop', 'popitClick');
         document.querySelectorAll('.action-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tool === tool));
         renderSeeds();
+        if (tutorialIsActive()) {
+            if (tutorialStep() === 'seed_select' && PLANTS[tool]) setTutorialStep('plant_tile');
+            else if (tutorialStep() === 'water_tool' && tool === 'water') setTutorialStep('water_tile');
+            else if (tutorialStep() === 'harvest_tool' && tool === 'harvest') setTutorialStep('harvest_tile');
+            else if (tutorialStep() === 'shovel_tool' && tool === 'shovel') finishTutorial();
+        } else {
+            refreshTutorial();
+        }
     }
 
     function handleInteract(idx) {
         const t = tiles[idx];
+        if (tutorialIsActive()) {
+            const step = tutorialStep();
+            const expectedTile = tutorialTileId();
+            const allowsPlant = step === 'plant_tile' && idx === expectedTile && PLANTS[currentTool] && !t.active;
+            const allowsWater = step === 'water_tile' && idx === expectedTile && currentTool === 'water';
+            const allowsHarvest = step === 'harvest_tile' && idx === expectedTile && currentTool === 'harvest' && t.active && t.growth >= 100;
+            if (!allowsPlant && !allowsWater && !allowsHarvest) { tutorialNudge(); return; }
+        }
         if (t.hasWeed) { t.hasWeed = false; decorSfx('pop', 'popitClick'); showToast("🐛 Паразит изгнан!", "#00b894"); updateTileDOM(idx); updateQuest('clear_weeds', 1); return; }
         if (currentTool === 'shovel') { if (t.active) { clearTile(idx); decorSfx('error', 'popitClick'); floatText(idx, "Очищено", "gray"); } else decorSfx('pop', 'popitClick'); return; }
-        if (currentTool === 'water') { if (t.active && t.growth < 100) { t.water = 100; decorSfx('pop', 'popitWater'); floatText(idx, "💧", "#74b9ff"); updateTileDOM(idx); updateQuest('water_plants', 1); } else decorSfx('pop', 'popitClick'); return; }
+        if (currentTool === 'water') {
+            t.water = WATER_DURATION;
+            decorSfx('pop', 'popitWater');
+            floatText(idx, "💧", "#74b9ff");
+            updateTileDOM(idx);
+            updateQuest('water_plants', 1);
+            if (tutorialIsActive() && tutorialStep() === 'water_tile' && idx === tutorialTileId()) {
+                setTutorialStep('wait_growth');
+                setTimeout(() => {
+                    const tile = tiles[idx];
+                    if (tile && tile.active && tutorialIsActive() && tutorialStep() === 'wait_growth') {
+                        tile.growth = 100;
+                        updateTileDOM(idx);
+                        setTutorialStep('harvest_tool');
+                        showToast('Урожай созрел!', '#f1c40f');
+                    }
+                }, 1800);
+            }
+            return;
+        }
         if (currentTool === 'harvest') { if (t.active && t.growth >= 100) harvestPlant(idx); else decorSfx('pop', 'popitClick'); return; }
 
         if (PLANTS[currentTool]) {
@@ -387,6 +535,10 @@ function init() {
             t.weight = cropWeight.weight; t.weightMult = cropWeight.weightMult; t.sizeTier = cropWeight.tier; t.scale = cropWeight.scale;
             decorSfx('pop', 'popitClick'); floatText(idx, `-${p.cost}$`, "#ff7675");
             updateUI(); updateTileDOM(idx);
+            if (tutorialIsActive() && tutorialStep() === 'plant_tile') {
+                player.tutorial.tileId = idx;
+                setTutorialStep('water_tool');
+            }
         }
     }
 
@@ -400,9 +552,11 @@ function init() {
         if (t.mutations.length > 0) {
             t.mutations.forEach(mId => {
                 const m = MUTATIONS[mId];
-                totalMult += (m.mult - 1); 
+                if (!m) return;
+                totalMult *= m.mult;
                 highestColor = m.color;
                 updateQuest('find_mut', 1);
+                if (mId === 'gold') updateQuest('find_gold', 1);
             });
         }
 
@@ -424,7 +578,7 @@ function init() {
         recordCropStats(cropRecord, finalReward, true);
         player.coins += finalReward; player.xp += xp;
         while (player.xp >= player.xpNeed) {
-            player.lvl++; player.xp -= player.xpNeed; player.xpNeed = Math.floor(player.xpNeed * 1.5);
+            player.lvl++; player.xp -= player.xpNeed; player.xpNeed = Math.floor(player.xpNeed * (BALANCE.xpNeedMult || 1.5));
             showToast(`УРОВЕНЬ ${player.lvl}! 🎉`, "#a29bfe"); renderSeeds();
         }
 
@@ -433,7 +587,11 @@ function init() {
         let multText = totalMult > 1 ? `<span style="font-size:16px; color:${highestColor}">x${totalMult.toFixed(1)}</span><br>` : '';
         floatText(idx, `${multText}+${finalReward}$<br><span style="font-size:14px">⚖️ ${formatWeight(actualWeight)}кг · x${weightMult}</span>`, highestColor);
         if (p.id === 'carrot') updateQuest('grow_carrot', 1);
+        updateQuest('harvest_any', 1);
         updateQuest('earn_coins', finalReward);
+        updateQuest('earn_big', finalReward);
+        if ((p.lvl || 0) >= 7) updateQuest('harvest_rare', 1);
+        if (tutorialIsActive() && tutorialStep() === 'harvest_tile') setTutorialStep('shovel_tool');
         clearTile(idx); updateUI();
     }
 
@@ -462,7 +620,7 @@ function init() {
     }
 
     function clearTile(idx) {
-        tiles[idx].active = false; tiles[idx].plantId = null; tiles[idx].growth = 0; tiles[idx].hasWeed = false; tiles[idx].mutations = []; tiles[idx].scale = 1; tiles[idx].weight = 5; tiles[idx].weightMult = 1; tiles[idx].sizeTier = 'normal'; tiles[idx].beeLock = 0;
+        tiles[idx].active = false; tiles[idx].plantId = null; tiles[idx].growth = 0; tiles[idx].water = 0; tiles[idx].hasWeed = false; tiles[idx].mutations = []; tiles[idx].scale = 1; tiles[idx].weight = 5; tiles[idx].weightMult = 1; tiles[idx].sizeTier = 'normal'; tiles[idx].beeLock = 0;
         updateTileDOM(idx);
     }
 
@@ -485,7 +643,7 @@ function init() {
 
         if (type === 'day') { env.eventTimer = 0; eventActions = []; return; }
         
-        env.eventTimer = 15; eventActions = [];
+        env.eventTimer = BALANCE.eventDuration || 15; eventActions = [];
         let targetCount = 0; let mutType = '';
 
         if (type === 'toxic') { targetCount = Math.floor(Math.random() * 3) + 2; mutType = 'toxic'; } 
@@ -589,7 +747,7 @@ function init() {
             });
             if (env.eventTimer <= 0) startEvent('day');
         } else {
-            if (Math.random() < BALANCE.autoEventChance && env.ticks % 10 === 0) {
+            if (Math.random() < BALANCE.autoEventChance && env.ticks % (BALANCE.autoEventCheckEvery || 10) === 0) {
                 let r = Math.random();
                 if (r < 0.3) Math.random() < 0.35 ? startEvent('storm') : startEvent('rain');
                 else if (r < 0.5) startEvent('toxic');
@@ -607,19 +765,27 @@ function init() {
         let buffs = getBuffs();
 
         tiles.forEach((t, idx) => {
-            if (!t.active || t.growth >= 100) return;
+            const wasWet = t.water > 0;
+
+            if (!t.active || t.growth >= 100) {
+                if (wasWet) {
+                    t.water = Math.max(0, t.water - 1);
+                    if (t.water === 0) updateTileDOM(idx);
+                }
+                return;
+            }
+
             if (t.beeLock > 0) { t.beeLock--; return; }
             if (!t.hasWeed && env.currentEvent === 'day' && Math.random() < BALANCE.weedChance) { t.hasWeed = true; updateTileDOM(idx); return; }
             if (t.hasWeed) return;
 
             const p = PLANTS[t.plantId];
             let speed = 1 + buffs.speedMult;
-            if (t.water > 0) speed *= 2;
+            if (wasWet) speed *= 2;
             if (env.currentEvent === 'rain' || env.currentEvent === 'storm') speed *= 3;
 
             t.growth = Math.min(100, t.growth + (100 / p.time) * speed);
-            t.water = Math.max(0, t.water - 5);
-
+            if (wasWet) t.water = Math.max(0, t.water - 1);
             if (t.growth >= 100 && t.mutations.length < 3) {
                 let r = Math.random(); let mChance = 1 + buffs.mutChance;
                 if (r < MUTATIONS.rainbow.chance * mChance && !t.mutations.includes('rainbow')) t.mutations.push('rainbow');
@@ -703,9 +869,14 @@ function init() {
         renderShowcase();
         renderDiary();
         applyDecorStyle();
+        refreshTutorial();
     }
 
-    function toggleMenu() { document.getElementById('side-menu').classList.toggle('open'); updateUI(); }
+    function toggleMenu() {
+        if (tutorialIsActive()) { tutorialNudge(); return; }
+        document.getElementById('side-menu').classList.toggle('open');
+        updateUI();
+    }
 
     function renderShowcase() {
         if (!Array.isArray(player.showcase)) player.showcase = [null, null, null];
@@ -913,12 +1084,14 @@ function init() {
         shop.innerHTML = Object.values(DECOR_STYLES).map(style => {
             const bought = owned.includes(style.id);
             const active = (player.plotStyle || 'default') === style.id;
-            return `<div class="decor-card ${active ? 'active' : ''} style-${style.id}">
+            const locked = player.lvl < (style.lvl || 1);
+            return `<div class="decor-card ${active ? 'active' : ''} ${locked ? 'locked' : ''} style-${style.id}">
                 <div class="decor-preview"></div>
                 <b>${style.name}</b>
                 <small>${style.desc}</small>
-                ${style.cost > 0 && !bought ? `<em>${style.cost}$</em>` : ''}
-                <button type="button" class="decor-buy ${active ? 'selected' : ''}" onclick="buyOrSelectDecor('${style.id}')">${active ? 'Выбран' : bought ? 'Выбрать' : 'Купить'}</button>
+                <small>${locked ? `Уровень ${style.lvl}` : ''}</small>
+                ${style.cost > 0 && !bought && !locked ? `<em>${style.cost}$</em>` : ''}
+                <button type="button" class="decor-buy ${active ? 'selected' : ''}" onclick="buyOrSelectDecor('${style.id}')">${locked ? `Ур. ${style.lvl}` : active ? 'Выбран' : bought ? 'Выбрать' : 'Купить'}</button>
             </div>`;
         }).join('');
     }
@@ -926,6 +1099,7 @@ function init() {
     function buyOrSelectDecor(styleId) {
         const style = DECOR_STYLES[styleId];
         if (!style) return;
+        if (player.lvl < (style.lvl || 1)) { showToast(`Нужен уровень ${style.lvl}`, "#ff7675"); return; }
         if (!Array.isArray(player.ownedDecor)) player.ownedDecor = ['default'];
         const bought = player.ownedDecor.includes(styleId);
         if (!bought) {
@@ -953,6 +1127,41 @@ function init() {
         sfx.play('coin');
         showToast("+99999999 монет", "#f1c40f");
         updateUI();
+    }
+
+    function resetProgress() {
+        player = {
+            coins: BALANCE.startCoins || 50, lvl: 1, xp: 0, xpNeed: BALANCE.xpNeedStart || 100,
+            rares: {}, unlockedMutations: [],
+            pets: [], petLevels: {}, petInventory: [], equippedPets: [null, null, null], unlockedPetSlots: 1,
+            incubator: [null, null, null], quests: [], lastSaved: Date.now(), bank: 0,
+            plotStyle: 'default', ownedDecor: ['default'], decorPaintColor: '#ff7675',
+            showcase: [null, null, null],
+            stats: { totalEarned: 0, maxWeight: 0, bestSale: 0, harvested: 0 },
+            tutorial: { done: false, step: 'seed_select', tileId: 0, force: true }
+        };
+        resetTilesState();
+        env = {
+            ticks: 0, currentEvent: 'day', eventTimer: 0, potTimer: 0, potActive: false,
+            activeNest: 0, activeEquip: 0, petPatCooldowns: {},
+            openMenuSections: { diary: false, pets: false, decor: false },
+            backroomsLampTimer: null, backroomsLampEndTimer: null
+        };
+        eventActions = [];
+        currentTool = 'water';
+        startEvent('day');
+        document.getElementById('side-menu').classList.remove('open');
+        document.getElementById('pet-reveal').classList.remove('active');
+        document.getElementById('pet-sell-modal').classList.remove('active');
+        document.querySelectorAll('.action-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tool === 'water'));
+        localStorage.removeItem('FarmMobileV2');
+        renderGarden();
+        renderSeeds();
+        generateQuestsIfNeeded();
+        updateUI();
+        refreshTutorial();
+        saveGame();
+        showToast('Прогресс сброшен', '#f1c40f');
     }
     
     function floatText(tileIdx, text, color) {
@@ -1042,7 +1251,7 @@ function init() {
     function hatchNest(slot = env.activeNest) {
         const nest = player.incubator[slot];
         if (!nest || nest.hatching) return;
-        if (player.petInventory.length >= 8) { showToast("Освободи место в инвентаре", "#ff7675"); return; }
+        if (player.petInventory.length >= (BALANCE.petInventoryMax || 8)) { showToast("Освободи место в инвентаре", "#ff7675"); return; }
         const now = Date.now();
         if (!nest.ready && now < nest.readyAt) { showToast("Яйцо ещё греется", "#74b9ff"); return; }
         nest.ready = true;
@@ -1187,7 +1396,7 @@ function init() {
     }
 
     function unlockPetSlot(slot) {
-        const costs = [0, 2500, 12000];
+        const costs = [0, BALANCE.petSlot2Cost || 2500, BALANCE.petSlot3Cost || 12000];
         if (slot !== player.unlockedPetSlots || slot >= 3) return;
         if (player.coins < costs[slot]) { showToast(`Нужно ${costs[slot]} монет!`, "#ff7675"); return; }
         player.coins -= costs[slot];
@@ -1276,7 +1485,9 @@ function init() {
         const nestView = document.getElementById('nest-view');
         const dots = document.getElementById('nest-dots');
         const equipSlots = document.getElementById('equip-slots');
+        const inventoryTitle = document.getElementById('pet-inventory-title');
         if (!list || !shop || !nestView || !dots || !equipSlots) return;
+        if (inventoryTitle) inventoryTitle.textContent = `Инвентарь ${BALANCE.petInventoryMax || 8} мест`;
 
         shop.innerHTML = Object.values(EGG_RARITIES).map(egg => `
             <button class="egg-buy rarity-${egg.id} ${egg.locked ? 'locked' : ''}" ${egg.locked ? 'disabled' : ''} onclick="startEgg('${egg.id}')">
@@ -1288,7 +1499,7 @@ function init() {
         const activePet = activeUid ? getPetInstance(activeUid) : null;
         const activeDef = activePet ? PET_DEFS[activePet.id] : null;
         if (!activeSlotUnlocked) {
-            const costs = [0, 2500, 12000];
+            const costs = [0, BALANCE.petSlot2Cost || 2500, BALANCE.petSlot3Cost || 12000];
             nestView.innerHTML = `<div class="slime-showcase locked"><div class="big-lock">🔒</div><div class="nest-info"><b>Слот ${env.activeEquip + 1} закрыт</b><span>Открыть за ${costs[env.activeEquip]}$</span></div><button class="pot-btn" onclick="unlockPetSlot(${env.activeEquip})">Открыть</button></div>`;
         } else if (!activePet || !activeDef) {
             nestView.innerHTML = `<div class="slime-showcase empty"><div class="big-egg empty">＋</div><div class="nest-info"><b>СЛОТ ${env.activeEquip + 1}</b><span>Нажми галочку у слайма</span></div></div>`;
@@ -1328,7 +1539,8 @@ function init() {
             </button>`;
         }).join('');
 
-        const inventory = player.petInventory.slice(0, 8);
+        const inventoryLimit = BALANCE.petInventoryMax || 8;
+        const inventory = player.petInventory.slice(0, inventoryLimit);
         const petCardsHtml = inventory.map(pet => {
             if (pet.reserved) {
                 return `<div class="pet-card mini-pet-card inventory-reserved">
@@ -1351,7 +1563,7 @@ function init() {
                 </div>
             </div>`;
         }).join('');
-        const emptySlotsHtml = Array.from({ length: Math.max(0, 8 - inventory.length) }, (_, i) => `<div class="pet-card mini-pet-card inventory-empty"><div class="mini-pet-portrait">＋</div><span>Место ${inventory.length + i + 1}</span></div>`).join('');
+        const emptySlotsHtml = Array.from({ length: Math.max(0, inventoryLimit - inventory.length) }, (_, i) => `<div class="pet-card mini-pet-card inventory-empty"><div class="mini-pet-portrait">＋</div><span>Место ${inventory.length + i + 1}</span></div>`).join('');
         list.innerHTML = petCardsHtml + emptySlotsHtml;
 
     }
@@ -1377,7 +1589,7 @@ function init() {
     function saveGame() {
         try {
             player.lastSaved = Date.now();
-            localStorage.setItem('FarmMobileV2', JSON.stringify({ player }));
+            localStorage.setItem('FarmMobileV2', JSON.stringify({ player, tiles }));
         } catch (error) {
             console.warn('Не удалось сохранить игру', error);
         }
@@ -1389,11 +1601,14 @@ function init() {
             if (saved) {
                 let data = JSON.parse(saved);
                 if (data.player) player = {...player, ...data.player};
+                if (Array.isArray(data.tiles)) {
+                    tiles = tiles.map((tile, index) => ({ ...tile, ...(data.tiles[index] || {}) }));
+                }
                 if (!player.rares) player.rares = {};
                 if (!player.quests) player.quests = [];
                 if (!player.unlockedMutations) player.unlockedMutations = [];
                 if (!player.stats) player.stats = { totalEarned: 0, maxWeight: 0, bestSale: 0, harvested: 0 };
-                if (!player.xpNeed) player.xpNeed = 100;
+                if (!player.xpNeed) player.xpNeed = BALANCE.xpNeedStart || 100;
             }
         } catch (error) {
             console.warn('Не удалось загрузить сохранение', error);
@@ -1404,6 +1619,7 @@ function init() {
 
     function normalizePetState() {
         ensureStats();
+        ensureTutorialState();
         if (!player.pets) player.pets = [];
         if (!player.petLevels) player.petLevels = {};
         if (!Array.isArray(player.petInventory)) player.petInventory = [];
@@ -1440,9 +1656,10 @@ function init() {
             const mappedId = oldPetMap[p.id] || p.id;
             return {...p, id: mappedId};
         }).filter(p => p && PET_DEFS[p.id]).map(p => ({...p, hunger: Math.max(0, Math.min(100, p.hunger ?? 100)), level: Math.max(1, Math.min(BALANCE.helperMaxLevel, p.level || 1)), size: p.size || 'normal', shiny: p.shiny || 'normal', happy: !!p.happy }));
-        player.petInventory = player.petInventory.slice(0, 8);
+        player.petInventory = player.petInventory.slice(0, BALANCE.petInventoryMax || 8);
         player.equippedPets = player.equippedPets.map((uid, i) => i < player.unlockedPetSlots && player.petInventory.some(p => p.uid === uid) ? uid : null);
         if (!player.equippedPets[0] && player.petInventory[0]) player.equippedPets[0] = player.petInventory[0].uid;
+        if (!Number.isInteger(player.tutorial.tileId)) player.tutorial.tileId = 0;
     }
 
     window.addEventListener('load', init);
