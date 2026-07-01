@@ -1385,7 +1385,6 @@ function init() {
         const soldOut = available <= 0;
         const disabled = soldOut || levelLocked;
         const label = levelLocked ? `Ур. ${p.lvl}` : soldOut ? 'Ресток' : `${p.cost}$`;
-        const hint = levelLocked ? 'закрыто' : soldOut ? 'ждем' : 'купить';
         return `<button class="shop-seed-card ${disabled ? 'disabled' : ''}" style="--shop-seed-color:${p.color};" type="button" onclick="buySeedFromShop('${source}','${id}', this)">
             <div class="pkt-top"></div>
             <div class="pkt-bg"></div>
@@ -1395,7 +1394,6 @@ function init() {
             </div>
             <div class="shop-seed-art">${seedIcon(id, 'shop-seed-icon')}</div>
             <div class="shop-seed-bottom">
-                <small>${hint}</small>
                 <em>${label}</em>
             </div>
         </button>`;
