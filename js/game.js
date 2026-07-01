@@ -1385,17 +1385,34 @@ function init() {
         const soldOut = available <= 0;
         const disabled = soldOut || levelLocked;
         const label = levelLocked ? `Ур. ${p.lvl}` : soldOut ? 'Ресток' : `${p.cost}$`;
-        return `<button class="shop-seed-card ${disabled ? 'disabled' : ''}" type="button" onclick="buySeedFromShop('${source}','${id}', this)">
+        const hint = levelLocked ? 'закрыто' : soldOut ? 'ждем' : 'купить';
+        return `<button class="shop-seed-card ${disabled ? 'disabled' : ''}" style="--shop-seed-color:${p.color};" type="button" onclick="buySeedFromShop('${source}','${id}', this)">
+            <div class="pkt-top"></div>
+            <div class="pkt-bg"></div>
             <div class="shop-seed-top">
                 <b>${p.name}</b>
                 <span>x${available}</span>
             </div>
             <div class="shop-seed-art">${seedIcon(id, 'shop-seed-icon')}</div>
             <div class="shop-seed-bottom">
-                <small>${levelLocked ? 'закрыто' : soldOut ? 'скоро' : 'купить 1'}</small>
+                <small>${hint}</small>
                 <em>${label}</em>
             </div>
         </button>`;
+    }
+
+    function getShopDisplayOrder(sourceStock) {
+        const sorted = seedKeys
+            .slice()
+            .sort((a, b) => (PLANTS[a].cost || 0) - (PLANTS[b].cost || 0));
+        const rows = [];
+        for (let i = 0; i < sorted.length; i += 2) rows.push(sorted.slice(i, i + 2).reverse());
+        return rows.flat().sort((a, b) => {
+            const aActive = (sourceStock[a] || 0) > 0 ? 1 : 0;
+            const bActive = (sourceStock[b] || 0) > 0 ? 1 : 0;
+            if (aActive !== bActive) return bActive - aActive;
+            return 0;
+        });
     }
 
     function renderShop() {
@@ -1418,26 +1435,53 @@ function init() {
         if (merchantLabel) merchantLabel.textContent = merchantActive ? 'Торговец!' : 'Торговец';
 
         if (env.shopTab === 'merchant') {
+            const merchantCards = getShopDisplayOrder(player.shop.merchantStock)
+                .map(id => renderShopSeedCard(id, player.shop.merchantStock[id] || 0, 'merchant'))
+                .join('');
             if (merchantActive) {
                 const leaveIn = Math.ceil((player.shop.merchantLeavesAt - now) / 1000);
                 subtitle.textContent = 'Редкий завоз от торговца';
                 headerMeter.innerHTML = `<small>Уедет через</small><b>${formatEventTimer(leaveIn)}</b>`;
                 content.innerHTML = `
-                    <div class="shop-info-banner hot">Загадочный торговец привез дорогие семена.</div>
-                    <div class="shop-seed-grid">
-                        ${seedKeys
-                            .slice()
-                            .sort((a, b) => (PLANTS[a].cost || 0) - (PLANTS[b].cost || 0))
-                            .map(id => renderShopSeedCard(id, player.shop.merchantStock[id] || 0, 'merchant')).join('')}
+                    <div class="shop-pane">
+                        <div class="shop-pane-head">
+                            <div class="shop-pane-title">
+                                <b>Загадочный торговец</b>
+                                <span>Редкие и дорогие семена на короткое время</span>
+                            </div>
+                            <div class="shop-pane-badge">
+                                <small>таймер</small>
+                                <b>${formatEventTimer(leaveIn)}</b>
+                            </div>
+                        </div>
+                        <div class="shop-info-banner hot">Лови редкие предложения, пока лавка открыта.</div>
+                        <div class="shop-seed-grid">
+                            ${merchantCards}
+                        </div>
                     </div>
                 `;
             } else {
                 const arriveIn = Math.max(0, Math.ceil((player.shop.merchantArrivesAt - now) / 1000));
                 subtitle.textContent = 'Иногда привозит редкие товары';
                 headerMeter.innerHTML = `<small>Приедет через</small><b>${formatEventTimer(arriveIn)}</b>`;
-                content.innerHTML = `<div class="shop-empty-state">
-                    <b>Торговец в пути</b>
-                    <small>Он приезжает каждые 4-8 минут и остается только на 2 минуты.</small>
+                content.innerHTML = `<div class="shop-pane">
+                    <div class="shop-pane-head">
+                        <div class="shop-pane-title">
+                            <b>Загадочный торговец</b>
+                            <span>Появляется каждые 4-8 минут и гостит всего 2 минуты</span>
+                        </div>
+                        <div class="shop-pane-badge">
+                            <small>таймер</small>
+                            <b>${formatEventTimer(arriveIn)}</b>
+                        </div>
+                    </div>
+                    <div class="shop-empty-state">
+                        <b>Торговец в пути</b>
+                        <small>Подготовь монеты заранее, ассортимент меняется каждый визит.</small>
+                    </div>
+                    <div class="shop-seed-grid">
+                        ${merchantCards}
+                    </div>
                 </div>`;
             }
             return;
@@ -1446,13 +1490,23 @@ function init() {
         const refreshIn = Math.max(0, Math.ceil((player.shop.refreshAt - now) / 1000));
         subtitle.textContent = 'Купи семена для посадки';
         headerMeter.innerHTML = `<small>Обновление</small><b>${formatEventTimer(refreshIn)}</b>`;
-        const allCards = seedKeys
-            .slice()
-            .sort((a, b) => (PLANTS[a].cost || 0) - (PLANTS[b].cost || 0))
+        const allCards = getShopDisplayOrder(player.shop.stock)
             .map(id => renderShopSeedCard(id, player.shop.stock[id] || 0, 'stock'))
             .join('');
         content.innerHTML = `
-            <div class="shop-seed-grid">${allCards}</div>
+            <div class="shop-pane">
+                <div class="shop-pane-head">
+                    <div class="shop-pane-title">
+                        <b>Полка с семенами</b>
+                        <span>Покупай нужное и пополняй быстрый ряд снизу</span>
+                    </div>
+                    <div class="shop-pane-badge">
+                        <small>ресток</small>
+                        <b>${formatEventTimer(refreshIn)}</b>
+                    </div>
+                </div>
+                <div class="shop-seed-grid">${allCards}</div>
+            </div>
         `;
     }
 

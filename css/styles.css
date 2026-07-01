@@ -618,7 +618,7 @@
             position: absolute;
             inset: 8px;
             display: grid;
-            grid-template-columns: 1fr 98px;
+            grid-template-columns: minmax(0, 1fr) 106px;
             overflow: hidden;
             border: 5px solid #7b4219;
             border-radius: 18px;
@@ -635,6 +635,7 @@
         .shop-main {
             display: flex;
             flex-direction: column;
+            min-width: 0;
             background:
                 linear-gradient(90deg, rgba(123,66,25,0.18) 0 8px, transparent 8px),
                 radial-gradient(circle at 14px 16px, rgba(123,66,25,0.09) 0 2px, transparent 3px),
@@ -711,7 +712,9 @@
         }
         .shop-content {
             flex: 1;
-            overflow-y: auto;
+            min-width: 0;
+            overflow-y: scroll;
+            scrollbar-gutter: stable;
             padding: 10px 10px calc(13px + env(safe-area-inset-bottom));
         }
         .shop-tabs {
@@ -844,43 +847,124 @@
             background: #f4e8ff;
             color: #603a94;
         }
+        .shop-pane {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-height: 100%;
+        }
+        .shop-pane-head {
+            display: flex;
+            align-items: stretch;
+            gap: 8px;
+        }
+        .shop-pane-title {
+            flex: 1;
+            min-width: 0;
+            border-radius: 12px;
+            padding: 8px 10px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,241,205,0.9));
+            border: 2px solid rgba(123,66,25,0.16);
+            color: #6a3512;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.65);
+        }
+        .shop-pane-title b,
+        .shop-pane-title span {
+            display: block;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .shop-pane-title b {
+            font-size: 13px;
+            line-height: 1.1;
+        }
+        .shop-pane-title span {
+            margin-top: 3px;
+            font-size: 10px;
+            font-weight: 900;
+            color: #946033;
+        }
+        .shop-pane-badge {
+            flex-shrink: 0;
+            min-width: 74px;
+            border-radius: 12px;
+            padding: 7px 8px;
+            text-align: center;
+            background: linear-gradient(180deg, #fff3cb, #efca75);
+            border: 2px solid rgba(123,66,25,0.16);
+            color: #6a3512;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.65);
+        }
+        .shop-pane-badge small,
+        .shop-pane-badge b {
+            display: block;
+            line-height: 1;
+        }
+        .shop-pane-badge small {
+            font-size: 9px;
+            font-weight: 1000;
+            text-transform: uppercase;
+            color: #946033;
+            margin-bottom: 4px;
+        }
+        .shop-pane-badge b {
+            font-size: 13px;
+            font-weight: 1000;
+        }
+        .shop-modal.merchant-theme .shop-pane-title {
+            background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(240,226,255,0.92));
+            border-color: rgba(96,58,148,0.18);
+            color: #4c2974;
+        }
+        .shop-modal.merchant-theme .shop-pane-title span {
+            color: #7b55aa;
+        }
+        .shop-modal.merchant-theme .shop-pane-badge {
+            background: linear-gradient(180deg, #f6ebff, #dbc0ff);
+            border-color: rgba(96,58,148,0.18);
+            color: #4c2974;
+        }
+        .shop-modal.merchant-theme .shop-pane-badge small {
+            color: #7b55aa;
+        }
         .shop-timer-banner {
-            margin-bottom: 12px;
+            margin-bottom: 0;
             background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(255,245,215,0.85));
         }
         .shop-seed-grid {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 8px;
-            direction: rtl;
+            align-content: start;
         }
         .shop-seed-card {
-            direction: ltr;
-            min-height: 108px;
+            min-height: 94px;
             border: 3px solid #8a4e1e;
             border-radius: 12px;
-            background:
-                linear-gradient(180deg, rgba(255,255,255,0.42), transparent 28%),
-                linear-gradient(180deg, #f7d286 0 62%, #a5642a 63% 100%);
-            padding: 6px;
-            text-align: left;
+            background: linear-gradient(180deg, #fffdf5, #fff1cf);
+            padding: 0;
+            text-align: center;
             font-family: inherit;
             color: #4f2609;
-            box-shadow: inset 0 2px 0 rgba(255,255,255,0.45), inset 0 -5px 0 rgba(73,35,10,0.18), 0 4px 0 rgba(74,35,11,0.24);
+            box-shadow: inset 0 2px 0 rgba(255,255,255,0.45), 0 4px 0 rgba(74,35,11,0.24);
             cursor: pointer;
             position: relative;
             overflow: hidden;
             transition: transform 0.12s ease, filter 0.16s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
         .shop-seed-card::before {
             content: '';
             position: absolute;
-            inset: 4px 4px auto;
+            left: 0;
+            right: 0;
+            bottom: 0;
             height: 54%;
-            border-radius: 8px;
-            background:
-                linear-gradient(180deg, rgba(255,250,225,0.9), rgba(255,229,164,0.76));
-            border: 2px solid rgba(116,67,25,0.22);
+            background: var(--shop-seed-color, #f7d286);
+            opacity: 0.34;
             z-index: 0;
             pointer-events: none;
         }
@@ -903,66 +987,93 @@
             filter: grayscale(1);
             opacity: 0.52;
         }
-        .shop-seed-top,
-        .shop-seed-bottom {
+        .shop-seed-card .pkt-top {
+            width: 100%;
+            height: 11px;
+            border-bottom: 2px dashed rgba(0,0,0,0.12);
+            background: rgba(255,255,255,0.96);
+        }
+        .shop-seed-card .pkt-bg {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 54%;
+            background: var(--shop-seed-color, #f7d286);
+            opacity: 0.24;
+            z-index: 0;
+            border-radius: 0 0 10px 10px;
+        }
+        .shop-seed-top {
+            width: 100%;
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             justify-content: space-between;
             gap: 6px;
+            padding: 4px 6px 0;
         }
         .shop-seed-top b {
-            font-size: 11px;
+            font-size: 10px;
             line-height: 1.1;
             min-width: 0;
             color: #54290c;
             text-shadow: 0 1px 0 rgba(255,255,255,0.64);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            text-transform: uppercase;
+            text-align: left;
         }
         .shop-seed-top span {
             flex-shrink: 0;
-            min-width: 28px;
-            padding: 2px 5px;
+            min-width: 25px;
+            padding: 2px 4px;
             border-radius: 999px;
-            background: rgba(104, 55, 18, 0.16);
+            background: rgba(104, 55, 18, 0.1);
             text-align: center;
-            font-size: 10px;
+            font-size: 9px;
             font-weight: 1000;
         }
         .shop-seed-art {
-            height: 40px;
+            height: 28px;
             display: flex;
             align-items: center;
             justify-content: center;
+            margin-top: auto;
         }
         .shop-seed-icon {
-            transform: scale(0.96);
+            transform: scale(0.82);
             filter: drop-shadow(0 3px 4px rgba(0,0,0,0.16));
+        }
+        .shop-seed-bottom {
+            width: 100%;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 6px;
+            padding: 0 6px 6px;
+            margin-top: auto;
         }
         .shop-seed-bottom small,
         .shop-seed-bottom em {
-            font-size: 10px;
+            font-size: 9px;
             font-style: normal;
             font-weight: 1000;
         }
         .shop-seed-bottom small {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
             min-width: 0;
+            text-align: left;
+            color: #70411d;
+            line-height: 1.05;
         }
         .shop-seed-bottom em {
-            min-width: 38px;
-            padding: 3px 6px;
-            border-radius: 999px;
+            min-width: 42px;
+            padding: 4px 5px;
+            border-radius: 8px;
             background: #fff3c4;
             color: #7d3f14;
             text-align: center;
             box-shadow: inset 0 -1px 0 rgba(0,0,0,0.12);
         }
         .shop-empty-state {
-            min-height: 150px;
+            min-height: 0;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -971,6 +1082,27 @@
             text-align: center;
             color: #6a3512;
             font-weight: 1000;
+            padding: 12px 10px;
+            border-radius: 14px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.88), rgba(255,241,205,0.76));
+            border: 2px dashed rgba(123,66,25,0.18);
+        }
+        .shop-empty-state b {
+            font-size: 14px;
+            line-height: 1.1;
+        }
+        .shop-empty-state small {
+            font-size: 11px;
+            line-height: 1.25;
+            color: #8f5a2e;
+        }
+        .shop-modal.merchant-theme .shop-empty-state {
+            background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(240,226,255,0.78));
+            border-color: rgba(96,58,148,0.2);
+            color: #4c2974;
+        }
+        .shop-modal.merchant-theme .shop-empty-state small {
+            color: #7b55aa;
         }
 
         .quest-card { background: rgba(255,255,255,0.5); border: 2px dashed rgba(0,0,0,0.2); border-radius: 12px; padding: 12px; }
