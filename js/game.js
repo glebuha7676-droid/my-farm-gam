@@ -1385,14 +1385,14 @@ function init() {
         const soldOut = available <= 0;
         const disabled = soldOut || levelLocked;
         const label = levelLocked ? `Ур. ${p.lvl}` : soldOut ? 'Ресток' : `${p.cost}$`;
-        return `<button class="shop-seed-card ${disabled ? 'disabled' : ''}" type="button" onclick="buySeedFromShop('${source}','${id}')">
+        return `<button class="shop-seed-card ${disabled ? 'disabled' : ''}" type="button" onclick="buySeedFromShop('${source}','${id}', this)">
             <div class="shop-seed-top">
                 <b>${p.name}</b>
                 <span>x${available}</span>
             </div>
             <div class="shop-seed-art">${seedIcon(id, 'shop-seed-icon')}</div>
             <div class="shop-seed-bottom">
-                <small>${levelLocked ? 'закрыто' : soldOut ? 'раскупили' : 'купить 1'}</small>
+                <small>${levelLocked ? 'закрыто' : soldOut ? 'скоро' : 'купить 1'}</small>
                 <em>${label}</em>
             </div>
         </button>`;
@@ -1403,29 +1403,37 @@ function init() {
         const modal = document.getElementById('shop-modal');
         const content = document.getElementById('shop-content');
         const subtitle = document.getElementById('shop-subtitle');
+        const headerMeter = document.getElementById('shop-header-meter');
         const seedsTab = document.getElementById('shop-tab-seeds');
         const merchantTab = document.getElementById('shop-tab-merchant');
-        if (!modal || !content || !subtitle || !seedsTab || !merchantTab) return;
+        if (!modal || !content || !subtitle || !headerMeter || !seedsTab || !merchantTab) return;
         seedsTab.classList.toggle('active', env.shopTab === 'seeds');
         merchantTab.classList.toggle('active', env.shopTab === 'merchant');
 
         const now = Date.now();
         const merchantActive = !!player.shop.merchantLeavesAt && player.shop.merchantLeavesAt > now;
         merchantTab.classList.toggle('hot', merchantActive);
-        merchantTab.textContent = merchantActive ? 'Торговец!' : 'Торговец';
+        const merchantLabel = merchantTab.querySelector('span:last-child');
+        if (merchantLabel) merchantLabel.textContent = merchantActive ? 'Торговец!' : 'Торговец';
 
         if (env.shopTab === 'merchant') {
             if (merchantActive) {
-                subtitle.textContent = `Уедет через ${formatEventTimer(Math.ceil((player.shop.merchantLeavesAt - now) / 1000))}`;
+                const leaveIn = Math.ceil((player.shop.merchantLeavesAt - now) / 1000);
+                subtitle.textContent = 'Редкий завоз от торговца';
+                headerMeter.innerHTML = `<small>Уедет через</small><b>${formatEventTimer(leaveIn)}</b>`;
                 content.innerHTML = `
                     <div class="shop-info-banner hot">Загадочный торговец привез дорогие семена.</div>
                     <div class="shop-seed-grid">
-                        ${Object.keys(player.shop.merchantStock).map(id => renderShopSeedCard(id, player.shop.merchantStock[id], 'merchant')).join('')}
+                        ${seedKeys
+                            .slice()
+                            .sort((a, b) => (PLANTS[a].cost || 0) - (PLANTS[b].cost || 0))
+                            .map(id => renderShopSeedCard(id, player.shop.merchantStock[id] || 0, 'merchant')).join('')}
                     </div>
                 `;
             } else {
                 const arriveIn = Math.max(0, Math.ceil((player.shop.merchantArrivesAt - now) / 1000));
-                subtitle.textContent = `Приедет через ${formatEventTimer(arriveIn)}`;
+                subtitle.textContent = 'Иногда привозит редкие товары';
+                headerMeter.innerHTML = `<small>Приедет через</small><b>${formatEventTimer(arriveIn)}</b>`;
                 content.innerHTML = `<div class="shop-empty-state">
                     <b>Торговец в пути</b>
                     <small>Он приезжает каждые 4-8 минут и остается только на 2 минуты.</small>
@@ -1435,23 +1443,19 @@ function init() {
         }
 
         const refreshIn = Math.max(0, Math.ceil((player.shop.refreshAt - now) / 1000));
-        subtitle.textContent = `Обновление через ${formatEventTimer(refreshIn)}`;
-        const baseCards = BASE_STORE_SEEDS.map(id => renderShopSeedCard(id, player.shop.stock[id] || 0, 'stock')).join('');
-        const extraCards = Object.keys(player.shop.stock)
-            .filter(id => !BASE_STORE_SEEDS.includes(id))
+        subtitle.textContent = 'Купи семена для посадки';
+        headerMeter.innerHTML = `<small>Обновление</small><b>${formatEventTimer(refreshIn)}</b>`;
+        const allCards = seedKeys
+            .slice()
             .sort((a, b) => (PLANTS[a].cost || 0) - (PLANTS[b].cost || 0))
             .map(id => renderShopSeedCard(id, player.shop.stock[id] || 0, 'stock'))
             .join('');
         content.innerHTML = `
-            <div class="shop-info-row">
-                <div class="shop-info-banner">Базовые семена всегда в наличии.</div>
-                <div class="shop-info-pill">Ресток 3 мин</div>
-            </div>
-            <div class="shop-seed-grid">${baseCards}${extraCards}</div>
+            <div class="shop-seed-grid">${allCards}</div>
         `;
     }
 
-    function buySeedFromShop(source, id) {
+    function buySeedFromShop(source, id, button) {
         updateShopState();
         const p = PLANTS[id];
         if (!p) return;
@@ -1460,14 +1464,22 @@ function init() {
         if (player.lvl < (p.lvl || 1)) { showToast(`Нужен уровень ${p.lvl}`, '#a29bfe'); return; }
         if (available <= 0) { showToast('Этот товар раскупили', '#ff7675'); renderShop(); return; }
         if (player.coins < p.cost) { showToast('Не хватает монет', '#ff7675'); return; }
+        if (button) {
+            button.classList.remove('buy-pop');
+            void button.offsetWidth;
+            button.classList.add('buy-pop');
+            button.disabled = true;
+        }
+        sfx.play('coin');
         player.coins -= p.cost;
         player.seedInventory[id] = getSeedOwned(id) + 1;
         sourceStock[id] = available - 1;
-        sfx.play('coin');
         showToast(`Куплено: ${p.name}`, '#f1c40f');
-        updateUI();
-        renderShop();
-        saveGame();
+        setTimeout(() => {
+            updateUI();
+            renderShop();
+            saveGame();
+        }, 170);
     }
 
     function renderShowcase() {

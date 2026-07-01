@@ -28,10 +28,13 @@
             </div>
         </div>
         <div class="state-indicator" id="state-indicator">☀️ День</div>
-        <div class="top-actions">
-            <button id="shop-btn" class="btn-icon btn-shop" type="button" onclick="toggleShop()">🛒 Магазин</button>
-            <button id="menu-btn" class="btn-icon" type="button" onclick="toggleMenu()">📋 Меню <span id="menu-badge" class="menu-badge"></span></button>
-        </div>
+        <button id="menu-btn" class="btn-icon" type="button" onclick="toggleMenu()">📋 Меню <span id="menu-badge" class="menu-badge"></span></button>
+    </div>
+    <div class="shop-launchbar">
+        <button id="shop-btn" class="btn-shop-large" type="button" onclick="toggleShop()">
+            <span aria-hidden="true">🛒</span>
+            <b>Магазин</b>
+        </button>
     </div>
     
     <div class="game-area">
@@ -152,13 +155,17 @@
                         <span>Лавка семян</span>
                         <small id="shop-subtitle">Запасы и редкие поставки</small>
                     </div>
+                    <div class="shop-header-meter" id="shop-header-meter">
+                        <small>Обновление</small>
+                        <b>3:00</b>
+                    </div>
                     <button class="shop-close" type="button" onclick="toggleShop(false)">✕</button>
                 </div>
                 <div class="shop-content" id="shop-content"></div>
             </div>
             <div class="shop-tabs">
-                <button id="shop-tab-seeds" class="shop-tab active" type="button" onclick="selectShopTab('seeds')">Семена</button>
-                <button id="shop-tab-merchant" class="shop-tab" type="button" onclick="selectShopTab('merchant')">Торговец</button>
+                <button id="shop-tab-seeds" class="shop-tab active" type="button" onclick="selectShopTab('seeds')"><span class="shop-tab-icon" aria-hidden="true">🌱</span><span>Семена</span></button>
+                <button id="shop-tab-merchant" class="shop-tab" type="button" onclick="selectShopTab('merchant')"><span class="shop-tab-icon" aria-hidden="true">🔮</span><span>Торговец</span></button>
             </div>
         </div>
     </div>
