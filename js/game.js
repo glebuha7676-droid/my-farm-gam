@@ -1417,11 +1417,11 @@ function init() {
         updateShopState();
         const modal = document.getElementById('shop-modal');
         const content = document.getElementById('shop-content');
-        const subtitle = document.getElementById('shop-subtitle');
+        const headerTitle = document.getElementById('shop-title');
         const headerMeter = document.getElementById('shop-header-meter');
         const seedsTab = document.getElementById('shop-tab-seeds');
         const merchantTab = document.getElementById('shop-tab-merchant');
-        if (!modal || !content || !subtitle || !headerMeter || !seedsTab || !merchantTab) return;
+        if (!modal || !content || !headerTitle || !headerMeter || !seedsTab || !merchantTab) return;
         modal.classList.toggle('merchant-theme', env.shopTab === 'merchant');
         seedsTab.classList.toggle('active', env.shopTab === 'seeds');
         merchantTab.classList.toggle('active', env.shopTab === 'merchant');
@@ -1436,23 +1436,13 @@ function init() {
             const merchantCards = getShopDisplayOrder(player.shop.merchantStock)
                 .map(id => renderShopSeedCard(id, player.shop.merchantStock[id] || 0, 'merchant'))
                 .join('');
+            headerTitle.textContent = 'Загадочный Торговец';
             if (merchantActive) {
                 const leaveIn = Math.ceil((player.shop.merchantLeavesAt - now) / 1000);
-                subtitle.textContent = 'Редкий завоз от торговца';
                 headerMeter.innerHTML = `<small>Уедет через</small><b>${formatEventTimer(leaveIn)}</b>`;
                 content.innerHTML = `
                     <div class="shop-pane">
-                        <div class="shop-pane-head">
-                            <div class="shop-pane-title">
-                                <b>Загадочный торговец</b>
-                                <span>Редкие и дорогие семена на короткое время</span>
-                            </div>
-                            <div class="shop-pane-badge">
-                                <small>таймер</small>
-                                <b>${formatEventTimer(leaveIn)}</b>
-                            </div>
-                        </div>
-                        <div class="shop-info-banner hot">Лови редкие предложения, пока лавка открыта.</div>
+                        <div class="shop-info-banner hot">Торговец прибыл! Посмотришь на мой товар?</div>
                         <div class="shop-seed-grid">
                             ${merchantCards}
                         </div>
@@ -1460,22 +1450,12 @@ function init() {
                 `;
             } else {
                 const arriveIn = Math.max(0, Math.ceil((player.shop.merchantArrivesAt - now) / 1000));
-                subtitle.textContent = 'Иногда привозит редкие товары';
                 headerMeter.innerHTML = `<small>Приедет через</small><b>${formatEventTimer(arriveIn)}</b>`;
                 content.innerHTML = `<div class="shop-pane">
-                    <div class="shop-pane-head">
-                        <div class="shop-pane-title">
-                            <b>Загадочный торговец</b>
-                            <span>Появляется каждые 4-8 минут и гостит всего 2 минуты</span>
-                        </div>
-                        <div class="shop-pane-badge">
-                            <small>таймер</small>
-                            <b>${formatEventTimer(arriveIn)}</b>
-                        </div>
-                    </div>
+                    <div class="shop-info-banner">Торговец в пути</div>
                     <div class="shop-empty-state">
-                        <b>Торговец в пути</b>
-                        <small>Подготовь монеты заранее, ассортимент меняется каждый визит.</small>
+                        <b>Скоро приедет с редкими семенами</b>
+                        <small>Загляни позже, ассортимент меняется каждый визит.</small>
                     </div>
                     <div class="shop-seed-grid">
                         ${merchantCards}
@@ -1486,23 +1466,14 @@ function init() {
         }
 
         const refreshIn = Math.max(0, Math.ceil((player.shop.refreshAt - now) / 1000));
-        subtitle.textContent = 'Купи семена для посадки';
+        headerTitle.textContent = 'Лавка';
         headerMeter.innerHTML = `<small>Обновление</small><b>${formatEventTimer(refreshIn)}</b>`;
         const allCards = getShopDisplayOrder(player.shop.stock)
             .map(id => renderShopSeedCard(id, player.shop.stock[id] || 0, 'stock'))
             .join('');
         content.innerHTML = `
             <div class="shop-pane">
-                <div class="shop-pane-head">
-                    <div class="shop-pane-title">
-                        <b>Полка с семенами</b>
-                        <span>Покупай нужное и пополняй быстрый ряд снизу</span>
-                    </div>
-                    <div class="shop-pane-badge">
-                        <small>ресток</small>
-                        <b>${formatEventTimer(refreshIn)}</b>
-                    </div>
-                </div>
+                <div class="shop-info-banner">Полка семян, каждые 3 минуты ассортимент меняется.</div>
                 <div class="shop-seed-grid">${allCards}</div>
             </div>
         `;
@@ -1528,8 +1499,10 @@ function init() {
         sourceStock[id] = available - 1;
         showToast(`Куплено: ${p.name}`, '#f1c40f');
         updateUI();
-        renderShop();
-        saveGame();
+        setTimeout(() => {
+            renderShop();
+            saveGame();
+        }, 90);
     }
 
     function renderShowcase() {
