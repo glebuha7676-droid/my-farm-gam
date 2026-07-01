@@ -1407,6 +1407,7 @@ function init() {
         const seedsTab = document.getElementById('shop-tab-seeds');
         const merchantTab = document.getElementById('shop-tab-merchant');
         if (!modal || !content || !subtitle || !headerMeter || !seedsTab || !merchantTab) return;
+        modal.classList.toggle('merchant-theme', env.shopTab === 'merchant');
         seedsTab.classList.toggle('active', env.shopTab === 'seeds');
         merchantTab.classList.toggle('active', env.shopTab === 'merchant');
 
