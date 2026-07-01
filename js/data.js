@@ -112,3 +112,14 @@ const BALANCE = {
     petSlot2Cost:               2000,
     petSlot3Cost:               8000
 };
+
+const PLOT_UNLOCK_LEVELS = {
+    2: 3,
+    5: 5,
+    6: 8,
+    7: 10,
+    8: 15,
+    9: 20,
+    10: 25,
+    11: 30
+};

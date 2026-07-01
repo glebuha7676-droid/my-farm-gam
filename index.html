@@ -28,22 +28,10 @@
             </div>
         </div>
         <div class="state-indicator" id="state-indicator">☀️ День</div>
-        <button class="btn-icon" type="button" onclick="toggleMenu()">📋 Меню <span id="menu-badge" class="menu-badge"></span></button>
-    </div>
-
-    <div class="admin-panel">
-        <button onclick="startEvent('day')" title="День">☀️</button>
-        <button onclick="startEvent('rain')" title="Дождь">🌧️</button>
-        <button onclick="startEvent('storm')" title="Буря">⚡</button>
-        <button onclick="startEvent('toxic')" title="Токсины">☣️</button>
-        <button onclick="startEvent('starfall')" title="Звездопад">🌠</button>
-        <button onclick="startEvent('holy')" title="Солнце">🔆</button>
-        <button onclick="startEvent('hell')" title="Жар">🔥</button>
-        <button onclick="startEvent('candy')" title="Конфеты">🍬</button>
-        <button onclick="startEvent('bee')" title="Пчелы">🐝</button>
-        <button onclick="startEvent('alien')" title="Вторжение">🛸</button>
-        <button onclick="addTestCoins()" title="Монеты">💰</button>
-        <button onclick="resetProgress()" title="Сброс">↺</button>
+        <div class="top-actions">
+            <button id="shop-btn" class="btn-icon btn-shop" type="button" onclick="toggleShop()">🛒 Магазин</button>
+            <button id="menu-btn" class="btn-icon" type="button" onclick="toggleMenu()">📋 Меню <span id="menu-badge" class="menu-badge"></span></button>
+        </div>
     </div>
     
     <div class="game-area">
@@ -77,6 +65,13 @@
         </div>
         <div class="menu-content">
             <section class="menu-panel showcase-area" id="showcase-area">
+                <div class="showcase-area-lock" id="showcase-area-lock">
+                    <div class="showcase-lock-badge">
+                        <span class="showcase-lock-icon" aria-hidden="true"></span>
+                        <b>Витрина откроется на 5 уровне</b>
+                        <small id="showcase-area-lock-text">Нужен уровень 5</small>
+                    </div>
+                </div>
                 <div class="panel-title"><span>🏆</span><strong>Витрина</strong></div>
                 <p class="showcase-desc">Добавь растения для получения прибыли пока находишься в АФК.</p>
                 <div class="showcase-slots" id="showcase-slots"></div>
@@ -122,11 +117,49 @@
                 <div class="decor-shop" id="decor-shop"></div>
             </section>
 
+            <button class="menu-fold-btn" type="button" onclick="toggleMenuSection('admin')">
+                <span>🛠️</span><strong>Админ</strong><em id="admin-fold-mark">＋</em>
+            </button>
+            <section class="menu-panel admin-menu-panel menu-fold" id="admin-section">
+                <div class="admin-grid">
+                    <button onclick="startEvent('day')" title="День">☀️</button>
+                    <button onclick="startEvent('rain')" title="Дождь">🌧️</button>
+                    <button onclick="startEvent('storm')" title="Буря">⚡</button>
+                    <button onclick="startEvent('toxic')" title="Токсины">☣️</button>
+                    <button onclick="startEvent('starfall')" title="Звездопад">🌠</button>
+                    <button onclick="startEvent('holy')" title="Солнце">🔆</button>
+                    <button onclick="startEvent('hell')" title="Жар">🔥</button>
+                    <button onclick="startEvent('candy')" title="Конфеты">🍬</button>
+                    <button onclick="startEvent('bee')" title="Пчелы">🐝</button>
+                    <button onclick="startEvent('alien')" title="Вторжение">🛸</button>
+                    <button onclick="addTestCoins()" title="Монеты">💰</button>
+                    <button onclick="resetProgress()" title="Сброс">↺</button>
+                </div>
+            </section>
+
             <section class="menu-panel">
                 <div class="panel-title"><span>📋</span><strong>Задания</strong></div>
                 <div id="quests-container" class="quests-list"></div>
             </section>
             <button class="menu-exit-btn" type="button" onclick="toggleMenu()">Выход</button>
+        </div>
+    </div>
+    <div class="shop-modal" id="shop-modal">
+        <div class="shop-shell">
+            <div class="shop-main">
+                <div class="shop-header">
+                    <div>
+                        <span>Лавка семян</span>
+                        <small id="shop-subtitle">Запасы и редкие поставки</small>
+                    </div>
+                    <button class="shop-close" type="button" onclick="toggleShop(false)">✕</button>
+                </div>
+                <div class="shop-content" id="shop-content"></div>
+            </div>
+            <div class="shop-tabs">
+                <button id="shop-tab-seeds" class="shop-tab active" type="button" onclick="selectShopTab('seeds')">Семена</button>
+                <button id="shop-tab-merchant" class="shop-tab" type="button" onclick="selectShopTab('merchant')">Торговец</button>
+            </div>
         </div>
     </div>
     <div class="pet-reveal" id="pet-reveal">
@@ -140,6 +173,7 @@
             <b id="tutorial-title">Обучение</b>
             <p id="tutorial-text"></p>
             <small id="tutorial-step"></small>
+            <button id="tutorial-action" class="tutorial-action" type="button" onclick="tutorialAdvance()">Далее</button>
         </div>
     </div>
     <script src="js/data.js" defer></script>

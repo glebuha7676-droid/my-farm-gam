@@ -4,12 +4,27 @@
         pets: [], petLevels: {}, petInventory: [], equippedPets: [null, null, null], unlockedPetSlots: 1,
         incubator: [null, null, null], quests: [], lastSaved: Date.now(), bank: 0,
         plotStyle: 'default', ownedDecor: ['default'], decorPaintColor: '#ff7675',
+        seedInventory: { carrot: 8, cucumber: 6, tomato: 4, pepper: 3 },
+        shop: { stock: {}, refreshAt: 0, merchantStock: {}, merchantArrivesAt: 0, merchantLeavesAt: 0 },
         showcase: [null, null, null],
         stats: { totalEarned: 0, maxWeight: 0, bestSale: 0, harvested: 0 },
-        tutorial: { done: false, step: 'seed_select', tileId: null }
+        tutorial: {
+            done: false,
+            step: 'welcome_seed',
+            force: true,
+            targetTiles: [0, 1],
+            plantedCount: 0,
+            harvestedCount: 0,
+            weedSpawned: false,
+            weedCleared: false,
+            finalQueued: false,
+            selectedSeed: '',
+            weedTile: 1,
+            readyTile: 0
+        }
     };
 
-    let env = { ticks: 0, currentEvent: 'day', eventTimer: 0, potTimer: 0, potActive: false, activeNest: 0, activeEquip: 0, petPatCooldowns: {}, openMenuSections: { diary: false, pets: false, decor: false }, backroomsLampTimer: null, backroomsLampEndTimer: null };
+    let env = { ticks: 0, currentEvent: 'day', eventTimer: 0, nextEventTimer: 75, potTimer: 0, potActive: false, activeNest: 0, activeEquip: 0, petPatCooldowns: {}, openMenuSections: { diary: false, pets: false, decor: false, admin: false }, backroomsLampTimer: null, backroomsLampEndTimer: null, shopTab: 'seeds' };
     let eventActions = []; 
     let tiles = Array(12).fill().map((_, i) => ({ id: i, active: false, plantId: null, growth: 0, water: 0, hasWeed: false, mutations: [], scale: 1, weight: 5, weightMult: 1, sizeTier: 'normal', beeLock: 0 }));
     let currentTool = 'water';
@@ -19,36 +34,74 @@
     const WATER_DURATION = 15;
     
     const seedKeys = Object.keys(PLANTS);
+    const BASE_STORE_SEEDS = ['carrot', 'cucumber', 'tomato', 'pepper'];
     const DECOR_PAINT_COLORS = ['#ff7675', '#fdcb6e', '#55efc4', '#74b9ff', '#a29bfe', '#2ecc71'];
     const SIZE_DIARY_ENTRIES = {
         big: { id: 'big', name: 'Большой', icon: 'B', mult: 'x1.5+' },
         huge: { id: 'huge', name: 'Огромный', icon: '!', mult: 'x3.5+' }
     };
-    const TUTORIAL_STEPS = {
-        seed_select: { title: 'Первые семена', text: 'Нажми на пакетик семян снизу. С него начнем посадку.', progress: '1 / 6' },
-        plant_tile: { title: 'Посади растение', text: 'Теперь нажми на подсвеченную грядку.', progress: '2 / 6' },
-        water_tool: { title: 'Выбери полив', text: 'Отлично. Теперь выбери инструмент полива.', progress: '3 / 6' },
-        water_tile: { title: 'Полей грядку', text: 'Нажми на ту же грядку, чтобы полить растение.', progress: '4 / 6' },
-        wait_growth: { title: 'Растет', text: 'Сейчас росток быстро дозреет. Секундочку.', progress: '4 / 6' },
-        harvest_tool: { title: 'Собери урожай', text: 'Выбери руку, чтобы собрать готовое растение.', progress: '5 / 6' },
-        harvest_tile: { title: 'Забери урожай', text: 'Нажми на готовую грядку и собери урожай.', progress: '5 / 6' },
-        shovel_tool: { title: 'Последний инструмент', text: 'Теперь выбери кирку. Ею можно убирать растения с грядки.', progress: '6 / 6' }
-    };
+    const TUTORIAL_TARGET_TILES = [0, 1];
 
     function getHelperCost() {
         const ownedCount = player.petInventory ? player.petInventory.length : player.pets.length;
         return BALANCE.magicSeedCost + ownedCount * BALANCE.helperCostStep;
     }
 
+    function defaultSeedInventory() {
+        return { carrot: 8, cucumber: 6, tomato: 4, pepper: 3 };
+    }
+
+    function defaultShopState() {
+        return { stock: {}, refreshAt: 0, merchantStock: {}, merchantArrivesAt: 0, merchantLeavesAt: 0 };
+    }
+
     function ensureTutorialState() {
         if (!player.tutorial || typeof player.tutorial !== 'object') {
-            player.tutorial = { done: false, step: 'seed_select', tileId: null };
+            player.tutorial = {};
         }
-        if (!player.tutorial.step) player.tutorial.step = 'seed_select';
+        const legacyStepMap = {
+            seed_select: 'welcome_seed',
+            plant_tile: 'plant_two',
+            water_tool: 'grow_watch',
+            water_tile: 'grow_watch',
+            wait_growth: 'grow_watch',
+            harvest_tool: 'harvest_ready',
+            harvest_tile: 'harvest_ready',
+            shovel_tool: 'menu_open'
+        };
+        if (legacyStepMap[player.tutorial.step]) player.tutorial.step = legacyStepMap[player.tutorial.step];
+        if (!player.tutorial.step) player.tutorial.step = 'welcome_seed';
         if (typeof player.tutorial.done !== 'boolean') player.tutorial.done = false;
+        if (typeof player.tutorial.force !== 'boolean') player.tutorial.force = false;
+        if (!Array.isArray(player.tutorial.targetTiles)) player.tutorial.targetTiles = [...TUTORIAL_TARGET_TILES];
+        if (typeof player.tutorial.plantedCount !== 'number') player.tutorial.plantedCount = 0;
+        if (typeof player.tutorial.harvestedCount !== 'number') player.tutorial.harvestedCount = 0;
+        if (typeof player.tutorial.weedSpawned !== 'boolean') player.tutorial.weedSpawned = false;
+        if (typeof player.tutorial.weedCleared !== 'boolean') player.tutorial.weedCleared = false;
+        if (typeof player.tutorial.finalQueued !== 'boolean') player.tutorial.finalQueued = false;
+        if (typeof player.tutorial.selectedSeed !== 'string') player.tutorial.selectedSeed = '';
+        if (typeof player.tutorial.weedTile !== 'number') player.tutorial.weedTile = TUTORIAL_TARGET_TILES[1];
+        if (typeof player.tutorial.readyTile !== 'number') player.tutorial.readyTile = TUTORIAL_TARGET_TILES[0];
         if (player.stats && player.stats.harvested > 0 && player.tutorial.done !== true && !player.tutorial.force) {
             player.tutorial.done = true;
         }
+    }
+
+    function ensureSeedAndShopState() {
+        if (!player.seedInventory || typeof player.seedInventory !== 'object') {
+            player.seedInventory = defaultSeedInventory();
+        }
+        seedKeys.forEach(id => {
+            player.seedInventory[id] = Math.max(0, Math.floor(Number(player.seedInventory[id]) || 0));
+        });
+        if (!player.shop || typeof player.shop !== 'object') {
+            player.shop = defaultShopState();
+        }
+        if (!player.shop.stock || typeof player.shop.stock !== 'object') player.shop.stock = {};
+        if (!player.shop.merchantStock || typeof player.shop.merchantStock !== 'object') player.shop.merchantStock = {};
+        player.shop.refreshAt = Number(player.shop.refreshAt) || 0;
+        player.shop.merchantArrivesAt = Number(player.shop.merchantArrivesAt) || 0;
+        player.shop.merchantLeavesAt = Number(player.shop.merchantLeavesAt) || 0;
     }
 
     function tutorialIsActive() {
@@ -59,10 +112,6 @@
     function tutorialStep() {
         ensureTutorialState();
         return player.tutorial.step;
-    }
-
-    function tutorialTileId() {
-        return Number.isInteger(player.tutorial.tileId) ? player.tutorial.tileId : 0;
     }
 
     function tutorialNudge() {
@@ -81,21 +130,149 @@
         player.tutorial.done = true;
         player.tutorial.force = false;
         player.tutorial.step = 'done';
-        player.tutorial.tileId = null;
+        player.tutorial.finalQueued = false;
         refreshTutorial();
         showToast('Обучение завершено!', '#f1c40f');
     }
 
-    function getTutorialTarget() {
+    function tutorialAdvance() {
+        if (!tutorialIsActive()) return;
         const step = tutorialStep();
-        if (step === 'seed_select') return document.querySelector('.seed-packet:not(.locked)');
-        if (step === 'plant_tile') return document.getElementById(`tile-${tutorialTileId()}`);
-        if (step === 'water_tool') return document.querySelector('.action-btn[data-tool="water"]');
-        if (step === 'water_tile') return document.getElementById(`tile-${tutorialTileId()}`);
-        if (step === 'harvest_tool') return document.querySelector('.action-btn[data-tool="harvest"]');
-        if (step === 'harvest_tile') return document.getElementById(`tile-${tutorialTileId()}`);
-        if (step === 'shovel_tool') return document.querySelector('.action-btn[data-tool="shovel"]');
-        return null;
+        if (step === 'menu_intro') {
+            setTutorialStep('final');
+            return;
+        }
+        if (step === 'final') {
+            finishTutorial();
+        }
+    }
+
+    function getTutorialCardCopy() {
+        const step = tutorialStep();
+        if (step === 'welcome_seed') {
+            return {
+                title: 'Добро пожаловать на вашу ферму!',
+                text: 'Выбери семена моркови.',
+                progress: 'Шаг 1'
+            };
+        }
+        if (step === 'plant_two') {
+            return {
+                title: 'Посади семена',
+                text: `Посади морковь на две грядки. ${player.tutorial.plantedCount || 0} из 2`,
+                progress: 'Шаг 2'
+            };
+        }
+        if (step === 'grow_watch') {
+            return {
+                title: 'Отлично!',
+                text: 'Теперь смотри, как морковь растет.',
+                progress: 'Шаг 3'
+            };
+        }
+        if (step === 'weed_alert') {
+            return {
+                title: 'О нет, это паразит!',
+                text: 'Кликни на него, иначе растение не вырастет.',
+                progress: 'Шаг 4'
+            };
+        }
+        if (step === 'harvest_ready') {
+            return {
+                title: 'Золотая морковка!',
+                text: currentTool === 'harvest'
+                    ? `Осталось ${player.tutorial.harvestedCount || 0} из 2. Собери обе морковки.`
+                    : 'Тебе попалась мутация, скорее собери свой урожай.',
+                progress: 'Шаг 5'
+            };
+        }
+        if (step === 'menu_open') {
+            return {
+                title: 'Теперь расскажу про меню',
+                text: 'Нажми на кнопку меню.',
+                progress: 'Шаг 6'
+            };
+        }
+        if (step === 'menu_intro') {
+            return {
+                title: 'Вот что есть в меню',
+                text: 'Тут ты можешь поставить свои растения на витрину, изменить внешний вид грядок и открыть очень милых слаймов!',
+                progress: 'Шаг 6'
+            };
+        }
+        if (step === 'final') {
+            return {
+                title: 'Ты молодец!',
+                text: 'Теперь возвращайся и посади еще несколько морковок. Удачи!',
+                progress: ''
+            };
+        }
+        return {
+            title: 'Добро пожаловать на вашу ферму!',
+            text: 'Выбери семена моркови.',
+            progress: 'Шаг 1'
+        };
+    }
+
+    function getTutorialTargets() {
+        const step = tutorialStep();
+        if (step === 'welcome_seed') {
+            const carrotSeed = document.querySelector('.seed-packet[data-seed="carrot"]');
+            return carrotSeed ? [carrotSeed] : [];
+        }
+        if (step === 'plant_two') {
+            return player.tutorial.targetTiles.map(idx => document.getElementById(`tile-${idx}`)).filter(Boolean);
+        }
+        if (step === 'weed_alert') {
+            const weedTile = document.getElementById(`tile-${player.tutorial.weedTile}`);
+            return weedTile ? [weedTile] : [];
+        }
+        if (step === 'harvest_ready') {
+            if (currentTool !== 'harvest') {
+                const harvestBtn = document.querySelector('.action-btn[data-tool="harvest"]');
+                return harvestBtn ? [harvestBtn] : [];
+            }
+            return player.tutorial.targetTiles
+                .map(idx => document.getElementById(`tile-${idx}`))
+                .filter(el => el && el.classList.contains('ready'));
+        }
+        if (step === 'menu_open') {
+            const menuBtn = document.getElementById('menu-btn');
+            return menuBtn ? [menuBtn] : [];
+        }
+        return [];
+    }
+
+    function placeTutorialCard(overlay, targets) {
+        const card = overlay.querySelector('.tutorial-card');
+        if (!card) return;
+        card.style.left = '50%';
+        card.style.top = '';
+        card.style.bottom = '132px';
+        card.style.transform = 'translateX(-50%)';
+        if (!targets || !targets.length) return;
+        const rects = targets.map(el => el.getBoundingClientRect());
+        const minTop = Math.min(...rects.map(r => r.top));
+        const maxBottom = Math.max(...rects.map(r => r.bottom));
+        const centerX = rects.reduce((sum, r) => sum + r.left + r.width / 2, 0) / rects.length;
+        if (tutorialStep() === 'final') {
+            card.style.top = '82px';
+            card.style.bottom = 'auto';
+            return;
+        }
+        const placeAbove = maxBottom > window.innerHeight * 0.56;
+        const cardWidth = Math.min(window.innerWidth * 0.92, 360);
+        const safeLeft = Math.max(cardWidth / 2 + 12, Math.min(window.innerWidth - cardWidth / 2 - 12, centerX));
+        card.style.left = `${safeLeft}px`;
+        card.style.transform = 'translateX(-50%)';
+        if (placeAbove) {
+            card.style.top = '82px';
+            card.style.bottom = 'auto';
+        } else {
+            const top = Math.max(maxBottom + 18, 82);
+            card.style.top = `${Math.min(top, window.innerHeight - 170)}px`;
+            card.style.bottom = 'auto';
+        }
     }
 
     function refreshTutorial() {
@@ -103,20 +280,31 @@
         const title = document.getElementById('tutorial-title');
         const text = document.getElementById('tutorial-text');
         const stepText = document.getElementById('tutorial-step');
+        const actionBtn = document.getElementById('tutorial-action');
         document.querySelectorAll('.tutorial-focus').forEach(el => el.classList.remove('tutorial-focus'));
-        if (!overlay || !title || !text || !stepText) return;
+        if (!overlay || !title || !text || !stepText || !actionBtn) return;
         if (!tutorialIsActive()) {
             overlay.classList.remove('active');
             return;
         }
         const step = tutorialStep();
-        const cfg = TUTORIAL_STEPS[step] || TUTORIAL_STEPS.seed_select;
+        const cfg = getTutorialCardCopy();
         title.textContent = cfg.title;
         text.textContent = cfg.text;
-        stepText.textContent = cfg.progress;
+        stepText.textContent = cfg.progress || '';
+        const dimOverlay = step === 'welcome_seed' || (step === 'harvest_ready' && currentTool !== 'harvest');
+        overlay.style.background = dimOverlay ? 'rgba(18, 12, 4, 0.36)' : 'transparent';
+        actionBtn.className = 'tutorial-action';
+        actionBtn.textContent = 'Далее';
+        if (step === 'menu_intro') actionBtn.classList.add('show');
+        if (step === 'final') {
+            actionBtn.textContent = 'Завершить обучение';
+            actionBtn.classList.add('show', 'finish');
+        }
         overlay.classList.add('active');
-        const target = getTutorialTarget();
-        if (target) target.classList.add('tutorial-focus');
+        const targets = getTutorialTargets();
+        targets.forEach(target => target.classList.add('tutorial-focus'));
+        placeTutorialCard(overlay, targets);
     }
 
     function resetTilesState() {
@@ -200,6 +388,113 @@
             return Math.max(0.5, Math.min(1.5, 0.5 + ((weight - 5) / 45)));
         }
         return 1.5 + Math.floor(weight / 100) * 0.5;
+    }
+
+    function getPlotUnlockLevel(idx) {
+        return PLOT_UNLOCK_LEVELS[idx] || 1;
+    }
+
+    function isPlotUnlocked(idx) {
+        return player.lvl >= getPlotUnlockLevel(idx);
+    }
+
+    function getShowcaseUnlockLevel(slot = -1) {
+        if (slot === 0) return 5;
+        if (slot === 1) return 10;
+        if (slot === 2) return 18;
+        return 5;
+    }
+
+    function isShowcaseUnlocked(slot = -1) {
+        return player.lvl >= getShowcaseUnlockLevel(slot);
+    }
+
+    function getSeedOwned(id) {
+        ensureSeedAndShopState();
+        return Math.max(0, Math.floor(Number(player.seedInventory[id]) || 0));
+    }
+
+    function rollSeedShopCount(plantId, basic = false) {
+        const p = PLANTS[plantId];
+        if (!p) return 0;
+        if (basic) {
+            if (plantId === 'carrot') return Math.floor(randomRange(8, 13));
+            if (plantId === 'cucumber') return Math.floor(randomRange(6, 10));
+            if (plantId === 'tomato') return Math.floor(randomRange(4, 8));
+            if (plantId === 'pepper') return Math.floor(randomRange(3, 6));
+        }
+        if (p.cost <= 100) return Math.floor(randomRange(2, 5));
+        if (p.cost <= 500) return Math.floor(randomRange(1, 4));
+        if (p.cost <= 2000) return Math.floor(randomRange(1, 3));
+        return Math.floor(randomRange(1, 2));
+    }
+
+    function rollNextMerchantArrivalMs() {
+        return Date.now() + Math.floor(randomRange(240000, 480001));
+    }
+
+    function buildSeedShopStock() {
+        const stock = {};
+        BASE_STORE_SEEDS.forEach(id => {
+            stock[id] = rollSeedShopCount(id, true);
+        });
+        const extras = seedKeys.filter(id => !BASE_STORE_SEEDS.includes(id));
+        const extraCount = Math.floor(randomRange(2, 4));
+        extras.sort(() => Math.random() - 0.5).slice(0, extraCount).forEach(id => {
+            stock[id] = rollSeedShopCount(id, false);
+        });
+        return stock;
+    }
+
+    function buildMerchantStock() {
+        const stock = {};
+        const pool = seedKeys.filter(id => (PLANTS[id].cost || 0) >= 150);
+        pool.sort((a, b) => PLANTS[a].cost - PLANTS[b].cost);
+        pool.sort(() => Math.random() - 0.5);
+        pool.slice(0, 4).forEach(id => {
+            stock[id] = Math.max(1, rollSeedShopCount(id, false));
+        });
+        return stock;
+    }
+
+    function updateShopState(forceRefresh = false) {
+        ensureSeedAndShopState();
+        const now = Date.now();
+        if (forceRefresh || !player.shop.refreshAt || now >= player.shop.refreshAt) {
+            player.shop.stock = buildSeedShopStock();
+            player.shop.refreshAt = now + 180000;
+        }
+        if (!player.shop.merchantArrivesAt && !player.shop.merchantLeavesAt) {
+            player.shop.merchantArrivesAt = rollNextMerchantArrivalMs();
+        }
+        if (player.shop.merchantLeavesAt && now >= player.shop.merchantLeavesAt) {
+            player.shop.merchantLeavesAt = 0;
+            player.shop.merchantStock = {};
+            player.shop.merchantArrivesAt = rollNextMerchantArrivalMs();
+        }
+        if (!player.shop.merchantLeavesAt && player.shop.merchantArrivesAt && now >= player.shop.merchantArrivesAt) {
+            player.shop.merchantStock = buildMerchantStock();
+            player.shop.merchantLeavesAt = now + 120000;
+            player.shop.merchantArrivesAt = 0;
+        }
+    }
+
+    function getQuickSeedKeys() {
+        return seedKeys
+            .filter(id => player.lvl >= (PLANTS[id].lvl || 1))
+            .sort((a, b) => {
+                const aReady = getSeedOwned(a) > 0 ? 1 : 0;
+                const bReady = getSeedOwned(b) > 0 ? 1 : 0;
+                if (aReady !== bReady) return bReady - aReady;
+                return seedKeys.indexOf(a) - seedKeys.indexOf(b);
+            });
+    }
+
+    function ensureSelectedSeedAvailable() {
+        if (!PLANTS[currentTool]) return;
+        if (getSeedOwned(currentTool) > 0) return;
+        const nextSeed = getQuickSeedKeys().find(id => getSeedOwned(id) > 0);
+        currentTool = nextSeed || 'water';
     }
 
     function visualScaleForWeight(weight, tier) {
@@ -379,6 +674,7 @@
 
 function init() {
         loadGame();
+        startEvent('day');
         renderGarden();
         renderSeeds();
         generateQuestsIfNeeded();
@@ -414,6 +710,7 @@ function init() {
             el.className = 'tile';
             el.id = `tile-${i}`;
             el.innerHTML = `
+                <div class="tile-lock" id="lock-${i}"><span class="lock-icon" aria-hidden="true"></span><small id="lock-level-${i}"></small></div>
                 <div class="toxic-cloud"></div>
                 <div class="candy-rain-container"></div>
                 <div class="mutation-aura" id="aura-${i}"></div>
@@ -437,19 +734,23 @@ function init() {
 
     function renderSeeds() {
         const container = document.getElementById('seeds-track');
+        ensureSeedAndShopState();
+        ensureSelectedSeedAvailable();
         container.innerHTML = '';
-        seedKeys.forEach(key => {
+        getQuickSeedKeys().forEach(key => {
             const p = PLANTS[key];
-            const locked = player.lvl < p.lvl;
+            const amount = getSeedOwned(key);
+            const empty = amount <= 0;
             const el = document.createElement('div');
-            el.className = `seed-packet ${locked ? 'locked' : ''} ${currentTool === p.id ? 'active' : ''}`;
+            el.className = `seed-packet ${empty ? 'empty' : ''} ${currentTool === p.id ? 'active' : ''}`;
+            el.dataset.seed = p.id;
             el.style.setProperty('--pkt-color', p.color);
             el.onclick = () => {
-                if (locked) { showToast(`Нужен уровень ${p.lvl}`, 'gray'); return; }
-                if (tutorialIsActive() && tutorialStep() !== 'seed_select') { tutorialNudge(); return; }
+                if (amount <= 0) { showToast('Купи семена в магазине', 'gray'); return; }
+                if (tutorialIsActive() && (tutorialStep() !== 'welcome_seed' || p.id !== 'carrot')) { tutorialNudge(); return; }
                 selectAction(p.id);
             };
-            el.innerHTML = `<div class="pkt-top"></div><div class="pkt-bg"></div><div class="seed-name">${p.name}</div><div class="seed-icon">${seedIcon(p.id)}</div><div class="seed-price">${p.cost}$</div>`;
+            el.innerHTML = `<div class="pkt-top"></div><div class="pkt-bg"></div><div class="seed-name">${p.name}</div><div class="seed-icon">${seedIcon(p.id)}</div><div class="seed-stock">x${amount}</div>`;
             container.appendChild(el);
         });
         setTimeout(updateCarouselArrows, 100);
@@ -468,13 +769,15 @@ function init() {
     }
 
     function selectAction(tool) {
+        if (tool === 'shop') {
+            toggleShop();
+            return;
+        }
         if (tutorialIsActive()) {
             const step = tutorialStep();
             const allowed = (
-                (step === 'seed_select' && PLANTS[tool]) ||
-                (step === 'water_tool' && tool === 'water') ||
-                (step === 'harvest_tool' && tool === 'harvest') ||
-                (step === 'shovel_tool' && tool === 'shovel')
+                (step === 'welcome_seed' && tool === 'carrot') ||
+                (step === 'harvest_ready' && tool === 'harvest')
             );
             if (!allowed) { tutorialNudge(); return; }
         }
@@ -482,10 +785,13 @@ function init() {
         document.querySelectorAll('.action-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tool === tool));
         renderSeeds();
         if (tutorialIsActive()) {
-            if (tutorialStep() === 'seed_select' && PLANTS[tool]) setTutorialStep('plant_tile');
-            else if (tutorialStep() === 'water_tool' && tool === 'water') setTutorialStep('water_tile');
-            else if (tutorialStep() === 'harvest_tool' && tool === 'harvest') setTutorialStep('harvest_tile');
-            else if (tutorialStep() === 'shovel_tool' && tool === 'shovel') finishTutorial();
+            if (tutorialStep() === 'welcome_seed' && tool === 'carrot') {
+                player.tutorial.selectedSeed = 'carrot';
+                setTutorialStep('plant_two');
+            } else if (tutorialStep() === 'harvest_ready' && tool === 'harvest') {
+                player.tutorial.harvestedCount = 0;
+                refreshTutorial();
+            }
         } else {
             refreshTutorial();
         }
@@ -493,15 +799,34 @@ function init() {
 
     function handleInteract(idx) {
         const t = tiles[idx];
+        if (!isPlotUnlocked(idx)) {
+            showToast(`Нужен уровень ${getPlotUnlockLevel(idx)}`, '#a29bfe');
+            sfx.play('error');
+            return;
+        }
         if (tutorialIsActive()) {
             const step = tutorialStep();
-            const expectedTile = tutorialTileId();
-            const allowsPlant = step === 'plant_tile' && idx === expectedTile && PLANTS[currentTool] && !t.active;
-            const allowsWater = step === 'water_tile' && idx === expectedTile && currentTool === 'water';
-            const allowsHarvest = step === 'harvest_tile' && idx === expectedTile && currentTool === 'harvest' && t.active && t.growth >= 100;
-            if (!allowsPlant && !allowsWater && !allowsHarvest) { tutorialNudge(); return; }
+            const isTutorialTile = player.tutorial.targetTiles.includes(idx);
+            const allowsWeed = step === 'weed_alert' && idx === player.tutorial.weedTile && t.hasWeed;
+            const allowsPlant = step === 'plant_two' && isTutorialTile && currentTool === 'carrot' && !t.active;
+            const allowsHarvest = step === 'harvest_ready' && isTutorialTile && currentTool === 'harvest' && t.active && t.growth >= 100;
+            if (!allowsWeed && !allowsPlant && !allowsHarvest) { tutorialNudge(); return; }
         }
-        if (t.hasWeed) { t.hasWeed = false; decorSfx('pop', 'popitClick'); showToast("🐛 Паразит изгнан!", "#00b894"); updateTileDOM(idx); updateQuest('clear_weeds', 1); return; }
+        if (t.hasWeed) {
+            t.hasWeed = false;
+            decorSfx('pop', 'popitClick');
+            showToast("🐛 Паразит изгнан!", "#00b894");
+            updateTileDOM(idx);
+            updateQuest('clear_weeds', 1);
+            if (tutorialIsActive() && tutorialStep() === 'weed_alert' && idx === player.tutorial.weedTile) {
+                player.tutorial.weedCleared = true;
+                if (!tiles[idx].mutations.includes('gold')) tiles[idx].mutations.push('gold');
+                tiles[idx].growth = 100;
+                updateTileDOM(idx);
+                setTutorialStep('harvest_ready');
+            }
+            return;
+        }
         if (currentTool === 'shovel') { if (t.active) { clearTile(idx); decorSfx('error', 'popitClick'); floatText(idx, "Очищено", "gray"); } else decorSfx('pop', 'popitClick'); return; }
         if (currentTool === 'water') {
             t.water = WATER_DURATION;
@@ -509,18 +834,6 @@ function init() {
             floatText(idx, "💧", "#74b9ff");
             updateTileDOM(idx);
             updateQuest('water_plants', 1);
-            if (tutorialIsActive() && tutorialStep() === 'water_tile' && idx === tutorialTileId()) {
-                setTutorialStep('wait_growth');
-                setTimeout(() => {
-                    const tile = tiles[idx];
-                    if (tile && tile.active && tutorialIsActive() && tutorialStep() === 'wait_growth') {
-                        tile.growth = 100;
-                        updateTileDOM(idx);
-                        setTutorialStep('harvest_tool');
-                        showToast('Урожай созрел!', '#f1c40f');
-                    }
-                }, 1800);
-            }
             return;
         }
         if (currentTool === 'harvest') { if (t.active && t.growth >= 100) harvestPlant(idx); else decorSfx('pop', 'popitClick'); return; }
@@ -528,16 +841,23 @@ function init() {
         if (PLANTS[currentTool]) {
             if (t.active) { decorSfx('pop', 'popitClick'); return; }
             const p = PLANTS[currentTool];
-            if (player.coins < p.cost) { showToast("Нет монет!", "#ff7675"); sfx.play('error'); return; }
-            player.coins -= p.cost;
+            if (getSeedOwned(p.id) <= 0) { showToast('Семена закончились', '#ff7675'); sfx.play('error'); renderSeeds(); return; }
+            player.seedInventory[p.id] = Math.max(0, getSeedOwned(p.id) - 1);
             const cropWeight = rollCropWeight();
             t.active = true; t.plantId = p.id; t.growth = 0; t.water = 0; t.hasWeed = false; t.mutations = []; t.beeLock = 0;
             t.weight = cropWeight.weight; t.weightMult = cropWeight.weightMult; t.sizeTier = cropWeight.tier; t.scale = cropWeight.scale;
-            decorSfx('pop', 'popitClick'); floatText(idx, `-${p.cost}$`, "#ff7675");
+            ensureSelectedSeedAvailable();
+            decorSfx('pop', 'popitClick'); floatText(idx, `-1 ${p.name}`, "#74b9ff");
             updateUI(); updateTileDOM(idx);
-            if (tutorialIsActive() && tutorialStep() === 'plant_tile') {
-                player.tutorial.tileId = idx;
-                setTutorialStep('water_tool');
+            if (tutorialIsActive() && tutorialStep() === 'plant_two') {
+                player.tutorial.plantedCount = player.tutorial.targetTiles.filter(tileId => tiles[tileId].active).length;
+                if (player.tutorial.plantedCount >= 2) {
+                    currentTool = 'water';
+                    document.querySelectorAll('.action-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tool === 'water'));
+                    setTutorialStep('grow_watch');
+                } else {
+                    refreshTutorial();
+                }
             }
         }
     }
@@ -579,7 +899,12 @@ function init() {
         player.coins += finalReward; player.xp += xp;
         while (player.xp >= player.xpNeed) {
             player.lvl++; player.xp -= player.xpNeed; player.xpNeed = Math.floor(player.xpNeed * (BALANCE.xpNeedMult || 1.5));
-            showToast(`УРОВЕНЬ ${player.lvl}! 🎉`, "#a29bfe"); renderSeeds();
+            showToast(`УРОВЕНЬ ${player.lvl}! 🎉`, "#a29bfe");
+            if (Object.values(PLOT_UNLOCK_LEVELS).includes(player.lvl)) {
+                showToast('Открылась новая грядка!', '#55efc4');
+            }
+            renderSeeds();
+            tiles.forEach((_, tileIdx) => updateTileDOM(tileIdx));
         }
 
         playHarvestSfx(sizeTier);
@@ -591,7 +916,14 @@ function init() {
         updateQuest('earn_coins', finalReward);
         updateQuest('earn_big', finalReward);
         if ((p.lvl || 0) >= 7) updateQuest('harvest_rare', 1);
-        if (tutorialIsActive() && tutorialStep() === 'harvest_tile') setTutorialStep('shovel_tool');
+        if (tutorialIsActive() && tutorialStep() === 'harvest_ready') {
+            player.tutorial.harvestedCount = (player.tutorial.harvestedCount || 0) + 1;
+            if ((player.tutorial.harvestedCount || 0) >= 2) {
+                setTutorialStep('menu_open');
+            } else {
+                updateUI();
+            }
+        }
         clearTile(idx); updateUI();
     }
 
@@ -624,26 +956,87 @@ function init() {
         updateTileDOM(idx);
     }
 
+    function getEventIndicatorLabel(type) {
+        if (type === 'day') return '☀️ День';
+        if (type === 'rain') return '🌧️ Дождь';
+        if (type === 'storm') return '⚡ Буря';
+        if (type === 'toxic') return '☣️ Токсины';
+        if (type === 'starfall') return '🌠 Звездопад';
+        if (type === 'holy') return '🔆 Солнце';
+        if (type === 'hell') return '🔥 Жар';
+        if (type === 'candy') return '🍬 Сладости';
+        if (type === 'bee') return '🐝 Пчелы';
+        if (type === 'alien') return '🛸 Вторжение';
+        return '☀️ День';
+    }
+
+    function formatEventTimer(seconds) {
+        const safe = Math.max(0, Math.ceil(Number(seconds) || 0));
+        const mins = Math.floor(safe / 60);
+        const secs = safe % 60;
+        return mins > 0 ? `${mins}:${String(secs).padStart(2, '0')}` : `${secs}с`;
+    }
+
+    function rollNextEventDelay() {
+        return Math.floor(randomRange(55, 96));
+    }
+
+    function queueNextEvent() {
+        env.nextEventTimer = rollNextEventDelay();
+    }
+
+    function triggerRandomDayEvent() {
+        const r = Math.random();
+        if (r < 0.3) Math.random() < 0.35 ? startEvent('storm') : startEvent('rain');
+        else if (r < 0.5) startEvent('toxic');
+        else if (r < 0.65) startEvent('starfall');
+        else if (r < 0.8) startEvent('holy');
+        else if (r < 0.9) startEvent('hell');
+        else if (r < 0.95) startEvent('candy');
+        else if (r < 0.985) startEvent('bee');
+        else startEvent('alien');
+    }
+
+    function updateStateIndicator() {
+        const indicator = document.getElementById('state-indicator');
+        if (!indicator) return;
+        const label = getEventIndicatorLabel(env.currentEvent);
+        if (env.currentEvent === 'day' || env.eventTimer <= 0) {
+            const nextTimer = Math.max(0, Math.ceil(Number(env.nextEventTimer) || 0));
+            if (nextTimer > 0) {
+                indicator.innerHTML = `<span class="state-label">${label}</span><span class="state-timer">через ${formatEventTimer(nextTimer)}</span>`;
+            } else {
+                indicator.innerHTML = `<span class="state-label">${label}</span>`;
+            }
+            return;
+        }
+        indicator.innerHTML = `<span class="state-label">${label}</span>`;
+    }
+
     function startEvent(type) {
         env.currentEvent = type;
         document.body.className = type === 'day' ? '' : `event-${type}`;
         const emitters = document.getElementById('bg-emitters'); emitters.innerHTML = '';
 
-        let indicator = document.getElementById('state-indicator');
-        if (type === 'day') indicator.innerHTML = '☀️ День';
-        else if (type === 'rain') indicator.innerHTML = '🌧️ Дождь';
-        else if (type === 'storm') indicator.innerHTML = '⚡ Буря';
-        else if (type === 'toxic') indicator.innerHTML = '☣️ Токсины';
-        else if (type === 'starfall') { indicator.innerHTML = '🌠 Звездопад'; showToast("Магия звезд!", "#a29bfe"); createBgParticles(['⭐'], 'bgFlyStar'); }
-        else if (type === 'holy') { indicator.innerHTML = '🔆 Солнце'; showToast("Солнечный луч!", "#f5f6fa"); }
-        else if (type === 'hell') { indicator.innerHTML = '🔥 Жар'; showToast("Теплый вихрь!", "#e84118"); createBgParticles(['■'], 'bgFlyAsh'); }
-        else if (type === 'candy') { indicator.innerHTML = '🍬 Сладости'; showToast("Конфетный дождь!", "#ff9ff3"); createBgParticles(['🍬','🍭','🍩','🍪'], 'bgFlyCandy'); }
-        else if (type === 'bee') { indicator.innerHTML = '🐝 Пчелы'; showToast("Жужжание повсюду!", "#f9ca24"); createBgParticles(['🐝'], 'bgFlyBee'); }
-        else if (type === 'alien') { indicator.innerHTML = '🛸 Вторжение'; showToast("Инопланетное вторжение!", "#40ffd2"); createBgParticles(['🛸'], 'bgFlyUfo'); }
+        if (type === 'starfall') { showToast("Магия звезд!", "#a29bfe"); createBgParticles(['⭐'], 'bgFlyStar'); }
+        else if (type === 'holy') { showToast("Солнечный луч!", "#f5f6fa"); }
+        else if (type === 'hell') { showToast("Теплый вихрь!", "#e84118"); createBgParticles(['■'], 'bgFlyAsh'); }
+        else if (type === 'candy') { showToast("Конфетный дождь!", "#ff9ff3"); createBgParticles(['🍬','🍭','🍩','🍪'], 'bgFlyCandy'); }
+        else if (type === 'bee') { showToast("Жужжание повсюду!", "#f9ca24"); createBgParticles(['🐝'], 'bgFlyBee'); }
+        else if (type === 'alien') { showToast("Инопланетное вторжение!", "#40ffd2"); createBgParticles(['🛸'], 'bgFlyUfo'); }
 
-        if (type === 'day') { env.eventTimer = 0; eventActions = []; return; }
+        if (type === 'day') {
+            env.eventTimer = 0;
+            queueNextEvent();
+            eventActions = [];
+            updateStateIndicator();
+            return;
+        }
         
-        env.eventTimer = BALANCE.eventDuration || 15; eventActions = [];
+        env.eventTimer = BALANCE.eventDuration || 15;
+        env.nextEventTimer = 0;
+        eventActions = [];
+        updateStateIndicator();
         let targetCount = 0; let mutType = '';
 
         if (type === 'toxic') { targetCount = Math.floor(Math.random() * 3) + 2; mutType = 'toxic'; } 
@@ -678,6 +1071,60 @@ function init() {
             p.style.setProperty('--size', `${Math.random() * 14 + 16}px`);
             container.appendChild(p);
         }
+    }
+
+    function runTutorialTick() {
+        updateIncubatorAndPets();
+        const step = tutorialStep();
+        const firstTile = tiles[player.tutorial.readyTile];
+        const weedTile = tiles[player.tutorial.weedTile];
+
+        player.tutorial.targetTiles.forEach(idx => {
+            const tile = tiles[idx];
+            if (!tile) return;
+            if (tile.water > 0) tile.water = Math.max(0, tile.water - 1);
+        });
+
+        if (step === 'grow_watch') {
+            if (firstTile && firstTile.active && firstTile.growth < 100) {
+                firstTile.growth = Math.min(100, firstTile.growth + 24);
+                updateTileDOM(player.tutorial.readyTile);
+            }
+            if (weedTile && weedTile.active && !player.tutorial.weedSpawned) {
+                weedTile.growth = Math.min(82, weedTile.growth + 18);
+                if (weedTile.growth >= 82) {
+                    weedTile.hasWeed = true;
+                    player.tutorial.weedSpawned = true;
+                    setTutorialStep('weed_alert');
+                }
+                updateTileDOM(player.tutorial.weedTile);
+            }
+            if (firstTile && firstTile.growth >= 100) updateTileDOM(player.tutorial.readyTile);
+            return;
+        }
+
+        if (step === 'weed_alert') {
+            if (firstTile && firstTile.active && firstTile.growth < 100) {
+                firstTile.growth = Math.min(100, firstTile.growth + 8);
+                updateTileDOM(player.tutorial.readyTile);
+            }
+            if (weedTile) updateTileDOM(player.tutorial.weedTile);
+            return;
+        }
+
+        if (step === 'harvest_ready') {
+            if (firstTile && firstTile.active) {
+                firstTile.growth = 100;
+                updateTileDOM(player.tutorial.readyTile);
+            }
+            if (weedTile && weedTile.active) {
+                weedTile.growth = 100;
+                updateTileDOM(player.tutorial.weedTile);
+            }
+            return;
+        }
+
+        refreshTutorial();
     }
 
     function applyEventMutation(idx, mutType) {
@@ -737,6 +1184,11 @@ function init() {
 
     function gameTick() {
         env.ticks++;
+        updateShopState();
+        if (tutorialIsActive()) {
+            runTutorialTick();
+            return;
+        }
         
         if (env.eventTimer > 0) {
             env.eventTimer--;
@@ -745,22 +1197,20 @@ function init() {
                     act.done = true; applyEventMutation(act.tileId, act.mut);
                 }
             });
+            updateStateIndicator();
             if (env.eventTimer <= 0) startEvent('day');
         } else {
-            if (Math.random() < BALANCE.autoEventChance && env.ticks % (BALANCE.autoEventCheckEvery || 10) === 0) {
-                let r = Math.random();
-                if (r < 0.3) Math.random() < 0.35 ? startEvent('storm') : startEvent('rain');
-                else if (r < 0.5) startEvent('toxic');
-                else if (r < 0.65) startEvent('starfall');
-        else if (r < 0.8) startEvent('holy');
-        else if (r < 0.9) startEvent('hell');
-        else if (r < 0.95) startEvent('candy');
-                else if (r < 0.985) startEvent('bee');
-                else startEvent('alien');
+            if (env.nextEventTimer > 0) {
+                env.nextEventTimer--;
+                updateStateIndicator();
+            }
+            if (env.nextEventTimer <= 0) {
+                triggerRandomDayEvent();
             }
         }
 
         updateIncubatorAndPets();
+        if (document.getElementById('shop-modal')?.classList.contains('open')) renderShop();
 
         let buffs = getBuffs();
 
@@ -801,17 +1251,26 @@ function init() {
         const wrapper = el.querySelector('.plant-wrapper');
         const mutContainer = document.getElementById(`mut-container-${idx}`);
         const aura = document.getElementById(`aura-${idx}`);
+        const lock = document.getElementById(`lock-${idx}`);
+        const lockLevel = document.getElementById(`lock-level-${idx}`);
+        const unlocked = isPlotUnlocked(idx);
         
         fill.style.width = `${t.growth}%`;
         
         // Пересобираем классы
         el.className = 'tile';
+        if (!unlocked) el.classList.add('locked');
         if (t.active) el.classList.add('occupied');
         if (t.water > 0) el.classList.add('wet');
         if (t.hasWeed) el.classList.add('has-weed');
         if (t.growth >= 100) el.classList.add('ready');
         if (t.beeLock > 0) el.classList.add('bee-arrived'); 
         if (t.active && t.sizeTier) el.classList.add(`crop-${t.sizeTier}`);
+
+        if (lock && lockLevel) {
+            lock.style.display = unlocked ? 'none' : 'flex';
+            lockLevel.textContent = `ур. ${getPlotUnlockLevel(idx)}`;
+        }
 
         wrapper.style.setProperty('--plant-scale', t.active ? t.scale : 1);
 
@@ -848,6 +1307,14 @@ function init() {
 
         } else { wrapper.querySelectorAll('.honey-drop').forEach(d=>d.remove()); }
 
+        if (!unlocked) {
+            aura.innerHTML = '';
+            mutContainer.innerHTML = '';
+            model.className = 'model';
+            wrapper.querySelectorAll('.honey-drop').forEach(d => d.remove());
+            return;
+        }
+
         if (t.active) {
             let stateClass = '';
             if (t.growth < 30) stateClass = 'model-seed growing'; 
@@ -863,30 +1330,173 @@ function init() {
         document.getElementById('ui-xp-fill').style.width = `${Math.min(100, (player.xp / player.xpNeed) * 100)}%`;
         let hasDoneQuests = player.quests.some(q => q.current >= q.target && !q.claimed);
         document.getElementById('menu-badge').style.display = hasDoneQuests ? 'block' : 'none';
+        renderSeeds();
+        tiles.forEach((_, idx) => updateTileDOM(idx));
         renderQuests();
         renderPets();
         renderDecorShop();
         renderShowcase();
         renderDiary();
         applyDecorStyle();
+        if (document.getElementById('shop-modal')?.classList.contains('open')) renderShop();
         refreshTutorial();
     }
 
     function toggleMenu() {
-        if (tutorialIsActive()) { tutorialNudge(); return; }
-        document.getElementById('side-menu').classList.toggle('open');
+        if (tutorialIsActive()) {
+            if (tutorialStep() !== 'menu_open' && tutorialStep() !== 'final') {
+                tutorialNudge();
+                return;
+            }
+        }
+        toggleShop(false);
+        const menu = document.getElementById('side-menu');
+        menu.classList.toggle('open');
+        if (tutorialIsActive() && tutorialStep() === 'menu_open' && menu.classList.contains('open')) {
+            setTutorialStep('menu_intro');
+        }
         updateUI();
+    }
+
+    function selectShopTab(tab) {
+        env.shopTab = tab;
+        renderShop();
+    }
+
+    function toggleShop(force) {
+        const modal = document.getElementById('shop-modal');
+        if (!modal) return;
+        const shouldOpen = typeof force === 'boolean' ? force : !modal.classList.contains('open');
+        if (tutorialIsActive() && shouldOpen) {
+            tutorialNudge();
+            return;
+        }
+        modal.classList.toggle('open', shouldOpen);
+        if (shouldOpen) {
+            document.getElementById('side-menu')?.classList.remove('open');
+            renderShop();
+        }
+    }
+
+    function renderShopSeedCard(id, available, source) {
+        const p = PLANTS[id];
+        if (!p) return '';
+        const levelLocked = player.lvl < (p.lvl || 1);
+        const soldOut = available <= 0;
+        const disabled = soldOut || levelLocked;
+        const label = levelLocked ? `Ур. ${p.lvl}` : soldOut ? 'Ресток' : `${p.cost}$`;
+        return `<button class="shop-seed-card ${disabled ? 'disabled' : ''}" type="button" onclick="buySeedFromShop('${source}','${id}')">
+            <div class="shop-seed-top">
+                <b>${p.name}</b>
+                <span>x${available}</span>
+            </div>
+            <div class="shop-seed-art">${seedIcon(id, 'shop-seed-icon')}</div>
+            <div class="shop-seed-bottom">
+                <small>${levelLocked ? 'закрыто' : soldOut ? 'раскупили' : 'купить 1'}</small>
+                <em>${label}</em>
+            </div>
+        </button>`;
+    }
+
+    function renderShop() {
+        updateShopState();
+        const modal = document.getElementById('shop-modal');
+        const content = document.getElementById('shop-content');
+        const subtitle = document.getElementById('shop-subtitle');
+        const seedsTab = document.getElementById('shop-tab-seeds');
+        const merchantTab = document.getElementById('shop-tab-merchant');
+        if (!modal || !content || !subtitle || !seedsTab || !merchantTab) return;
+        seedsTab.classList.toggle('active', env.shopTab === 'seeds');
+        merchantTab.classList.toggle('active', env.shopTab === 'merchant');
+
+        const now = Date.now();
+        const merchantActive = !!player.shop.merchantLeavesAt && player.shop.merchantLeavesAt > now;
+        merchantTab.classList.toggle('hot', merchantActive);
+        merchantTab.textContent = merchantActive ? 'Торговец!' : 'Торговец';
+
+        if (env.shopTab === 'merchant') {
+            if (merchantActive) {
+                subtitle.textContent = `Уедет через ${formatEventTimer(Math.ceil((player.shop.merchantLeavesAt - now) / 1000))}`;
+                content.innerHTML = `
+                    <div class="shop-info-banner hot">Загадочный торговец привез дорогие семена.</div>
+                    <div class="shop-seed-grid">
+                        ${Object.keys(player.shop.merchantStock).map(id => renderShopSeedCard(id, player.shop.merchantStock[id], 'merchant')).join('')}
+                    </div>
+                `;
+            } else {
+                const arriveIn = Math.max(0, Math.ceil((player.shop.merchantArrivesAt - now) / 1000));
+                subtitle.textContent = `Приедет через ${formatEventTimer(arriveIn)}`;
+                content.innerHTML = `<div class="shop-empty-state">
+                    <b>Торговец в пути</b>
+                    <small>Он приезжает каждые 4-8 минут и остается только на 2 минуты.</small>
+                </div>`;
+            }
+            return;
+        }
+
+        const refreshIn = Math.max(0, Math.ceil((player.shop.refreshAt - now) / 1000));
+        subtitle.textContent = `Обновление через ${formatEventTimer(refreshIn)}`;
+        const baseCards = BASE_STORE_SEEDS.map(id => renderShopSeedCard(id, player.shop.stock[id] || 0, 'stock')).join('');
+        const extraCards = Object.keys(player.shop.stock)
+            .filter(id => !BASE_STORE_SEEDS.includes(id))
+            .sort((a, b) => (PLANTS[a].cost || 0) - (PLANTS[b].cost || 0))
+            .map(id => renderShopSeedCard(id, player.shop.stock[id] || 0, 'stock'))
+            .join('');
+        content.innerHTML = `
+            <div class="shop-info-row">
+                <div class="shop-info-banner">Базовые семена всегда в наличии.</div>
+                <div class="shop-info-pill">Ресток 3 мин</div>
+            </div>
+            <div class="shop-seed-grid">${baseCards}${extraCards}</div>
+        `;
+    }
+
+    function buySeedFromShop(source, id) {
+        updateShopState();
+        const p = PLANTS[id];
+        if (!p) return;
+        const sourceStock = source === 'merchant' ? player.shop.merchantStock : player.shop.stock;
+        const available = Math.max(0, Math.floor(Number(sourceStock[id]) || 0));
+        if (player.lvl < (p.lvl || 1)) { showToast(`Нужен уровень ${p.lvl}`, '#a29bfe'); return; }
+        if (available <= 0) { showToast('Этот товар раскупили', '#ff7675'); renderShop(); return; }
+        if (player.coins < p.cost) { showToast('Не хватает монет', '#ff7675'); return; }
+        player.coins -= p.cost;
+        player.seedInventory[id] = getSeedOwned(id) + 1;
+        sourceStock[id] = available - 1;
+        sfx.play('coin');
+        showToast(`Куплено: ${p.name}`, '#f1c40f');
+        updateUI();
+        renderShop();
+        saveGame();
     }
 
     function renderShowcase() {
         if (!Array.isArray(player.showcase)) player.showcase = [null, null, null];
         player.showcase = [player.showcase[0] || null, player.showcase[1] || null, player.showcase[2] || null];
+        const area = document.getElementById('showcase-area');
+        const areaLock = document.getElementById('showcase-area-lock');
+        const areaLockText = document.getElementById('showcase-area-lock-text');
         const slots = document.getElementById('showcase-slots');
         const rate = document.getElementById('showcase-rate');
         const bank = document.getElementById('bank-coins');
-        if (!slots || !rate || !bank) return;
+        if (!slots || !rate || !bank || !area || !areaLock || !areaLockText) return;
+
+        const showcaseOpen = isShowcaseUnlocked();
+        area.classList.toggle('locked', !showcaseOpen);
+        areaLock.style.display = showcaseOpen ? 'none' : 'flex';
+        areaLockText.textContent = `Нужен уровень ${getShowcaseUnlockLevel()}`;
 
         slots.innerHTML = player.showcase.map((crop, slot) => {
+            const slotOpen = isShowcaseUnlocked(slot);
+            if (!slotOpen) {
+                return `<div class="showcase-slot locked-slot" aria-disabled="true">
+                    <div class="showcase-slot-lock">
+                        <span class="showcase-lock-icon small" aria-hidden="true"></span>
+                        <b>Слот ${slot + 1}</b>
+                        <small>ур. ${getShowcaseUnlockLevel(slot)}</small>
+                    </div>
+                </div>`;
+            }
             if (!crop || !PLANTS[crop.plantId]) {
                 return `<button class="showcase-slot empty" type="button" onclick="openShowcasePicker(${slot})">
                     <span class="showcase-plus" aria-hidden="true"></span>
@@ -919,6 +1529,14 @@ function init() {
     function openShowcasePicker(slot) {
         const picker = document.getElementById('showcase-picker');
         if (!picker) return;
+        if (!isShowcaseUnlocked()) {
+            showToast(`Витрина откроется на ${getShowcaseUnlockLevel()} уровне`, '#a29bfe');
+            return;
+        }
+        if (!isShowcaseUnlocked(slot)) {
+            showToast(`Слот откроется на ${getShowcaseUnlockLevel(slot)} уровне`, '#a29bfe');
+            return;
+        }
         const ready = readyCropsForShowcase();
         if (ready.length === 0) {
             picker.innerHTML = `<div class="showcase-picker-box"><b>У вас нет готового урожая</b><small>Вырастите растение до 100%, потом вернитесь к витрине.</small></div>`;
@@ -948,6 +1566,14 @@ function init() {
     }
 
     function addReadyCropToShowcase(slot, tileId) {
+        if (!isShowcaseUnlocked()) {
+            showToast(`Витрина откроется на ${getShowcaseUnlockLevel()} уровне`, '#a29bfe');
+            return;
+        }
+        if (!isShowcaseUnlocked(slot)) {
+            showToast(`Слот откроется на ${getShowcaseUnlockLevel(slot)} уровне`, '#a29bfe');
+            return;
+        }
         const crop = cropSnapshotFromTile(tileId);
         if (!crop) {
             showToast("Урожай еще не готов", "#ff7675");
@@ -964,6 +1590,14 @@ function init() {
     }
 
     function sellShowcaseCrop(slot) {
+        if (!isShowcaseUnlocked()) {
+            showToast(`Витрина откроется на ${getShowcaseUnlockLevel()} уровне`, '#a29bfe');
+            return;
+        }
+        if (!isShowcaseUnlocked(slot)) {
+            showToast(`Слот откроется на ${getShowcaseUnlockLevel(slot)} уровне`, '#a29bfe');
+            return;
+        }
         const crop = player.showcase && player.showcase[slot];
         if (!crop) return;
         player.coins += crop.value || 0;
@@ -1136,21 +1770,37 @@ function init() {
             pets: [], petLevels: {}, petInventory: [], equippedPets: [null, null, null], unlockedPetSlots: 1,
             incubator: [null, null, null], quests: [], lastSaved: Date.now(), bank: 0,
             plotStyle: 'default', ownedDecor: ['default'], decorPaintColor: '#ff7675',
+            seedInventory: defaultSeedInventory(),
+            shop: defaultShopState(),
             showcase: [null, null, null],
             stats: { totalEarned: 0, maxWeight: 0, bestSale: 0, harvested: 0 },
-            tutorial: { done: false, step: 'seed_select', tileId: 0, force: true }
+            tutorial: {
+                done: false,
+                step: 'welcome_seed',
+                force: true,
+                targetTiles: [...TUTORIAL_TARGET_TILES],
+                plantedCount: 0,
+                harvestedCount: 0,
+                weedSpawned: false,
+                weedCleared: false,
+                finalQueued: false,
+                selectedSeed: '',
+                weedTile: TUTORIAL_TARGET_TILES[1],
+                readyTile: TUTORIAL_TARGET_TILES[0]
+            }
         };
         resetTilesState();
         env = {
-            ticks: 0, currentEvent: 'day', eventTimer: 0, potTimer: 0, potActive: false,
+            ticks: 0, currentEvent: 'day', eventTimer: 0, nextEventTimer: rollNextEventDelay(), potTimer: 0, potActive: false,
             activeNest: 0, activeEquip: 0, petPatCooldowns: {},
-            openMenuSections: { diary: false, pets: false, decor: false },
-            backroomsLampTimer: null, backroomsLampEndTimer: null
+            openMenuSections: { diary: false, pets: false, decor: false, admin: false },
+            backroomsLampTimer: null, backroomsLampEndTimer: null, shopTab: 'seeds'
         };
         eventActions = [];
         currentTool = 'water';
         startEvent('day');
         document.getElementById('side-menu').classList.remove('open');
+        document.getElementById('shop-modal').classList.remove('open');
         document.getElementById('pet-reveal').classList.remove('active');
         document.getElementById('pet-sell-modal').classList.remove('active');
         document.querySelectorAll('.action-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tool === 'water'));
@@ -1181,7 +1831,7 @@ function init() {
     function showBigMutation(mutId) {
         sfx.play('mut'); const overlay = document.getElementById('mut-overlay'); const m = MUTATIONS[mutId];
         document.getElementById('mut-icon').innerText = m.icon;
-        document.getElementById('mut-text').innerHTML = `${m.name}! <br><span style="font-size:20px; color:${m.color};">x${m.mult} Доход</span>`;
+        document.getElementById('mut-text').innerHTML = `Открыта новая мутация!<br><span style="font-size:20px; color:${m.color};">${m.name} • x${m.mult}</span>`;
         overlay.classList.add('active'); setTimeout(() => overlay.classList.remove('active'), 2000);
     }
 
@@ -1580,6 +2230,10 @@ function init() {
     }
 
     function claimBank() {
+        if (!isShowcaseUnlocked()) {
+            showToast(`Витрина откроется на ${getShowcaseUnlockLevel()} уровне`, '#a29bfe');
+            return;
+        }
         if (player.bank > 0) {
             player.coins += player.bank; ensureStats(); player.stats.totalEarned += Math.max(0, player.bank || 0); sfx.play('coin'); showToast(`Собрано ${player.bank} монет!`, "#f1c40f");
             player.bank = 0; updateUI();
@@ -1620,6 +2274,7 @@ function init() {
     function normalizePetState() {
         ensureStats();
         ensureTutorialState();
+        ensureSeedAndShopState();
         if (!player.pets) player.pets = [];
         if (!player.petLevels) player.petLevels = {};
         if (!Array.isArray(player.petInventory)) player.petInventory = [];
