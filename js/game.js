@@ -1000,16 +1000,16 @@ function init() {
     function updateStateIndicator() {
         const indicator = document.getElementById('state-indicator');
         if (!indicator) return;
-        const label = getEventIndicatorLabel(env.currentEvent);
         if (env.currentEvent === 'day' || env.eventTimer <= 0) {
             const nextTimer = Math.max(0, Math.ceil(Number(env.nextEventTimer) || 0));
             if (nextTimer > 0) {
-                indicator.innerHTML = `<span class="state-label">${label}</span><span class="state-timer">через ${formatEventTimer(nextTimer)}</span>`;
+                indicator.innerHTML = `<span class="state-timer">${formatEventTimer(nextTimer)}</span>`;
             } else {
-                indicator.innerHTML = `<span class="state-label">${label}</span>`;
+                indicator.innerHTML = `<span class="state-timer">0с</span>`;
             }
             return;
         }
+        const label = getEventIndicatorLabel(env.currentEvent);
         indicator.innerHTML = `<span class="state-label">${label}</span>`;
     }
 
@@ -1469,18 +1469,15 @@ function init() {
             button.classList.remove('buy-pop');
             void button.offsetWidth;
             button.classList.add('buy-pop');
-            button.disabled = true;
         }
         sfx.play('coin');
         player.coins -= p.cost;
         player.seedInventory[id] = getSeedOwned(id) + 1;
         sourceStock[id] = available - 1;
         showToast(`Куплено: ${p.name}`, '#f1c40f');
-        setTimeout(() => {
-            updateUI();
-            renderShop();
-            saveGame();
-        }, 170);
+        updateUI();
+        renderShop();
+        saveGame();
     }
 
     function renderShowcase() {
