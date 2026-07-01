@@ -250,16 +250,19 @@
         card.style.top = '';
         card.style.bottom = '132px';
         card.style.transform = 'translateX(-50%)';
+        const step = tutorialStep();
+        if (step === 'menu_intro' || step === 'final') {
+            card.style.left = '50%';
+            card.style.top = '108px';
+            card.style.bottom = 'auto';
+            card.style.transform = 'translateX(-50%)';
+            return;
+        }
         if (!targets || !targets.length) return;
         const rects = targets.map(el => el.getBoundingClientRect());
         const minTop = Math.min(...rects.map(r => r.top));
         const maxBottom = Math.max(...rects.map(r => r.bottom));
         const centerX = rects.reduce((sum, r) => sum + r.left + r.width / 2, 0) / rects.length;
-        if (tutorialStep() === 'final') {
-            card.style.top = '82px';
-            card.style.bottom = 'auto';
-            return;
-        }
         const placeAbove = maxBottom > window.innerHeight * 0.56;
         const cardWidth = Math.min(window.innerWidth * 0.92, 360);
         const safeLeft = Math.max(cardWidth / 2 + 12, Math.min(window.innerWidth - cardWidth / 2 - 12, centerX));
@@ -294,6 +297,7 @@
         stepText.textContent = cfg.progress || '';
         const dimOverlay = step === 'welcome_seed' || (step === 'harvest_ready' && currentTool !== 'harvest');
         overlay.style.background = dimOverlay ? 'rgba(18, 12, 4, 0.36)' : 'transparent';
+        overlay.classList.toggle('menu-stage', step === 'menu_intro' || step === 'final');
         actionBtn.className = 'tutorial-action';
         actionBtn.textContent = 'Далее';
         if (step === 'menu_intro') actionBtn.classList.add('show');

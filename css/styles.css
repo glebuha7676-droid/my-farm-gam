@@ -173,12 +173,16 @@
             background: rgba(18, 12, 4, 0.36);
         }
         .tutorial-overlay.active { display: block; }
+        .tutorial-overlay.menu-stage {
+            z-index: 5605;
+        }
         .tutorial-card {
             position: absolute;
             left: 50%;
             bottom: 132px;
             transform: translateX(-50%);
             width: min(92vw, 360px);
+            max-width: calc(100vw - 28px);
             background: linear-gradient(180deg, #fff6df 0%, #f6e6bc 100%);
             color: #5a3512;
             border: 3px solid #d59d36;
@@ -186,6 +190,10 @@
             box-shadow: 0 16px 32px rgba(0, 0, 0, 0.32);
             padding: 14px 16px 12px;
             text-align: center;
+        }
+        .tutorial-overlay.menu-stage .tutorial-card {
+            top: max(96px, calc(env(safe-area-inset-top) + 88px));
+            bottom: auto;
         }
         .tutorial-card b {
             display: block;
