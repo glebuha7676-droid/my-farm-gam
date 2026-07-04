@@ -10389,10 +10389,10 @@
 .companion-window-scene::after { display:none; }
 
 body.event-rain .companion-window-scene { background:linear-gradient(180deg,#789aaf 0 64%,#66865e 65%); }
-body.event-rain .companion-window-scene::before { inset:-20px -15px; width:auto; height:auto; border-radius:0; background:repeating-linear-gradient(105deg,transparent 0 8px,rgba(210,239,255,.76) 9px 11px,transparent 12px 19px); box-shadow:none; animation:windowRain .75s linear infinite; }
+body.event-rain .companion-window-scene::before { inset:-60px -30px; width:auto; height:auto; border-radius:0; background:repeating-linear-gradient(103deg,transparent 0 12px,rgba(205,237,255,.68) 12px 14px,transparent 14px 30px); background-size:54px 54px; box-shadow:none; animation:windowRainSoft 1.05s linear infinite; }
 
 body.event-storm .companion-window-scene { background:linear-gradient(180deg,#323f4e 0 64%,#465448 65%); animation:windowLightning 5.2s steps(1) infinite; }
-body.event-storm .companion-window-scene::before { inset:-20px -15px; width:auto; height:auto; border-radius:0; background:repeating-linear-gradient(105deg,transparent 0 7px,rgba(186,220,241,.7) 8px 10px,transparent 11px 18px); box-shadow:none; animation:windowRain .55s linear infinite; }
+body.event-storm .companion-window-scene::before { inset:-60px -30px; width:auto; height:auto; border-radius:0; background:repeating-linear-gradient(103deg,transparent 0 12px,rgba(184,218,239,.62) 12px 14px,transparent 14px 30px); background-size:54px 54px; box-shadow:none; animation:windowRainSoft 1.05s linear infinite; }
 body.event-storm .companion-window-scene::after { display:block; left:8px; top:5px; width:43px; height:22px; border-radius:50%; background:#27323e; box-shadow:22px 5px 0 3px #27323e; }
 
 body.event-toxic .companion-window-scene { background:linear-gradient(180deg,#789848 0 64%,#587335 65%); }
@@ -10401,33 +10401,39 @@ body.event-toxic .companion-window-scene::before { left:5%; top:14%; width:90%; 
 body.event-hell .companion-window-scene { background:linear-gradient(180deg,#43171a 0 64%,#68261d 65%); }
 body.event-hell .companion-window-scene::before { left:-8%; right:-8%; top:30%; bottom:-18%; width:auto; height:auto; border-radius:0; background:radial-gradient(ellipse at 15% 100%,#ffd05a 0 8%,#ff6b22 9% 23%,transparent 24%),radial-gradient(ellipse at 48% 100%,#ffe26d 0 10%,#ed451c 11% 28%,transparent 29%),radial-gradient(ellipse at 82% 100%,#ffc04a 0 8%,#ff6421 9% 25%,transparent 26%); box-shadow:none; transform-origin:50% 100%; animation:windowFire 1s ease-in-out infinite alternate; }
 
-body.event-starfall .companion-window-scene { background:radial-gradient(circle at 18% 20%,#fff 0 1px,transparent 2px),radial-gradient(circle at 71% 28%,#ffe779 0 1px,transparent 2px),radial-gradient(circle at 47% 48%,#fff 0 1px,transparent 2px),linear-gradient(180deg,#101744 0 67%,#26345a 68%); }
-body.event-starfall .companion-window-scene::before { left:65px; top:2px; width:20px; height:2px; border-radius:99px; background:linear-gradient(90deg,transparent,#fff); box-shadow:none; transform:rotate(-28deg); animation:windowStar 3.8s ease-in infinite; }
+body.event-starfall .companion-window-scene { background:radial-gradient(circle at 10% 16%,#fff 0 1px,transparent 2px),radial-gradient(circle at 30% 38%,#ffe779 0 1px,transparent 2px),radial-gradient(circle at 52% 13%,#fff 0 1px,transparent 2px),radial-gradient(circle at 74% 43%,#b9d7ff 0 1px,transparent 2px),radial-gradient(circle at 89% 24%,#fff 0 1px,transparent 2px),linear-gradient(180deg,#101744 0 67%,#26345a 68%); }
+body.event-starfall .companion-window-scene::before,body.event-starfall .companion-window-scene::after { display:block; width:18px; height:2px; border-radius:99px; background:linear-gradient(90deg,transparent,#fff); box-shadow:none; opacity:0; }
+body.event-starfall .companion-window-scene::before { left:72px; top:-6px; animation:windowStarA 3.1s ease-in infinite; }
+body.event-starfall .companion-window-scene::after { left:50px; top:-10px; animation:windowStarB 4.7s 1.4s ease-in infinite; }
 
 body.event-alien .companion-window-scene { background:radial-gradient(circle at 18% 18%,#fff 0 1px,transparent 2px),linear-gradient(180deg,#162b47 0 67%,#294d46 68%); }
 body.event-alien .companion-window-scene::before { left:50%; top:15%; width:31px; height:10px; border-radius:50% 50% 45% 45%; background:linear-gradient(180deg,#b7fff5,#39bfae); box-shadow:0 2px 5px rgba(84,255,230,.75); transform:translateX(-50%); animation:windowUfo 2.2s ease-in-out infinite; }
 body.event-alien .companion-window-scene::after { display:block; left:50%; top:25%; width:35px; height:42px; background:linear-gradient(180deg,rgba(104,244,255,.62),rgba(104,244,255,0)); clip-path:polygon(40% 0,60% 0,100% 100%,0 100%); transform:translateX(-50%); animation:windowBeam 2.2s ease-in-out infinite; }
 
 body.event-bee .companion-window-scene { background:linear-gradient(180deg,#f8da70 0 64%,#8eae57 65%); }
-body.event-bee .companion-window-scene::before { left:4px; top:-4px; width:45px; height:36px; border-radius:0; background:radial-gradient(circle,#ffd75a 0 5px,#b97917 6px 7px,transparent 8px) 0 0/16px 14px; box-shadow:none; animation:windowHoney 2s ease-in-out infinite; }
-body.event-bee .companion-window-scene::after { display:block; left:4px; top:24px; width:6px; height:4px; border-radius:50%; background:#32230d; box-shadow:0 0 0 2px #f0bd28; animation:windowBee 4.5s ease-in-out infinite; }
+body.event-bee .companion-window-scene::before { inset:-3px; width:auto; height:auto; border-radius:0; background:radial-gradient(circle,#ffd75a 0 4px,#b97917 5px 6px,transparent 7px) 0 0/14px 12px; box-shadow:none; opacity:.58; animation:windowHoney 2.4s ease-in-out infinite; }
+body.event-bee .companion-window-scene::after { content:"🐝  🐝  🐝"; display:block; left:-18px; top:19px; width:105px; height:13px; white-space:nowrap; color:#2b1a08; background:none; font-size:7px; line-height:1; word-spacing:13px; animation:windowBees 5.5s ease-in-out infinite; }
 
 body.event-candy .companion-window-scene { background:linear-gradient(180deg,#c9845a 0 64%,#a85b48 65%); }
-body.event-candy .companion-window-scene::before { inset:-20px 0 0; width:auto; height:auto; border-radius:0; background:radial-gradient(circle,#ff6fae 0 2px,#fff 3px 4px,transparent 5px) 3px 0/22px 25px,radial-gradient(circle,#62d5e8 0 3px,transparent 4px) 13px 9px/27px 29px; box-shadow:none; animation:windowCandy 3s linear infinite; }
+body.event-candy .companion-window-scene::before,body.event-candy .companion-window-scene::after { display:block; width:90px; height:12px; white-space:nowrap; background:none; box-shadow:none; font-size:7px; line-height:1; opacity:.9; }
+body.event-candy .companion-window-scene::before { content:"🍬                 🍭"; left:3px; top:-13px; animation:windowCandyA 4.8s linear infinite; }
+body.event-candy .companion-window-scene::after { content:"          🍬"; left:14px; top:-15px; animation:windowCandyB 6.3s 2s linear infinite; }
 
 body.event-holy .companion-window-scene { background:linear-gradient(180deg,#ffe99a 0 64%,#9fc46d 65%); }
 body.event-holy .companion-window-scene::before { left:50%; top:14%; width:20px; height:20px; border-radius:50%; background:#fff8b9; box-shadow:0 0 8px 4px rgba(255,244,125,.85); transform:translateX(-50%); animation:windowSun 2.3s ease-in-out infinite; }
 
-@keyframes windowRain { to { background-position:-16px 42px; } }
+@keyframes windowRainSoft { from { background-position:0 0; } to { background-position:-54px 108px; } }
 @keyframes windowLightning { 0%,89%,93%,100% { filter:none; } 90%,92% { filter:brightness(2.2); } }
 @keyframes windowToxic { 0%,100% { opacity:.55; transform:scale(.86); } 50% { opacity:1; transform:scale(1.08); } }
 @keyframes windowFire { from { transform:scaleY(.82) skewX(-3deg); } to { transform:scaleY(1.08) skewX(3deg); } }
-@keyframes windowStar { 0%,70% { opacity:0; transform:translate(0,0) rotate(-28deg); } 74% { opacity:1; } 92%,100% { opacity:0; transform:translate(-92px,48px) rotate(-28deg); } }
+@keyframes windowStarA { 0%,48% { opacity:0; transform:translate(0,0) rotate(-31deg); } 52% { opacity:1; } 78%,100% { opacity:0; transform:translate(-98px,56px) rotate(-31deg); } }
+@keyframes windowStarB { 0%,62% { opacity:0; transform:translate(0,0) rotate(-22deg); } 66% { opacity:.9; } 88%,100% { opacity:0; transform:translate(-76px,38px) rotate(-22deg); } }
 @keyframes windowUfo { 0%,100% { transform:translate(-50%,0); } 50% { transform:translate(-50%,3px); } }
 @keyframes windowBeam { 0%,100% { opacity:.35; } 50% { opacity:.78; } }
 @keyframes windowHoney { 0%,100% { transform:translateY(-2px); } 50% { transform:translateY(2px); } }
-@keyframes windowBee { 0%,100% { transform:translate(0,0); opacity:.25; } 30% { opacity:1; } 55% { transform:translate(48px,-12px); opacity:1; } 80% { transform:translate(27px,18px); opacity:.6; } }
-@keyframes windowCandy { to { background-position:3px 50px,13px 67px; } }
+@keyframes windowBees { 0%,100% { transform:translate(-3px,4px); opacity:.35; } 20% { opacity:1; } 48% { transform:translate(18px,-10px); opacity:1; } 76% { transform:translate(6px,16px); opacity:.75; } }
+@keyframes windowCandyA { 0% { transform:translateY(0) rotate(0deg); opacity:0; } 12% { opacity:1; } 100% { transform:translateY(92px) rotate(120deg); opacity:0; } }
+@keyframes windowCandyB { 0% { transform:translateY(0) rotate(0deg); opacity:0; } 18% { opacity:.9; } 100% { transform:translateY(94px) rotate(-140deg); opacity:0; } }
 @keyframes windowSun { 0%,100% { box-shadow:0 0 7px 3px rgba(255,244,125,.72); transform:translateX(-50%) scale(.94); } 50% { box-shadow:0 0 13px 7px rgba(255,244,125,.96); transform:translateX(-50%) scale(1.08); } }
 
 .companion-dirt-cloud {
