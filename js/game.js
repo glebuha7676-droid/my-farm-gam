@@ -1062,7 +1062,7 @@ function init() {
         document.body.className = type === 'day' ? '' : `event-${type}`;
         const emitters = document.getElementById('bg-emitters'); emitters.innerHTML = '';
 
-        if (type === 'starfall') { showToast("Магия звезд!", "#a29bfe"); createBgParticles(['⭐'], 'bgFlyStar'); }
+        if (type === 'starfall') { showToast("Магия звезд!", "#a29bfe"); }
         else if (type === 'holy') { showToast("Солнечный луч!", "#f5f6fa"); }
         else if (type === 'hell') { showToast("Теплый вихрь!", "#e84118"); createBgParticles(['■'], 'bgFlyAsh'); }
         else if (type === 'candy') { showToast("Конфетный дождь!", "#ff9ff3"); createBgParticles(['🍬','🍭','🍩','🍪'], 'bgFlyCandy'); }
