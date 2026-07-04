@@ -3909,8 +3909,8 @@
 
         body.event-starfall .weather-overlay {
             display: block;
-            z-index: 0;
-            opacity: 1;
+            z-index: -1;
+            opacity: 0.96;
             background: none;
             animation: none;
         }
