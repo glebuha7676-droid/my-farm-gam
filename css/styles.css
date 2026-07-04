@@ -10368,7 +10368,7 @@
 @keyframes companionDropLong { from { opacity: 1; transform: translateY(0) scale(.85); } 80% { opacity: 1; } to { opacity: 0; transform: translateY(86px) scale(1.05); } }
 
 .companion-stat i em { transition: width .3s linear, background .3s; }
-.companion-stat.hunger,
+.companion-stat.satiety,
 .companion-stat.clean,
 .companion-stat.energy { background:rgba(255,255,255,.82); }
 .companion-stat.is-low i em { background: #ef704d; }
@@ -10403,7 +10403,7 @@ body.event-alien .companion-window i { background: radial-gradient(ellipse at 50
     transition: opacity .3s,transform .3s;
 }
 .companion-flies { position:absolute; z-index:7; left:50%; bottom:28px; width:150px; height:118px; transform:translateX(-50%); pointer-events:none; }
-.companion-flies i { position:absolute; width:5px; height:5px; border-radius:50%; background:#242516; box-shadow:-4px -2px 0 -1px rgba(36,37,22,.75),4px -2px 0 -1px rgba(36,37,22,.75); opacity:0; animation:companionFly 1.8s ease-in-out infinite alternate; }
+.companion-flies i { position:absolute; width:5px; height:5px; border-radius:50%; background:#242516; box-shadow:-4px -2px 0 -1px rgba(36,37,22,.75),4px -2px 0 -1px rgba(36,37,22,.75); opacity:0; transition:opacity .45s ease; animation:companionFly 1.8s ease-in-out infinite alternate; }
 .companion-flies i:nth-child(1) { left:18%; top:44%; opacity:var(--fly-1,0); }
 .companion-flies i:nth-child(2) { right:19%; top:30%; opacity:var(--fly-2,0); animation-delay:-.4s; }
 .companion-flies i:nth-child(3) { left:34%; top:12%; opacity:var(--fly-3,0); animation-delay:-.8s; }

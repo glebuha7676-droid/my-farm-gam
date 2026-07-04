@@ -727,6 +727,7 @@ function init() {
         document.getElementById('seeds-window').addEventListener('scroll', updateCarouselArrows);
         document.getElementById('garden').addEventListener('pointerdown', handleGardenDecorTap);
         setInterval(gameTick, 1000);
+        setInterval(realtimeUiTick, 250);
         setInterval(saveGame, 5000);
     }
 
@@ -1230,7 +1231,6 @@ function init() {
         updateShopState();
         ensureRewardsState();
         updateCompanionState();
-        if (document.getElementById('side-menu')?.classList.contains('open')) renderCompanionVitals();
         if (tutorialIsActive()) {
             runTutorialTick();
             return;
@@ -1399,6 +1399,13 @@ function init() {
         applyDecorStyle();
         if (document.getElementById('shop-modal')?.classList.contains('open')) renderShop();
         refreshTutorial();
+    }
+
+    function realtimeUiTick() {
+        updateCompanionState();
+        if (document.getElementById('side-menu')?.classList.contains('open')) renderCompanionVitals();
+        updateStateIndicator();
+        renderActiveStatusStrip();
     }
 
     function toggleMenu() {
@@ -1614,7 +1621,7 @@ function init() {
         const energyInterval = pet.sleeping ? 1 : 3;
         const energySteps = Math.floor(pet.energyClock / energyInterval);
         if (energySteps > 0) {
-            const energyDelta = energySteps * 2;
+            const energyDelta = energySteps * (pet.sleeping ? 3 : 2);
             pet.energy = pet.sleeping ? Math.min(100, pet.energy + energyDelta) : Math.max(0, pet.energy - energyDelta);
             pet.energyClock %= energyInterval;
         }
@@ -1664,7 +1671,7 @@ function init() {
         updateCompanionState();
         const pet = player.companion;
         const stats = [
-            ['hunger', pet.hunger],
+            ['satiety', pet.hunger],
             ['clean', pet.clean],
             ['energy', pet.energy]
         ];
@@ -1739,7 +1746,7 @@ function init() {
         document.getElementById('companion-skin-name').textContent = def ? (def.shortName || def.name) : 'Базовый';
         document.getElementById('companion-buff').textContent = companionBuffText();
         document.getElementById('companion-stats').innerHTML = [
-            companionStatHTML('hunger', 'Сытость', pet.hunger, '#ef9c39', '●'),
+            companionStatHTML('satiety', 'Сытость', pet.hunger, '#ef9c39', '●'),
             companionStatHTML('clean', 'Чистота', pet.clean, '#42bde9', '◆'),
             companionStatHTML('energy', 'Бодрость', pet.energy, '#8a73df', '◐')
         ].join('');
@@ -1748,7 +1755,6 @@ function init() {
         root.querySelector('.companion-action.feed').disabled = pet.sleeping;
         root.querySelector('.companion-action.wash').disabled = pet.sleeping;
         document.getElementById('companion-wash-btn').classList.toggle('active', !!env.companionShower);
-        document.getElementById('companion-sleep-note').style.display = pet.sleeping ? 'block' : 'none';
         renderCompanionDrawer();
     }
 
@@ -1846,7 +1852,6 @@ function init() {
         updateCompanionState();
         if (player.companion.sleeping) return;
         env.companionShower = !env.companionShower;
-        env.companionNextWashGainAt = 0;
         env.companionDrawer = '';
         stopCompanionShower();
         renderCompanion();
@@ -1890,19 +1895,13 @@ function init() {
         const hitsSlime = dropClientX >= slimeRect.left - 10 && dropClientX <= slimeRect.right + 10 && crossesSlime;
         if (!hitsSlime) return;
         const now = Date.now();
-        if (now < (env.companionNextWashGainAt || 0)) return;
-        env.companionNextWashGainAt = now + 1000;
         const wasFullyClean = player.companion.clean >= 100;
-        player.companion.clean = Math.min(100, player.companion.clean + 2);
+        player.companion.clean = Math.min(100, player.companion.clean + 1);
         if (!wasFullyClean && player.companion.clean >= 100) {
             player.companion.cleanGraceUntil = now + 5000;
             player.companion.cleanClock = 0;
         }
-        const fill = document.querySelector('.companion-stat.clean em');
-        const value = document.querySelector('.companion-stat.clean strong');
-        if (fill) fill.style.width = `${player.companion.clean}%`;
-        if (value) value.textContent = `${player.companion.clean}%`;
-        document.getElementById('companion-panel')?.classList.toggle('is-dirty', player.companion.clean < 35);
+        renderCompanionVitals();
     }
 
     function companionPointerDown(event) {
