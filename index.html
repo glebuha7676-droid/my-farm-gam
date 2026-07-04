@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Grow a Farm: Mobile Edition</title>
-    <link rel="stylesheet" href="css/styles.css?v=20260702c">
+    <link rel="stylesheet" href="css/styles.css?v=20260702g">
 </head>
 <body>
     <div class="holy-bg-rays"></div>
@@ -67,7 +67,43 @@
             <button class="menu-close" onclick="toggleMenu()">✕</button>
         </div>
         <div class="menu-content">
-            <section class="menu-panel showcase-area" id="showcase-area">
+            <section class="menu-panel active-status-panel" id="active-status-panel" style="display:none;">
+                <div class="active-status-head"><span>✨</span><strong>Активные бонусы</strong></div>
+                <div class="active-status-list" id="active-status-list"></div>
+            </section>
+            <section class="menu-panel companion-panel" id="companion-panel">
+                <div class="companion-topline">
+                    <button class="companion-name" id="companion-name" type="button" onclick="renameCompanion()">Лайм <span aria-hidden="true">✎</span></button>
+                    <div class="companion-level"><small>Lvl</small><b id="companion-level">1</b></div>
+                </div>
+                <div class="companion-habitat" id="companion-habitat" onpointerdown="companionPointerDown(event)" onpointermove="companionPointerMove(event)" onpointerup="companionPointerUp(event)" onpointercancel="companionPointerUp(event)" onpointerleave="companionPointerLeave(event)">
+                    <div class="companion-room-light"></div>
+                    <div class="companion-window"><i></i><i></i></div>
+                    <div class="companion-shelf"><i></i><i></i></div>
+                    <button class="companion-stage" id="companion-stage" type="button" onclick="petCompanion()" aria-label="Погладить слайма"></button>
+                    <div class="companion-shower-cursor" id="companion-shower-cursor" aria-hidden="true">🚿</div>
+                    <div class="companion-sleep-note" id="companion-sleep-note">Тс-с... слайм отдыхает</div>
+                </div>
+                <div class="companion-xp"><span><small>До нового уровня</small><b id="companion-xp-label">0 / 60 XP</b></span><i><em id="companion-xp-fill"></em></i></div>
+                <div class="companion-section-title">Состояние</div>
+                <div class="companion-stats" id="companion-stats"></div>
+                <div class="companion-buff-row">
+                    <div><small>АКТИВНЫЙ БОНУС</small><b id="companion-buff">Нет бонуса</b></div>
+                    <button type="button" onclick="toggleCompanionSkins()"><span>◈</span><small>ОБЛИК</small><b id="companion-skin-name">Базовый</b></button>
+                </div>
+                <div class="companion-section-title actions-title">Уход</div>
+                <div class="companion-actions">
+                    <button class="companion-action feed" type="button" onclick="toggleCompanionFeed()"><span>🥕</span><b>Покормить</b></button>
+                    <button class="companion-action wash" id="companion-wash-btn" type="button" onclick="toggleCompanionShower()"><span>🚿</span><b>Помыть</b></button>
+                    <button class="companion-action sleep" id="companion-sleep-btn" type="button" onclick="toggleCompanionSleep()"><span>🌙</span><b>Спать</b></button>
+                </div>
+                <div class="companion-drawer" id="companion-drawer"></div>
+            </section>
+
+            <button class="menu-fold-btn showcase-fold-btn" type="button" onclick="toggleMenuSection('showcase')">
+                <span>🏆</span><strong>Витрина</strong><em id="showcase-fold-mark">＋</em>
+            </button>
+            <section class="menu-panel showcase-area menu-fold" id="showcase-section">
                 <div class="showcase-area-lock" id="showcase-area-lock">
                     <div class="showcase-lock-badge">
                         <span class="showcase-lock-icon" aria-hidden="true"></span>
@@ -94,30 +130,18 @@
                 <div class="diary-mutations" id="diary-mutations"></div>
             </section>
 
-            <button class="menu-fold-btn" type="button" onclick="toggleMenuSection('pets')">
-                <span>🐾</span><strong>Питомцы</strong><em id="pets-fold-mark">＋</em>
-            </button>
-            <section class="menu-panel helper-house pet-incubator-panel menu-fold" id="pets-section">
-                <div class="incubator slime-focus">
-                    <button class="nest-arrow" type="button" onclick="switchNest(-1)">❮</button>
-                    <div class="nest-view" id="nest-view"></div>
-                    <button class="nest-arrow" type="button" onclick="switchNest(1)">❯</button>
-                </div>
-                <div class="nest-dots" id="nest-dots"></div>
-                <div class="compact-incubator">
-                    <div class="panel-title mini"><span>🥚</span><strong>Яйца</strong></div>
-                    <div class="egg-shop" id="egg-shop"></div>
-                    <div class="equip-slots" id="equip-slots"></div>
-                </div>
-                <div class="panel-title mini"><span>🎒</span><strong id="pet-inventory-title">Инвентарь 8 мест</strong></div>
-                <div class="pet-list" id="pet-list"></div>
-            </section>
-
             <button class="menu-fold-btn decor-fold-btn" type="button" onclick="toggleMenuSection('decor')">
                 <span>🎨</span><strong>Декор</strong><em id="decor-fold-mark">＋</em>
             </button>
             <section class="menu-panel decor-panel menu-fold" id="decor-section">
                 <div class="decor-shop" id="decor-shop"></div>
+            </section>
+
+            <button class="menu-fold-btn" type="button" onclick="toggleMenuSection('rewards')">
+                <span>🎁</span><strong>Награды</strong><i class="menu-attn-marker" id="rewards-ready-marker" aria-hidden="true"></i><em id="rewards-fold-mark">＋</em>
+            </button>
+            <section class="menu-panel rewards-panel menu-fold" id="rewards-section">
+                <div id="rewards-content"></div>
             </section>
 
             <button class="menu-fold-btn" type="button" onclick="toggleMenuSection('admin')">
@@ -174,6 +198,9 @@
     <div class="pet-sell-modal" id="pet-sell-modal">
         <div class="pet-sell-card" id="pet-sell-card"></div>
     </div>
+    <div class="reward-pop" id="reward-pop">
+        <div class="reward-pop-card" id="reward-pop-card"></div>
+    </div>
     <div class="tutorial-overlay" id="tutorial-overlay">
         <div class="tutorial-card">
             <b id="tutorial-title">Обучение</b>
@@ -182,8 +209,8 @@
             <button id="tutorial-action" class="tutorial-action" type="button" onclick="tutorialAdvance()">Далее</button>
         </div>
     </div>
-    <script src="js/data.js?v=20260702c" defer></script>
-    <script src="js/audio.js?v=20260702c" defer></script>
-    <script src="js/game.js?v=20260702c" defer></script>
+    <script src="js/data.js?v=20260702f" defer></script>
+    <script src="js/audio.js?v=20260702d" defer></script>
+    <script src="js/game.js?v=20260702f" defer></script>
 </body>
 </html>

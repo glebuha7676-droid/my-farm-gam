@@ -89,7 +89,6 @@ const DECOR_STYLES = {
     vip:       { id: 'vip',       name: 'VIP',         cost: 12000, lvl: 10, icon: '👑', desc: 'Золотая вывеска' },
     glass:     { id: 'glass',     name: 'Стекло',      cost: 12000, lvl: 12, icon: '◇',  desc: 'Простое прозрачное стекло' },
     backrooms: { id: 'backrooms', name: 'Бэкрумс',     cost: 9500,  lvl: 13, icon: '▦',  desc: 'Желтые стены и старый ковролин' },
-    toyblocks: { id: 'toyblocks', name: 'Конструктор', cost: 10000, lvl: 15, icon: '▣',  desc: 'Яркие игрушечные блоки' },
     block:     { id: 'block',     name: 'Блочный',     cost: 10000, lvl: 17, icon: '🧱', desc: 'Кубический стиль' }
 };
 
