@@ -4477,7 +4477,9 @@
             }
 
             .companion-panel {
-                flex-shrink: 0;
+                display: block;
+                flex: none;
+                min-height: 430px;
                 padding: 8px !important;
             }
 
