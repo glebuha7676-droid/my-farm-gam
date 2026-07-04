@@ -1230,7 +1230,7 @@ function init() {
         updateShopState();
         ensureRewardsState();
         updateCompanionState();
-        if (document.getElementById('side-menu')?.classList.contains('open')) renderCompanion();
+        if (document.getElementById('side-menu')?.classList.contains('open')) renderCompanionVitals();
         if (tutorialIsActive()) {
             runTutorialTick();
             return;
@@ -1583,9 +1583,9 @@ function init() {
         const now = Date.now();
         const elapsed = Math.max(0, Math.min(21600, (now - pet.lastUpdate) / 1000));
         if (elapsed < 1) return;
-        pet.hunger = Math.max(0, pet.hunger - elapsed / 180);
-        pet.clean = Math.max(0, pet.clean - elapsed / 240);
-        pet.energy = pet.sleeping ? Math.min(100, pet.energy + elapsed / 18) : Math.max(0, pet.energy - elapsed / 300);
+        pet.hunger = Math.max(0, pet.hunger - elapsed / 50);
+        pet.clean = Math.max(0, pet.clean - elapsed / 70);
+        pet.energy = pet.sleeping ? Math.min(100, pet.energy + elapsed / 5) : Math.max(0, pet.energy - elapsed / 90);
         pet.lastUpdate = now;
         if (pet.sleeping && pet.energy >= 100) pet.sleeping = false;
     }
@@ -1611,8 +1611,48 @@ function init() {
     }
 
     function companionStatHTML(type, label, value, color, symbol) {
-        const safe = Math.round(Math.max(0, Math.min(100, value)));
-        return `<div class="companion-stat ${type}"><span class="companion-stat-icon">${symbol}</span><div><b>${label}</b><i><em style="width:${safe}%; --meter-color:${color}"></em></i></div><strong>${safe}</strong></div>`;
+        const safe = Math.max(0, Math.min(100, value));
+        const tone = safe <= 15 ? 'is-critical' : (safe <= 35 ? 'is-low' : '');
+        return `<div class="companion-stat ${type} ${tone}"><span class="companion-stat-icon">${symbol}</span><div><b>${label}</b><i><em style="width:${safe}%; --meter-color:${color}"></em></i></div><strong>${safe.toFixed(1)}</strong></div>`;
+    }
+
+    function renderCompanionVitals() {
+        const root = document.getElementById('companion-panel');
+        if (!root) return;
+        updateCompanionState();
+        const pet = player.companion;
+        const stats = [
+            ['hunger', pet.hunger],
+            ['clean', pet.clean],
+            ['energy', pet.energy]
+        ];
+        stats.forEach(([type, value]) => {
+            const row = root.querySelector(`.companion-stat.${type}`);
+            if (!row) return;
+            const safe = Math.max(0, Math.min(100, value));
+            row.classList.toggle('is-low', safe > 15 && safe <= 35);
+            row.classList.toggle('is-critical', safe <= 15);
+            const fill = row.querySelector('i em');
+            const text = row.querySelector('strong');
+            if (fill) fill.style.width = `${safe}%`;
+            if (text) text.textContent = safe.toFixed(1);
+        });
+        const mood = companionMood();
+        const stage = document.getElementById('companion-stage');
+        if (stage) {
+            ['happy', 'hungry', 'tired', 'dirty', 'sleeping'].forEach(name => stage.classList.remove(`mood-${name}`));
+            stage.classList.add(`mood-${mood}`);
+        }
+        root.classList.toggle('is-sleeping', pet.sleeping);
+        root.classList.toggle('is-dirty', pet.clean < 35);
+        const sleepBtn = document.getElementById('companion-sleep-btn');
+        if (sleepBtn) sleepBtn.querySelector('b').textContent = pet.sleeping ? 'Разбудить' : 'Спать';
+        const feedBtn = root.querySelector('.companion-action.feed');
+        const washBtn = root.querySelector('.companion-action.wash');
+        if (feedBtn) feedBtn.disabled = pet.sleeping;
+        if (washBtn) washBtn.disabled = pet.sleeping;
+        const sleepNote = document.getElementById('companion-sleep-note');
+        if (sleepNote) sleepNote.style.display = pet.sleeping ? 'block' : 'none';
     }
 
     function companionFoodValue(crop) {
@@ -1680,16 +1720,20 @@ function init() {
         if (env.companionDrawer === 'feed') {
             const ready = readyCropsForShowcase();
             drawer.innerHTML = `<div class="companion-drawer-head"><span><b>Чем угостить?</b><small>Урожай исчезнет с грядки</small></span><button type="button" onclick="closeCompanionDrawer()">×</button></div><div class="companion-feed-list">${ready.length ? ready.map(item => {
-                const p = PLANTS[item.crop.plantId];
                 const food = companionFoodValue(item.crop);
                 return `<button class="companion-feed-card" type="button" onclick="feedCompanion(${item.tileId})">
                     ${showcaseCropHTML(item.crop)}
-                    <span><b>${p.name}</b><small>${formatWeight(item.crop.weight)}кг · +${food} сытости</small></span>
+                    <strong>+${food} сытости</strong>
                 </button>`;
             }).join('') : '<div class="companion-empty"><b>Нет готового урожая</b><small>Вырастите растение на грядке</small></div>'}</div>`;
             return;
         }
-        const skinIds = ['basic', ...Object.keys(PET_DEFS)];
+        const rarityOrder = { common: 0, rare: 1, legendary: 2, secret: 3 };
+        const skinIds = ['basic', ...Object.keys(PET_DEFS).sort((a, b) => {
+            const rankA = rarityOrder[PET_DEFS[a]?.rarity] ?? 99;
+            const rankB = rarityOrder[PET_DEFS[b]?.rarity] ?? 99;
+            return rankA - rankB;
+        })];
         drawer.innerHTML = `<div class="companion-drawer-head"><span><b>Облики</b><small>Выберите внешний вид и бонус</small></span><button type="button" onclick="closeCompanionDrawer()">×</button></div><div class="companion-skin-list">${skinIds.map(id => {
             const def = PET_DEFS[id];
             const selected = player.companion.skin === id;
