@@ -1615,6 +1615,18 @@ function init() {
         return `<div class="companion-stat ${type}"><span class="companion-stat-icon">${symbol}</span><div><b>${label}</b><i><em style="width:${safe}%; --meter-color:${color}"></em></i></div><strong>${safe}</strong></div>`;
     }
 
+    function companionFoodValue(crop) {
+        if (!crop) return 0;
+        const value = Math.max(1, Number(crop.value) || cropSaleValue(crop.plantId, crop.mutations, crop.weight));
+        return Math.max(8, Math.min(65, Math.round(5 + Math.log10(value + 10) * 10)));
+    }
+
+    function companionSkinStars(def) {
+        const rarity = def?.rarity || 'common';
+        const count = (PET_RARITY_STYLE[rarity] || PET_RARITY_STYLE.common).stars || 1;
+        return `<span class="companion-skin-stars" aria-label="${count} звезд">${'★'.repeat(count)}</span>`;
+    }
+
     function renderCompanion() {
         const root = document.getElementById('companion-panel');
         if (!root) return;
@@ -1669,18 +1681,25 @@ function init() {
             const ready = readyCropsForShowcase();
             drawer.innerHTML = `<div class="companion-drawer-head"><span><b>Чем угостить?</b><small>Урожай исчезнет с грядки</small></span><button type="button" onclick="closeCompanionDrawer()">×</button></div><div class="companion-feed-list">${ready.length ? ready.map(item => {
                 const p = PLANTS[item.crop.plantId];
-                const food = Math.min(35, 18 + Math.round((item.crop.weight || 5) / 50));
-                return `<button type="button" onclick="feedCompanion(${item.tileId})">${seedIcon(p.id)}<span><b>${p.name}</b><small>+${food} сытости</small></span></button>`;
+                const food = companionFoodValue(item.crop);
+                return `<button class="companion-feed-card" type="button" onclick="feedCompanion(${item.tileId})">
+                    ${showcaseCropHTML(item.crop)}
+                    <span><b>${p.name}</b><small>${formatWeight(item.crop.weight)}кг · +${food} сытости</small></span>
+                </button>`;
             }).join('') : '<div class="companion-empty"><b>Нет готового урожая</b><small>Вырастите растение на грядке</small></div>'}</div>`;
             return;
         }
         const skinIds = ['basic', ...Object.keys(PET_DEFS)];
-        drawer.innerHTML = `<div class="companion-drawer-head"><span><b>Облики</b><small>Меняют вид и бонус</small></span><button type="button" onclick="closeCompanionDrawer()">×</button></div><div class="companion-skin-list">${skinIds.map(id => {
+        drawer.innerHTML = `<div class="companion-drawer-head"><span><b>Облики</b><small>Выберите внешний вид и бонус</small></span><button type="button" onclick="closeCompanionDrawer()">×</button></div><div class="companion-skin-list">${skinIds.map(id => {
             const def = PET_DEFS[id];
             const selected = player.companion.skin === id;
             const previewDef = def || { rarity: 'common', face: 'happy', slime: { body: '#72db68', shade: '#35a84c', blush: '#ffc1cf', decor: 'none' } };
-            const rarity = def ? (PET_RARITY_STYLE[def.rarity] || PET_RARITY_STYLE.common).label : 'Обычный';
-            return `<button class="${selected ? 'selected' : ''}" type="button" onclick="selectCompanionSkin('${id}')">${slimeHTML(previewDef, {}, 'dot')}<span><b>${def ? (def.shortName || def.name) : 'Базовый'}</b><small>${rarity} · ${def ? petBuffText(def, 1) : 'Без бонуса'}</small></span></button>`;
+            const rarity = def?.rarity || 'common';
+            return `<article class="companion-skin-card rarity-${rarity} ${selected ? 'selected' : ''}">
+                <div class="companion-skin-preview">${slimeHTML(previewDef, {}, 'inventory')}</div>
+                <div class="companion-skin-copy"><b>${def ? def.name : 'Базовый слайм'}</b>${companionSkinStars(previewDef)}<small>${def ? petBuffText(def, 1) : 'Без бонуса'}</small></div>
+                <button type="button" onclick="selectCompanionSkin('${id}')" ${selected ? 'disabled' : ''}>${selected ? 'Выбран' : 'Выбрать'}</button>
+            </article>`;
         }).join('')}</div>`;
     }
 
@@ -1709,7 +1728,7 @@ function init() {
             renderCompanion();
             return;
         }
-        const food = Math.min(35, 18 + Math.round((crop.weight || 5) / 50));
+        const food = companionFoodValue(crop);
         const xpGain = Math.max(8, Math.min(42, Math.round(Math.log10((crop.value || 0) + 10) * 11)));
         player.companion.hunger = Math.min(100, player.companion.hunger + food);
         player.companion.xp += xpGain;
@@ -1766,12 +1785,20 @@ function init() {
         const point = env.companionPointer;
         const drop = document.createElement('i');
         drop.className = 'companion-water-drop';
-        drop.style.left = `${point.x + (Math.random() * 14 - 7)}px`;
-        drop.style.top = `${point.y + 12}px`;
+        const dropX = point.x + (Math.random() * 14 - 7);
+        const dropStartY = point.y + 12;
+        const dropTravel = 86;
+        drop.style.left = `${dropX}px`;
+        drop.style.top = `${dropStartY}px`;
         habitat.appendChild(drop);
         setTimeout(() => drop.remove(), 520);
+        const habitatRect = habitat.getBoundingClientRect();
         const slimeRect = slime.getBoundingClientRect();
-        const hitsSlime = point.clientX >= slimeRect.left - 12 && point.clientX <= slimeRect.right + 12 && point.clientY >= slimeRect.top - 34 && point.clientY <= slimeRect.bottom;
+        const dropClientX = habitatRect.left + dropX;
+        const dropStartClientY = habitatRect.top + dropStartY;
+        const dropEndClientY = dropStartClientY + dropTravel;
+        const crossesSlime = dropStartClientY <= slimeRect.bottom && dropEndClientY >= slimeRect.top;
+        const hitsSlime = dropClientX >= slimeRect.left - 10 && dropClientX <= slimeRect.right + 10 && crossesSlime;
         if (!hitsSlime) return;
         player.companion.clean = Math.min(100, player.companion.clean + 1.8);
         const fill = document.querySelector('.companion-stat.clean em');
@@ -1795,6 +1822,10 @@ function init() {
 
     function companionPointerMove(event) {
         if (!env.companionShower) return;
+        if (env.companionPointerDown) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
         updateCompanionPointer(event);
     }
 
@@ -2868,7 +2899,7 @@ function init() {
         const panel = document.getElementById('active-status-panel');
         const list = document.getElementById('active-status-list');
         if (!panel || !list) return;
-        const statuses = activeStatusEntries();
+        const statuses = activeStatusEntries().slice(0, 3);
         panel.style.display = statuses.length ? 'block' : 'none';
         if (!statuses.length) {
             list.innerHTML = '';
