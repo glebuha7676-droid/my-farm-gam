@@ -43,7 +43,8 @@
 .companion-window::before,.companion-window::after { content:""; position:absolute; z-index:2; background:#80522d; box-shadow:0 0 0 1px rgba(255,255,255,.14); pointer-events:none; }
 .companion-window::before { left:50%; top:0; width:4px; height:100%; transform:translateX(-50%); }
 .companion-window::after { left:0; top:52%; width:100%; height:4px; transform:translateY(-50%); }
-.companion-window-scene { position:absolute; inset:0; background:radial-gradient(ellipse at 22% 25%,rgba(255,255,255,.88) 0 7px,transparent 8px),radial-gradient(ellipse at 72% 31%,rgba(255,255,255,.65) 0 9px,transparent 10px),linear-gradient(155deg,transparent 0 57%,#65995e 58% 70%,transparent 71%),linear-gradient(180deg,#91d9eb 0 62%,#7fba70 63% 100%); }
+.companion-window-scene { position:absolute; inset:0; overflow:hidden; background:linear-gradient(180deg,#91d9eb 0 64%,#7fba70 65% 100%); }
+.companion-window-scene::before,.companion-window-scene::after { content:""; position:absolute; pointer-events:none; }
 .companion-shelf { position:absolute; right:17px; top:55px; width:58px; height:7px; background:#7d4c29; box-shadow:0 4px 0 #b77b3e; }
 .companion-shelf i { position:absolute; bottom:7px; width:14px; border-radius:4px 4px 0 0; }
 .companion-shelf i:first-child { left:8px; height:28px; background:#e97a69; }
@@ -10382,17 +10383,52 @@
 .companion-stat.is-low i em { background: #ef704d; }
 .companion-stat.is-critical i em { background: #d72d2d; }
 
-/* One continuous scene sits behind the window frame and mirrors the event. */
-.companion-window-scene { transition:none !important; }
-body.event-rain .companion-window-scene { background:repeating-linear-gradient(105deg,transparent 0 9px,rgba(211,239,255,.72) 10px 12px,transparent 13px 22px),radial-gradient(ellipse at 30% 25%,#d2dce0 0 18px,transparent 19px),linear-gradient(180deg,#718b9d 0 63%,#607a59 64%); }
-body.event-storm .companion-window-scene { background:linear-gradient(145deg,transparent 0 43%,#fff48c 44% 48%,transparent 49% 55%,#fff48c 56% 58%,transparent 59%),radial-gradient(ellipse at 35% 22%,#3f4c58 0 22px,transparent 23px),linear-gradient(180deg,#222d3a 0 64%,#35443b 65%); }
-body.event-toxic .companion-window-scene { background:radial-gradient(circle at 24% 28%,rgba(218,255,82,.75) 0 5px,transparent 6px),radial-gradient(circle at 72% 48%,rgba(113,255,77,.5) 0 7px,transparent 8px),linear-gradient(155deg,transparent 0 58%,#537c34 59% 72%,transparent 73%),linear-gradient(180deg,#7fa64a 0 63%,#5c8432 64%); }
-body.event-starfall .companion-window-scene { background:radial-gradient(circle at 18% 20%,#fff 0 1px,transparent 2px),radial-gradient(circle at 48% 34%,#ffe66d 0 2px,transparent 3px),radial-gradient(circle at 78% 17%,#fff 0 1px,transparent 2px),radial-gradient(ellipse at 68% 78%,#303d72 0 17px,transparent 18px),linear-gradient(180deg,#101744 0 68%,#202c55 69%); }
-body.event-holy .companion-window-scene { background:radial-gradient(circle at 68% 25%,#fff 0 8px,#ffe779 9px 14px,transparent 15px),linear-gradient(150deg,transparent 0 58%,#8ab873 59% 72%,transparent 73%),linear-gradient(180deg,#fff2a7 0 63%,#9bca7c 64%); }
-body.event-hell .companion-window-scene { background:radial-gradient(ellipse at 28% 100%,#ff8b25 0 11px,transparent 23px),radial-gradient(ellipse at 76% 96%,#db3c1c 0 9px,transparent 20px),linear-gradient(155deg,transparent 0 58%,#682820 59% 72%,transparent 73%),linear-gradient(180deg,#40161a 0 63%,#70261b 64%); }
-body.event-candy .companion-window-scene { background:radial-gradient(circle at 20% 25%,#fff 0 6px,transparent 7px),radial-gradient(circle at 72% 36%,#ff5eaa 0 5px,#fff 6px 7px,transparent 8px),repeating-linear-gradient(145deg,transparent 0 13px,rgba(255,255,255,.28) 14px 18px),linear-gradient(180deg,#ffc1e5 0 63%,#de8fc4 64%); }
-body.event-bee .companion-window-scene { background:radial-gradient(ellipse at 67% 30%,#33220d 0 3px,#f1c832 4px 8px,transparent 9px),radial-gradient(circle at 25% 42%,#fff5b8 0 5px,transparent 6px),linear-gradient(150deg,transparent 0 58%,#8eb85f 59% 72%,transparent 73%),linear-gradient(180deg,#ffe895 0 63%,#9bc36b 64%); }
-body.event-alien .companion-window-scene { background:radial-gradient(ellipse at 55% 28%,#b7fff4 0 6px,#3ed8bc 7px 12px,transparent 13px),radial-gradient(ellipse at 55% 36%,rgba(64,255,211,.3) 0 18px,transparent 19px),radial-gradient(circle at 18% 18%,#fff 0 1px,transparent 2px),linear-gradient(180deg,#172d48 0 66%,#295047 67%); }
+/* One continuous landscape sits behind the frame; each event adds one light effect. */
+.companion-window-scene { transition:background .35s ease; }
+.companion-window-scene::before { left:8%; top:18%; width:25px; height:8px; border-radius:50%; background:rgba(255,255,255,.72); box-shadow:17px 3px 0 2px rgba(255,255,255,.58); }
+.companion-window-scene::after { display:none; }
+
+body.event-rain .companion-window-scene { background:linear-gradient(180deg,#789aaf 0 64%,#66865e 65%); }
+body.event-rain .companion-window-scene::before { inset:-20px -15px; width:auto; height:auto; border-radius:0; background:repeating-linear-gradient(105deg,transparent 0 8px,rgba(210,239,255,.76) 9px 11px,transparent 12px 19px); box-shadow:none; animation:windowRain .75s linear infinite; }
+
+body.event-storm .companion-window-scene { background:linear-gradient(180deg,#323f4e 0 64%,#465448 65%); animation:windowLightning 5.2s steps(1) infinite; }
+body.event-storm .companion-window-scene::before { inset:-20px -15px; width:auto; height:auto; border-radius:0; background:repeating-linear-gradient(105deg,transparent 0 7px,rgba(186,220,241,.7) 8px 10px,transparent 11px 18px); box-shadow:none; animation:windowRain .55s linear infinite; }
+body.event-storm .companion-window-scene::after { display:block; left:8px; top:5px; width:43px; height:22px; border-radius:50%; background:#27323e; box-shadow:22px 5px 0 3px #27323e; }
+
+body.event-toxic .companion-window-scene { background:linear-gradient(180deg,#789848 0 64%,#587335 65%); }
+body.event-toxic .companion-window-scene::before { left:5%; top:14%; width:90%; height:58%; border-radius:50%; background:radial-gradient(circle at 30% 42%,rgba(195,255,80,.82) 0 9px,transparent 20px),radial-gradient(circle at 68% 55%,rgba(89,225,63,.72) 0 12px,transparent 24px); box-shadow:none; filter:blur(3px); animation:windowToxic 2.4s ease-in-out infinite; }
+
+body.event-hell .companion-window-scene { background:linear-gradient(180deg,#43171a 0 64%,#68261d 65%); }
+body.event-hell .companion-window-scene::before { left:-8%; right:-8%; top:30%; bottom:-18%; width:auto; height:auto; border-radius:0; background:radial-gradient(ellipse at 15% 100%,#ffd05a 0 8%,#ff6b22 9% 23%,transparent 24%),radial-gradient(ellipse at 48% 100%,#ffe26d 0 10%,#ed451c 11% 28%,transparent 29%),radial-gradient(ellipse at 82% 100%,#ffc04a 0 8%,#ff6421 9% 25%,transparent 26%); box-shadow:none; transform-origin:50% 100%; animation:windowFire 1s ease-in-out infinite alternate; }
+
+body.event-starfall .companion-window-scene { background:radial-gradient(circle at 18% 20%,#fff 0 1px,transparent 2px),radial-gradient(circle at 71% 28%,#ffe779 0 1px,transparent 2px),radial-gradient(circle at 47% 48%,#fff 0 1px,transparent 2px),linear-gradient(180deg,#101744 0 67%,#26345a 68%); }
+body.event-starfall .companion-window-scene::before { left:65px; top:2px; width:20px; height:2px; border-radius:99px; background:linear-gradient(90deg,transparent,#fff); box-shadow:none; transform:rotate(-28deg); animation:windowStar 3.8s ease-in infinite; }
+
+body.event-alien .companion-window-scene { background:radial-gradient(circle at 18% 18%,#fff 0 1px,transparent 2px),linear-gradient(180deg,#162b47 0 67%,#294d46 68%); }
+body.event-alien .companion-window-scene::before { left:50%; top:15%; width:31px; height:10px; border-radius:50% 50% 45% 45%; background:linear-gradient(180deg,#b7fff5,#39bfae); box-shadow:0 2px 5px rgba(84,255,230,.75); transform:translateX(-50%); animation:windowUfo 2.2s ease-in-out infinite; }
+body.event-alien .companion-window-scene::after { display:block; left:50%; top:25%; width:35px; height:42px; background:linear-gradient(180deg,rgba(104,244,255,.62),rgba(104,244,255,0)); clip-path:polygon(40% 0,60% 0,100% 100%,0 100%); transform:translateX(-50%); animation:windowBeam 2.2s ease-in-out infinite; }
+
+body.event-bee .companion-window-scene { background:linear-gradient(180deg,#f8da70 0 64%,#8eae57 65%); }
+body.event-bee .companion-window-scene::before { left:4px; top:-4px; width:45px; height:36px; border-radius:0; background:radial-gradient(circle,#ffd75a 0 5px,#b97917 6px 7px,transparent 8px) 0 0/16px 14px; box-shadow:none; animation:windowHoney 2s ease-in-out infinite; }
+body.event-bee .companion-window-scene::after { display:block; left:4px; top:24px; width:6px; height:4px; border-radius:50%; background:#32230d; box-shadow:0 0 0 2px #f0bd28; animation:windowBee 4.5s ease-in-out infinite; }
+
+body.event-candy .companion-window-scene { background:linear-gradient(180deg,#c9845a 0 64%,#a85b48 65%); }
+body.event-candy .companion-window-scene::before { inset:-20px 0 0; width:auto; height:auto; border-radius:0; background:radial-gradient(circle,#ff6fae 0 2px,#fff 3px 4px,transparent 5px) 3px 0/22px 25px,radial-gradient(circle,#62d5e8 0 3px,transparent 4px) 13px 9px/27px 29px; box-shadow:none; animation:windowCandy 3s linear infinite; }
+
+body.event-holy .companion-window-scene { background:linear-gradient(180deg,#ffe99a 0 64%,#9fc46d 65%); }
+body.event-holy .companion-window-scene::before { left:50%; top:14%; width:20px; height:20px; border-radius:50%; background:#fff8b9; box-shadow:0 0 8px 4px rgba(255,244,125,.85); transform:translateX(-50%); animation:windowSun 2.3s ease-in-out infinite; }
+
+@keyframes windowRain { to { background-position:-16px 42px; } }
+@keyframes windowLightning { 0%,89%,93%,100% { filter:none; } 90%,92% { filter:brightness(2.2); } }
+@keyframes windowToxic { 0%,100% { opacity:.55; transform:scale(.86); } 50% { opacity:1; transform:scale(1.08); } }
+@keyframes windowFire { from { transform:scaleY(.82) skewX(-3deg); } to { transform:scaleY(1.08) skewX(3deg); } }
+@keyframes windowStar { 0%,70% { opacity:0; transform:translate(0,0) rotate(-28deg); } 74% { opacity:1; } 92%,100% { opacity:0; transform:translate(-92px,48px) rotate(-28deg); } }
+@keyframes windowUfo { 0%,100% { transform:translate(-50%,0); } 50% { transform:translate(-50%,3px); } }
+@keyframes windowBeam { 0%,100% { opacity:.35; } 50% { opacity:.78; } }
+@keyframes windowHoney { 0%,100% { transform:translateY(-2px); } 50% { transform:translateY(2px); } }
+@keyframes windowBee { 0%,100% { transform:translate(0,0); opacity:.25; } 30% { opacity:1; } 55% { transform:translate(48px,-12px); opacity:1; } 80% { transform:translate(27px,18px); opacity:.6; } }
+@keyframes windowCandy { to { background-position:3px 50px,13px 67px; } }
+@keyframes windowSun { 0%,100% { box-shadow:0 0 7px 3px rgba(255,244,125,.72); transform:translateX(-50%) scale(.94); } 50% { box-shadow:0 0 13px 7px rgba(255,244,125,.96); transform:translateX(-50%) scale(1.08); } }
 
 .companion-dirt-cloud {
     position: absolute;
