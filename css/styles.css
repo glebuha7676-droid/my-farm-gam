@@ -4454,6 +4454,250 @@
             display: block;
         }
 
+        @media (max-width: 560px) {
+            .side-menu {
+                width: 100%;
+                max-width: none;
+                border-left: 0;
+                box-shadow: none;
+            }
+
+            .menu-header {
+                padding-right: calc(12px + env(safe-area-inset-right));
+            }
+
+            .menu-content {
+                gap: 10px;
+                padding: 10px 10px calc(18px + env(safe-area-inset-bottom));
+            }
+
+            .menu-panel {
+                padding: 10px;
+            }
+
+            .companion-panel {
+                padding: 9px !important;
+            }
+
+            .companion-topline {
+                gap: 6px;
+                margin-bottom: 7px;
+            }
+
+            .companion-name {
+                height: 38px;
+                padding: 0 10px;
+                font-size: 17px;
+            }
+
+            .companion-name span {
+                font-size: 13px;
+            }
+
+            .companion-level {
+                width: 64px;
+                height: 38px;
+                gap: 4px;
+            }
+
+            .companion-level small {
+                font-size: 10px;
+            }
+
+            .companion-level b {
+                font-size: 20px;
+            }
+
+            .companion-habitat {
+                height: 186px;
+                border-radius: 10px;
+            }
+
+            .companion-room-light {
+                top: -18px;
+                width: 78px;
+                height: 40px;
+            }
+
+            .companion-window {
+                left: 12px;
+                top: 24px;
+                width: 52px;
+                height: 60px;
+                padding: 4px;
+                border-width: 4px;
+            }
+
+            .companion-shelf {
+                right: 12px;
+                top: 44px;
+                width: 46px;
+                height: 6px;
+            }
+
+            .companion-shelf i {
+                width: 11px;
+            }
+
+            .companion-shelf i:first-child {
+                left: 6px;
+                height: 22px;
+            }
+
+            .companion-shelf i:last-child {
+                right: 6px;
+                height: 16px;
+            }
+
+            .companion-stage {
+                width: 180px;
+                height: 144px;
+                bottom: 12px;
+            }
+
+            .companion-panel.is-dirty .companion-stage::after {
+                left: 52px;
+                bottom: 18px;
+                width: 9px;
+                height: 9px;
+                box-shadow: 66px -16px 0 #766145, 18px -58px 0 -2px #766145;
+            }
+
+            .companion-sleep-note {
+                top: 12px;
+                padding: 5px 8px;
+                font-size: 9px;
+            }
+
+            .companion-xp {
+                grid-template-columns: 84px 1fr;
+                gap: 7px;
+                padding: 7px 0 6px;
+            }
+
+            .companion-xp b {
+                font-size: 10px;
+            }
+
+            .companion-xp small,
+            .companion-section-title {
+                font-size: 8px;
+            }
+
+            .companion-stats {
+                display: grid;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 5px;
+            }
+
+            .companion-stat {
+                min-height: 70px;
+                grid-template-columns: 1fr;
+                justify-items: center;
+                gap: 4px;
+                padding: 6px 5px;
+                text-align: center;
+            }
+
+            .companion-stat > div {
+                min-width: 0;
+                width: 100%;
+                display: block;
+            }
+
+            .companion-stat b {
+                margin-bottom: 4px;
+                font-size: 9px;
+            }
+
+            .companion-stat i {
+                height: 7px;
+                margin-bottom: 4px;
+            }
+
+            .companion-stat strong {
+                font-size: 9px;
+                text-align: center;
+            }
+
+            .companion-buff-row {
+                grid-template-columns: 1fr 1fr;
+                gap: 5px;
+                margin-top: 6px;
+            }
+
+            .companion-buff-row > div,
+            .companion-buff-row > button {
+                min-height: 45px;
+                padding: 6px 8px;
+            }
+
+            .companion-buff-row small {
+                font-size: 7px;
+            }
+
+            .companion-buff-row b {
+                font-size: 9px;
+            }
+
+            .companion-buff-row > button {
+                padding-left: 31px;
+            }
+
+            .companion-buff-row > button > span {
+                left: 7px;
+                width: 18px;
+                height: 21px;
+                font-size: 12px;
+            }
+
+            .companion-actions {
+                gap: 5px;
+                margin-top: 7px;
+            }
+
+            .companion-action {
+                height: 54px;
+                gap: 2px;
+                padding: 4px 2px;
+            }
+
+            .companion-action span {
+                width: 26px;
+                height: 24px;
+                font-size: 17px;
+            }
+
+            .companion-action b {
+                font-size: 9px;
+            }
+
+            .companion-drawer.open {
+                margin-top: 7px;
+                padding: 8px;
+            }
+
+            .companion-drawer-head b {
+                font-size: 12px;
+            }
+
+            .companion-drawer-head small {
+                font-size: 8px;
+            }
+
+            .companion-feed-list,
+            .companion-skin-list {
+                grid-template-columns: 1fr;
+                max-height: none;
+                overflow: visible;
+            }
+
+            .companion-feed-list > button,
+            .companion-skin-list > button {
+                min-height: 50px;
+            }
+        }
+
         @keyframes menuFoldIn {
             from { opacity: 0; transform: translateY(-6px) scale(0.98); }
             to { opacity: 1; transform: translateY(0) scale(1); }
