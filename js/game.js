@@ -1555,7 +1555,7 @@ function init() {
     }
 
     function defaultCompanionState() {
-        return { name: 'Лайм', level: 1, xp: 0, hunger: 82, clean: 88, energy: 92, sleeping: false, skin: 'basic', lastUpdate: Date.now() };
+        return { name: 'Лайм', level: 1, xp: 0, hunger: 82, clean: 88, energy: 92, sleeping: false, skin: 'basic', lastUpdate: Date.now(), hungerClock: 0, cleanClock: 0, energyClock: 0, cleanGraceUntil: 0 };
     }
 
     function ensureCompanionState() {
@@ -1566,8 +1566,12 @@ function init() {
         player.companion.level = Math.max(1, Math.min(30, Math.floor(Number(player.companion.level) || 1)));
         player.companion.xp = Math.max(0, Number(player.companion.xp) || 0);
         ['hunger', 'clean', 'energy'].forEach(key => {
-            player.companion[key] = Math.max(0, Math.min(100, Number(player.companion[key]) || 0));
+            player.companion[key] = Math.round(Math.max(0, Math.min(100, Number(player.companion[key]) || 0)));
         });
+        ['hungerClock', 'cleanClock', 'energyClock'].forEach(key => {
+            player.companion[key] = Math.max(0, Number(player.companion[key]) || 0);
+        });
+        player.companion.cleanGraceUntil = Math.max(0, Number(player.companion.cleanGraceUntil) || 0);
         if (player.companion.skin !== 'basic' && !PET_DEFS[player.companion.skin]) player.companion.skin = 'basic';
         player.companion.sleeping = !!player.companion.sleeping;
         player.companion.lastUpdate = Number(player.companion.lastUpdate) || Date.now();
@@ -1581,11 +1585,39 @@ function init() {
         ensureCompanionState();
         const pet = player.companion;
         const now = Date.now();
-        const elapsed = Math.max(0, Math.min(21600, (now - pet.lastUpdate) / 1000));
-        if (elapsed < 1) return;
-        pet.hunger = Math.max(0, pet.hunger - elapsed / 50);
-        pet.clean = Math.max(0, pet.clean - elapsed / 70);
-        pet.energy = pet.sleeping ? Math.min(100, pet.energy + elapsed / 5) : Math.max(0, pet.energy - elapsed / 90);
+        const previousUpdate = pet.lastUpdate;
+        const elapsed = Math.max(0, Math.min(21600, (now - previousUpdate) / 1000));
+        if (elapsed <= 0) return;
+
+        pet.hungerClock += elapsed;
+        const hungerSteps = Math.floor(pet.hungerClock / 4);
+        if (hungerSteps > 0) {
+            pet.hunger = Math.max(0, pet.hunger - hungerSteps);
+            pet.hungerClock %= 4;
+        }
+
+        const cleanElapsed = now <= pet.cleanGraceUntil
+            ? 0
+            : Math.max(0, (now - Math.max(previousUpdate, pet.cleanGraceUntil)) / 1000);
+        if (cleanElapsed > 0) {
+            pet.cleanClock += cleanElapsed;
+            const cleanSteps = Math.floor(pet.cleanClock / 2);
+            if (cleanSteps > 0) {
+                pet.clean = Math.max(0, pet.clean - cleanSteps);
+                pet.cleanClock %= 2;
+            }
+        } else {
+            pet.cleanClock = 0;
+        }
+
+        pet.energyClock += elapsed;
+        const energyInterval = pet.sleeping ? 1 : 3;
+        const energySteps = Math.floor(pet.energyClock / energyInterval);
+        if (energySteps > 0) {
+            const energyDelta = energySteps * 2;
+            pet.energy = pet.sleeping ? Math.min(100, pet.energy + energyDelta) : Math.max(0, pet.energy - energyDelta);
+            pet.energyClock %= energyInterval;
+        }
         pet.lastUpdate = now;
         if (pet.sleeping && pet.energy >= 100) pet.sleeping = false;
     }
@@ -1611,9 +1643,19 @@ function init() {
     }
 
     function companionStatHTML(type, label, value, color, symbol) {
-        const safe = Math.max(0, Math.min(100, value));
+        const safe = Math.round(Math.max(0, Math.min(100, value)));
         const tone = safe <= 15 ? 'is-critical' : (safe <= 35 ? 'is-low' : '');
-        return `<div class="companion-stat ${type} ${tone}"><span class="companion-stat-icon">${symbol}</span><div><b>${label}</b><i><em style="width:${safe}%; --meter-color:${color}"></em></i></div><strong>${safe.toFixed(1)}</strong></div>`;
+        return `<div class="companion-stat ${type} ${tone}"><span class="companion-stat-icon">${symbol}</span><div><b>${label}</b><i><em style="width:${safe}%; --meter-color:${color}"></em></i></div><strong>${safe}%</strong></div>`;
+    }
+
+    function applyCompanionDirt(root, clean) {
+        const safeClean = Math.round(Math.max(0, Math.min(100, clean)));
+        const level = Math.max(0, (50 - safeClean) / 50);
+        root.style.setProperty('--dirt-opacity', (level * 0.72).toFixed(2));
+        root.style.setProperty('--dirt-scale', (0.55 + level * 0.7).toFixed(2));
+        [50, 40, 30, 20, 10].forEach((threshold, index) => {
+            root.style.setProperty(`--fly-${index + 1}`, safeClean <= threshold ? '1' : '0');
+        });
     }
 
     function renderCompanionVitals() {
@@ -1629,13 +1671,13 @@ function init() {
         stats.forEach(([type, value]) => {
             const row = root.querySelector(`.companion-stat.${type}`);
             if (!row) return;
-            const safe = Math.max(0, Math.min(100, value));
+            const safe = Math.round(Math.max(0, Math.min(100, value)));
             row.classList.toggle('is-low', safe > 15 && safe <= 35);
             row.classList.toggle('is-critical', safe <= 15);
             const fill = row.querySelector('i em');
             const text = row.querySelector('strong');
             if (fill) fill.style.width = `${safe}%`;
-            if (text) text.textContent = safe.toFixed(1);
+            if (text) text.textContent = `${safe}%`;
         });
         const mood = companionMood();
         const stage = document.getElementById('companion-stage');
@@ -1645,6 +1687,7 @@ function init() {
         }
         root.classList.toggle('is-sleeping', pet.sleeping);
         root.classList.toggle('is-dirty', pet.clean < 35);
+        applyCompanionDirt(root, pet.clean);
         const sleepBtn = document.getElementById('companion-sleep-btn');
         if (sleepBtn) sleepBtn.querySelector('b').textContent = pet.sleeping ? 'Разбудить' : 'Спать';
         const feedBtn = root.querySelector('.companion-action.feed');
@@ -1679,6 +1722,7 @@ function init() {
         const need = companionXpNeed();
         root.classList.toggle('is-sleeping', pet.sleeping);
         root.classList.toggle('is-dirty', pet.clean < 35);
+        applyCompanionDirt(root, pet.clean);
         root.classList.toggle('is-shower-mode', !!env.companionShower);
         const nameButton = document.getElementById('companion-name');
         const editMark = document.createElement('span');
@@ -1802,6 +1846,7 @@ function init() {
         updateCompanionState();
         if (player.companion.sleeping) return;
         env.companionShower = !env.companionShower;
+        env.companionNextWashGainAt = 0;
         env.companionDrawer = '';
         stopCompanionShower();
         renderCompanion();
@@ -1844,11 +1889,19 @@ function init() {
         const crossesSlime = dropStartClientY <= slimeRect.bottom && dropEndClientY >= slimeRect.top;
         const hitsSlime = dropClientX >= slimeRect.left - 10 && dropClientX <= slimeRect.right + 10 && crossesSlime;
         if (!hitsSlime) return;
-        player.companion.clean = Math.min(100, player.companion.clean + 1.8);
+        const now = Date.now();
+        if (now < (env.companionNextWashGainAt || 0)) return;
+        env.companionNextWashGainAt = now + 1000;
+        const wasFullyClean = player.companion.clean >= 100;
+        player.companion.clean = Math.min(100, player.companion.clean + 2);
+        if (!wasFullyClean && player.companion.clean >= 100) {
+            player.companion.cleanGraceUntil = now + 5000;
+            player.companion.cleanClock = 0;
+        }
         const fill = document.querySelector('.companion-stat.clean em');
         const value = document.querySelector('.companion-stat.clean strong');
         if (fill) fill.style.width = `${player.companion.clean}%`;
-        if (value) value.textContent = Math.round(player.companion.clean);
+        if (value) value.textContent = `${player.companion.clean}%`;
         document.getElementById('companion-panel')?.classList.toggle('is-dirty', player.companion.clean < 35);
     }
 
@@ -1892,6 +1945,7 @@ function init() {
         env.companionShower = false;
         stopCompanionShower();
         player.companion.sleeping = !player.companion.sleeping;
+        player.companion.energyClock = 0;
         env.companionDrawer = '';
         sfx.play('pop');
         renderCompanion();
