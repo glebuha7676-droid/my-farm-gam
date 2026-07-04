@@ -58,6 +58,9 @@
 .companion-stage.is-petted .slime-pet { animation:companionPet .48s ease-out; }
 @keyframes companionIdle { 0%,100%{transform:scale(calc(var(--companion-growth) * 1.42)) translateY(0)} 50%{transform:scale(calc(var(--companion-growth) * 1.45),calc(var(--companion-growth) * 1.39)) translateY(-3px)} }
 @keyframes companionPet { 0%,100%{transform:scale(calc(var(--companion-growth) * 1.42))} 45%{transform:scale(calc(var(--companion-growth) * 1.58),calc(var(--companion-growth) * 1.23))} }
+.companion-stage.mood-hungry .slime-mouth,
+.companion-stage.mood-tired .slime-mouth,
+.companion-stage.mood-dirty .slime-mouth { border-top:3px solid #2d1b15 !important; border-bottom:0 !important; border-radius:50% 50% 0 0 !important; top:15px !important; }
 .companion-stage.mood-sleeping .slime-eye { height:3px !important; border-radius:99px !important; }
 .companion-stage.mood-sleeping .slime-mouth { animation:companionSnoreMouth 1.8s ease-in-out infinite; }
 .companion-sleep-note { display:none; position:absolute; z-index:7; left:50%; top:16px; transform:translateX(-50%); width:max-content; padding:6px 10px; border-radius:999px; background:#41365f; color:#f4eeff; font-size:10px; font-weight:900; }
@@ -8718,54 +8721,28 @@
 
         .slime-mouth {
             left: 50%;
-            top: 60%;
-            width: auto;
-            height: auto;
-            transform: translate(-50%, -50%);
-            border: 0 !important;
+            top: 62%;
+            width: 30%;
+            height: 18%;
+            transform: translateX(-50%);
+            border: 0;
+            border-bottom: 0.15em solid #271509;
+            border-radius: 0 0 999px 999px;
             background: transparent;
-            box-shadow: none !important;
         }
 
-        .slime-mouth::before {
-            content: '3';
-            display: block;
-            color: #271509;
-            font-size: 1.55em;
-            font-weight: 1000;
-            line-height: 1;
-            transform: scaleX(-1);
-            transform-origin: 50% 50%;
+        .face-happy .slime-face::after,
+        .face-smile .slime-face::after,
+        .face-cute .slime-face::after {
+            width: 38%;
+            height: 24%;
         }
 
-        .slime-pet .slime-mouth,
-        .companion-stage .slime-mouth,
-        [class*="face-"] .slime-mouth,
-        .slime-pet.is-happy .slime-mouth,
-        .petted .slime-mouth {
-            left: 50% !important;
-            top: 60% !important;
-            width: auto !important;
-            height: auto !important;
-            transform: translate(-50%, -50%) !important;
-            border: 0 !important;
-            border-radius: 0 !important;
-            background: transparent !important;
-            box-shadow: none !important;
-        }
-
-        .slime-pet .slime-mouth::before,
-        .companion-stage .slime-mouth::before,
-        [class*="face-"] .slime-mouth::before,
-        .slime-pet.is-happy .slime-mouth::before,
-        .petted .slime-mouth::before {
-            content: '3' !important;
-            display: block !important;
-            color: #271509 !important;
-            font-size: 1.55em !important;
-            font-weight: 1000 !important;
-            line-height: 1 !important;
-            transform: scaleX(-1) !important;
+        .face-happy .slime-mouth,
+        .face-smile .slime-mouth,
+        .face-cute .slime-mouth {
+            width: 38%;
+            height: 22%;
         }
 
         .face-excited .slime-eye {
