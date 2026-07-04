@@ -39,8 +39,11 @@
     background:linear-gradient(90deg,transparent 49%,rgba(71,108,82,.12) 50%,transparent 51%) 0 0/76px 100%;
 }
 .companion-room-light { position:absolute; left:50%; top:-22px; width:94px; height:48px; transform:translateX(-50%); border-radius:0 0 50% 50%; background:#f5c95c; box-shadow:0 18px 32px rgba(255,233,148,.48); }
-.companion-window { position:absolute; left:18px; top:30px; width:67px; height:76px; display:grid; grid-template-columns:1fr 1fr; gap:3px; padding:5px; border:5px solid #80522d; background:#eff9d7; box-shadow:inset 0 0 18px #91d7dc; }
-.companion-window i { background:linear-gradient(180deg,#9bdceb 0 58%,#80bf70 59%); }
+.companion-window { position:absolute; left:18px; top:30px; width:67px; height:76px; overflow:hidden; border:5px solid #80522d; background:#eff9d7; box-shadow:inset 0 0 18px #91d7dc; }
+.companion-window::before,.companion-window::after { content:""; position:absolute; z-index:2; background:#80522d; box-shadow:0 0 0 1px rgba(255,255,255,.14); pointer-events:none; }
+.companion-window::before { left:50%; top:0; width:4px; height:100%; transform:translateX(-50%); }
+.companion-window::after { left:0; top:52%; width:100%; height:4px; transform:translateY(-50%); }
+.companion-window-scene { position:absolute; inset:0; background:radial-gradient(ellipse at 22% 25%,rgba(255,255,255,.88) 0 7px,transparent 8px),radial-gradient(ellipse at 72% 31%,rgba(255,255,255,.65) 0 9px,transparent 10px),linear-gradient(155deg,transparent 0 57%,#65995e 58% 70%,transparent 71%),linear-gradient(180deg,#91d9eb 0 62%,#7fba70 63% 100%); }
 .companion-shelf { position:absolute; right:17px; top:55px; width:58px; height:7px; background:#7d4c29; box-shadow:0 4px 0 #b77b3e; }
 .companion-shelf i { position:absolute; bottom:7px; width:14px; border-radius:4px 4px 0 0; }
 .companion-shelf i:first-child { left:8px; height:28px; background:#e97a69; }
@@ -10366,6 +10369,11 @@
 .companion-panel.is-shower-mode .companion-habitat { touch-action: none; }
 .companion-water-drop { animation-name: companionDropLong; }
 @keyframes companionDropLong { from { opacity: 1; transform: translateY(0) scale(.85); } 80% { opacity: 1; } to { opacity: 0; transform: translateY(86px) scale(1.05); } }
+.companion-water-splash { position:absolute; z-index:15; width:16px; height:7px; transform:translate(-50%,-50%); border:2px solid #bff4ff; border-top:0; border-radius:0 0 50% 50%; pointer-events:none; animation:companionSplash .42s ease-out forwards; }
+.companion-water-splash::before,.companion-water-splash::after { content:""; position:absolute; bottom:1px; width:5px; height:8px; border-radius:60% 40% 58% 42%; background:#67d4f2; box-shadow:0 0 0 1px rgba(255,255,255,.58); }
+.companion-water-splash::before { left:-3px; transform:rotate(-38deg); }
+.companion-water-splash::after { right:-3px; transform:rotate(38deg); }
+@keyframes companionSplash { from { opacity:1; transform:translate(-50%,-20%) scale(.65); } to { opacity:0; transform:translate(-50%,-115%) scale(1.25); } }
 
 .companion-stat i em { transition: width .3s linear, background .3s; }
 .companion-stat.satiety,
@@ -10374,17 +10382,17 @@
 .companion-stat.is-low i em { background: #ef704d; }
 .companion-stat.is-critical i em { background: #d72d2d; }
 
-/* The room window mirrors the current event without animated transitions. */
-.companion-window i { transition: none !important; }
-body.event-rain .companion-window i { background: linear-gradient(110deg,transparent 0 40%,rgba(210,239,255,.8) 41% 46%,transparent 47% 62%,rgba(210,239,255,.75) 63% 68%,transparent 69%),linear-gradient(180deg,#668da8 0 58%,#66835c 59%); }
-body.event-storm .companion-window i { background: linear-gradient(145deg,transparent 42%,#f4ea8b 43% 48%,transparent 49%),linear-gradient(180deg,#273545 0 58%,#39463d 59%); }
-body.event-toxic .companion-window i { background: radial-gradient(circle at 28% 35%,rgba(224,255,99,.8) 0 4px,transparent 5px),linear-gradient(180deg,#79a83e 0 58%,#5b8530 59%); }
-body.event-starfall .companion-window i { background: radial-gradient(circle at 25% 25%,#fff 0 1px,transparent 2px),radial-gradient(circle at 72% 38%,#ffe36b 0 2px,transparent 3px),linear-gradient(180deg,#111947 0 72%,#26335b 73%); }
-body.event-holy .companion-window i { background: radial-gradient(circle at 50% 26%,#fffbd5 0 8px,rgba(255,239,112,.8) 9px,transparent 18px),linear-gradient(180deg,#ffe990 0 60%,#8fc47c 61%); }
-body.event-hell .companion-window i { background: radial-gradient(circle at 50% 90%,#ff8b28 0 8px,transparent 20px),linear-gradient(180deg,#40151a 0 58%,#742b1e 59%); }
-body.event-candy .companion-window i { background: radial-gradient(circle at 28% 30%,#fff 0 5px,transparent 6px),radial-gradient(circle at 72% 48%,#ff5faa 0 5px,transparent 6px),linear-gradient(180deg,#ffbfe2 0 58%,#e995c7 59%); }
-body.event-bee .companion-window i { background: radial-gradient(ellipse at 60% 35%,#34220c 0 3px,#f5cc36 4px 7px,transparent 8px),linear-gradient(180deg,#ffe994 0 58%,#9ac46e 59%); }
-body.event-alien .companion-window i { background: radial-gradient(ellipse at 50% 35%,#a7fff1 0 6px,#35d8ba 7px 10px,transparent 11px),linear-gradient(180deg,#182f49 0 64%,#274f48 65%); }
+/* One continuous scene sits behind the window frame and mirrors the event. */
+.companion-window-scene { transition:none !important; }
+body.event-rain .companion-window-scene { background:repeating-linear-gradient(105deg,transparent 0 9px,rgba(211,239,255,.72) 10px 12px,transparent 13px 22px),radial-gradient(ellipse at 30% 25%,#d2dce0 0 18px,transparent 19px),linear-gradient(180deg,#718b9d 0 63%,#607a59 64%); }
+body.event-storm .companion-window-scene { background:linear-gradient(145deg,transparent 0 43%,#fff48c 44% 48%,transparent 49% 55%,#fff48c 56% 58%,transparent 59%),radial-gradient(ellipse at 35% 22%,#3f4c58 0 22px,transparent 23px),linear-gradient(180deg,#222d3a 0 64%,#35443b 65%); }
+body.event-toxic .companion-window-scene { background:radial-gradient(circle at 24% 28%,rgba(218,255,82,.75) 0 5px,transparent 6px),radial-gradient(circle at 72% 48%,rgba(113,255,77,.5) 0 7px,transparent 8px),linear-gradient(155deg,transparent 0 58%,#537c34 59% 72%,transparent 73%),linear-gradient(180deg,#7fa64a 0 63%,#5c8432 64%); }
+body.event-starfall .companion-window-scene { background:radial-gradient(circle at 18% 20%,#fff 0 1px,transparent 2px),radial-gradient(circle at 48% 34%,#ffe66d 0 2px,transparent 3px),radial-gradient(circle at 78% 17%,#fff 0 1px,transparent 2px),radial-gradient(ellipse at 68% 78%,#303d72 0 17px,transparent 18px),linear-gradient(180deg,#101744 0 68%,#202c55 69%); }
+body.event-holy .companion-window-scene { background:radial-gradient(circle at 68% 25%,#fff 0 8px,#ffe779 9px 14px,transparent 15px),linear-gradient(150deg,transparent 0 58%,#8ab873 59% 72%,transparent 73%),linear-gradient(180deg,#fff2a7 0 63%,#9bca7c 64%); }
+body.event-hell .companion-window-scene { background:radial-gradient(ellipse at 28% 100%,#ff8b25 0 11px,transparent 23px),radial-gradient(ellipse at 76% 96%,#db3c1c 0 9px,transparent 20px),linear-gradient(155deg,transparent 0 58%,#682820 59% 72%,transparent 73%),linear-gradient(180deg,#40161a 0 63%,#70261b 64%); }
+body.event-candy .companion-window-scene { background:radial-gradient(circle at 20% 25%,#fff 0 6px,transparent 7px),radial-gradient(circle at 72% 36%,#ff5eaa 0 5px,#fff 6px 7px,transparent 8px),repeating-linear-gradient(145deg,transparent 0 13px,rgba(255,255,255,.28) 14px 18px),linear-gradient(180deg,#ffc1e5 0 63%,#de8fc4 64%); }
+body.event-bee .companion-window-scene { background:radial-gradient(ellipse at 67% 30%,#33220d 0 3px,#f1c832 4px 8px,transparent 9px),radial-gradient(circle at 25% 42%,#fff5b8 0 5px,transparent 6px),linear-gradient(150deg,transparent 0 58%,#8eb85f 59% 72%,transparent 73%),linear-gradient(180deg,#ffe895 0 63%,#9bc36b 64%); }
+body.event-alien .companion-window-scene { background:radial-gradient(ellipse at 55% 28%,#b7fff4 0 6px,#3ed8bc 7px 12px,transparent 13px),radial-gradient(ellipse at 55% 36%,rgba(64,255,211,.3) 0 18px,transparent 19px),radial-gradient(circle at 18% 18%,#fff 0 1px,transparent 2px),linear-gradient(180deg,#172d48 0 66%,#295047 67%); }
 
 .companion-dirt-cloud {
     position: absolute;
@@ -10435,6 +10443,7 @@ body.event-alien .companion-window i { background: radial-gradient(ellipse at 50
 .active-status-chip.tone-xp { border-color: #245cb1; background: linear-gradient(180deg,#e9f6ff,#76b8f5); }
 
 @media (max-width: 560px) {
+    .companion-window { padding:0; }
     .companion-buff-row > .companion-skin-trigger { min-height: 54px; padding-left: 48px; }
     .companion-buff-row > .companion-skin-trigger > .companion-skin-outline { left: 10px; width: 28px; height: 23px; }
     .companion-skin-trigger b { font-size: 11px; }

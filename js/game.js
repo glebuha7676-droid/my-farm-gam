@@ -1657,12 +1657,34 @@ function init() {
 
     function applyCompanionDirt(root, clean) {
         const safeClean = Math.round(Math.max(0, Math.min(100, clean)));
-        const level = Math.max(0, (50 - safeClean) / 50);
+        const dirtSteps = safeClean < 50 ? Math.min(10, Math.floor((50 - safeClean) / 5) + 1) : 0;
+        const level = dirtSteps / 10;
         root.style.setProperty('--dirt-opacity', (level * 0.72).toFixed(2));
         root.style.setProperty('--dirt-scale', (0.55 + level * 0.7).toFixed(2));
-        [50, 40, 30, 20, 10].forEach((threshold, index) => {
+        [40, 35, 30, 20, 10].forEach((threshold, index) => {
             root.style.setProperty(`--fly-${index + 1}`, safeClean <= threshold ? '1' : '0');
         });
+    }
+
+    function createCompanionSplash(habitat, x, y) {
+        const splash = document.createElement('i');
+        splash.className = 'companion-water-splash';
+        splash.style.left = `${x}px`;
+        splash.style.top = `${y}px`;
+        habitat.appendChild(splash);
+        setTimeout(() => splash.remove(), 420);
+    }
+
+    function applyCompanionWashDrop() {
+        const now = Date.now();
+        const wasFullyClean = player.companion.clean >= 100;
+        const cleanGain = Math.random() < 0.65 ? 1 : 2;
+        player.companion.clean = Math.min(100, player.companion.clean + cleanGain);
+        if (!wasFullyClean && player.companion.clean >= 100) {
+            player.companion.cleanGraceUntil = now + 5000;
+            player.companion.cleanClock = 0;
+        }
+        renderCompanionVitals();
     }
 
     function renderCompanionVitals() {
@@ -1885,7 +1907,6 @@ function init() {
         drop.style.left = `${dropX}px`;
         drop.style.top = `${dropStartY}px`;
         habitat.appendChild(drop);
-        setTimeout(() => drop.remove(), 520);
         const habitatRect = habitat.getBoundingClientRect();
         const slimeRect = slime.getBoundingClientRect();
         const dropClientX = habitatRect.left + dropX;
@@ -1893,15 +1914,18 @@ function init() {
         const dropEndClientY = dropStartClientY + dropTravel;
         const crossesSlime = dropStartClientY <= slimeRect.bottom && dropEndClientY >= slimeRect.top;
         const hitsSlime = dropClientX >= slimeRect.left - 10 && dropClientX <= slimeRect.right + 10 && crossesSlime;
-        if (!hitsSlime) return;
-        const now = Date.now();
-        const wasFullyClean = player.companion.clean >= 100;
-        player.companion.clean = Math.min(100, player.companion.clean + 1);
-        if (!wasFullyClean && player.companion.clean >= 100) {
-            player.companion.cleanGraceUntil = now + 5000;
-            player.companion.cleanClock = 0;
+        if (!hitsSlime) {
+            setTimeout(() => drop.remove(), 540);
+            return;
         }
-        renderCompanionVitals();
+        const slimeTop = slimeRect.top - habitatRect.top;
+        const hitDistance = Math.max(0, slimeTop - dropStartY + 4);
+        const hitDelay = Math.max(50, Math.min(500, (hitDistance / dropTravel) * 520));
+        setTimeout(() => {
+            drop.remove();
+            createCompanionSplash(habitat, dropX, Math.max(dropStartY + 8, slimeTop + 5));
+            applyCompanionWashDrop();
+        }, hitDelay);
     }
 
     function companionPointerDown(event) {
