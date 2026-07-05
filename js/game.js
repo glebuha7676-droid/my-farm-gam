@@ -34,7 +34,7 @@
         }
     };
 
-    let env = { ticks: 0, currentEvent: 'day', eventTimer: 0, nextEventTimer: 75, potTimer: 0, potActive: false, activeNest: 0, activeEquip: 0, petPatCooldowns: {}, companionDrawer: '', companionShower: false, companionShowerTimer: null, companionPointerDown: false, companionPointer: null, openMenuSections: { showcase: false, diary: false, decor: false, rewards: false, admin: false }, backroomsLampTimer: null, backroomsLampEndTimer: null, shopTab: 'seeds' };
+    let env = { ticks: 0, currentEvent: 'day', eventTimer: 0, nextEventTimer: 75, potTimer: 0, potActive: false, activeNest: 0, activeEquip: 0, petPatCooldowns: {}, companionDrawer: '', companionShower: false, companionShowerTimer: null, companionPointerDown: false, companionPointer: null, companionPetting: false, companionPettingPointerId: null, companionPettingMoved: false, companionPettingStartX: 0, companionPettingStartY: 0, companionPettingStartedInside: false, companionTapCooldownUntil: 0, companionHeartLastAt: 0, openMenuSections: { showcase: false, diary: false, decor: false, rewards: false, admin: false }, backroomsLampTimer: null, backroomsLampEndTimer: null, shopTab: 'seeds' };
     let eventActions = []; 
     let tiles = Array(12).fill().map((_, i) => ({ id: i, active: false, plantId: null, growth: 0, water: 0, hasWeed: false, mutations: [], scale: 1, weight: 5, weightMult: 1, sizeTier: 'normal', beeLock: 0 }));
     let currentTool = 'water';
@@ -726,6 +726,7 @@ function init() {
         refreshTutorial();
         document.getElementById('seeds-window').addEventListener('scroll', updateCarouselArrows);
         document.getElementById('garden').addEventListener('pointerdown', handleGardenDecorTap);
+        bindPressFeedback();
         setInterval(gameTick, 1000);
         setInterval(realtimeUiTick, 250);
         setInterval(saveGame, 5000);
@@ -1062,7 +1063,7 @@ function init() {
         document.body.className = type === 'day' ? '' : `event-${type}`;
         const emitters = document.getElementById('bg-emitters'); emitters.innerHTML = '';
 
-        if (type === 'starfall') { showToast("Магия звезд!", "#a29bfe"); }
+        if (type === 'starfall') { showToast("Магия звезд!", "#a29bfe"); createBgParticles(['⭐'], 'bgFlyStar'); }
         else if (type === 'holy') { showToast("Солнечный луч!", "#f5f6fa"); }
         else if (type === 'hell') { showToast("Теплый вихрь!", "#e84118"); createBgParticles(['■'], 'bgFlyAsh'); }
         else if (type === 'candy') { showToast("Конфетный дождь!", "#ff9ff3"); createBgParticles(['🍬','🍭','🍩','🍪'], 'bgFlyCandy'); }
@@ -1762,6 +1763,7 @@ function init() {
         const stage = document.getElementById('companion-stage');
         stage.style.setProperty('--companion-growth', growth.toFixed(3));
         stage.className = `companion-stage mood-${mood}`;
+        stage.classList.toggle('is-petting', !!env.companionPetting);
         stage.innerHTML = slimeHTML(def || basicDef, { happy: mood === 'happy' }, 'featured');
         document.getElementById('companion-xp-label').textContent = pet.level >= 30 ? 'МАКС. УРОВЕНЬ' : `${Math.floor(pet.xp)} / ${need} XP`;
         document.getElementById('companion-xp-fill').style.width = `${pet.level >= 30 ? 100 : Math.min(100, pet.xp / need * 100)}%`;
@@ -1875,6 +1877,10 @@ function init() {
         if (player.companion.sleeping) return;
         env.companionShower = !env.companionShower;
         env.companionDrawer = '';
+        if (env.companionShower) {
+            cancelCompanionPetting(false);
+            env.companionPettingPointerId = null;
+        }
         stopCompanionShower();
         renderCompanion();
         if (env.companionShower) showToast('Зажмите лейку над слаймом', '#42bde9');
@@ -1957,6 +1963,9 @@ function init() {
     }
 
     function companionPointerLeave() {
+        if (env.companionPettingPointerId !== null) {
+            cancelCompanionPetting();
+        }
         if (!env.companionPointerDown) {
             const cursor = document.getElementById('companion-shower-cursor');
             if (cursor) cursor.classList.remove('visible');
@@ -1997,13 +2006,105 @@ function init() {
         saveGame();
     }
 
-    function petCompanion() {
-        if (player.companion.sleeping) return;
+    function companionStageContact(event) {
+        const slime = document.querySelector('#companion-stage .slime-pet');
+        if (!slime || player.companion.sleeping) return false;
+        const rect = slime.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        return x >= 0 && y >= 0 && x <= rect.width && y <= rect.height;
+    }
+
+    function startCompanionPettingSession(event, startedInside) {
+        env.companionPettingPointerId = event.pointerId;
+        env.companionPettingMoved = false;
+        env.companionPettingStartX = event.clientX;
+        env.companionPettingStartY = event.clientY;
+        env.companionPettingStartedInside = startedInside;
+    }
+
+    function stopCompanionPettingSession() {
+        env.companionPettingPointerId = null;
+        env.companionPettingMoved = false;
+        env.companionPettingStartX = 0;
+        env.companionPettingStartY = 0;
+        env.companionPettingStartedInside = false;
+        env.companionPetting = false;
+    }
+
+    function cancelCompanionPetting(render = true) {
+        const hadPetting = env.companionPetting || env.companionPettingPointerId !== null;
+        stopCompanionPettingSession();
+        if (hadPetting && render) renderCompanion();
+    }
+
+    function triggerCompanionTap() {
+        if (Date.now() < env.companionTapCooldownUntil) return;
         const stage = document.getElementById('companion-stage');
-        stage.classList.remove('is-petted');
-        void stage.offsetWidth;
-        stage.classList.add('is-petted');
+        if (!stage || player.companion.sleeping) return;
+        env.companionTapCooldownUntil = Date.now() + 1000;
         sfx.play('blop');
+        stage.classList.remove('is-tapped');
+        void stage.offsetWidth;
+        stage.classList.add('is-tapped');
+        setTimeout(() => {
+            if (stage) stage.classList.remove('is-tapped');
+            renderCompanion();
+        }, 1000);
+    }
+
+    function companionStagePointerDown(event) {
+        if (player.companion.sleeping) return;
+        if (env.companionShower) return;
+        event.preventDefault();
+        event.stopPropagation();
+        if (env.companionPettingPointerId !== null) return;
+        if (!companionStageContact(event)) return;
+        startCompanionPettingSession(event, true);
+        event.currentTarget.setPointerCapture?.(event.pointerId);
+        triggerCompanionTap();
+    }
+
+    function companionStagePointerMove(event) {
+        if (player.companion.sleeping || env.companionShower) return;
+        const target = event.currentTarget;
+        const inside = companionStageContact(event);
+        const pressed = event.buttons === 1 || event.pointerType === 'touch';
+        if (!pressed) return;
+        if (env.companionPettingPointerId === null && inside) {
+            startCompanionPettingSession(event, false);
+        }
+        if (env.companionPettingPointerId !== event.pointerId) return;
+        if (inside) {
+            const dx = event.clientX - env.companionPettingStartX;
+            const dy = event.clientY - env.companionPettingStartY;
+            const movedEnough = Math.hypot(dx, dy) >= 8;
+            if (!env.companionPetting && (!env.companionPettingStartedInside || movedEnough)) {
+                env.companionPetting = true;
+                env.companionPettingMoved = true;
+                renderCompanion();
+            }
+            if (!env.companionPetting) return;
+            const now = Date.now();
+            if (now - env.companionHeartLastAt >= 120) {
+                env.companionHeartLastAt = now;
+                sfx.play('pop');
+                const stageRect = target.getBoundingClientRect();
+                const heart = document.createElement('span');
+                heart.className = 'companion-heart';
+                heart.textContent = '♥';
+                heart.style.left = `${Math.max(12, Math.min(stageRect.width - 12, event.clientX - stageRect.left))}px`;
+                heart.style.top = `${Math.max(12, Math.min(stageRect.height - 16, event.clientY - stageRect.top))}px`;
+                target.appendChild(heart);
+                setTimeout(() => heart.remove(), 1100);
+            }
+        }
+    }
+
+    function companionStagePointerUp(event) {
+        if (env.companionShower) return;
+        if (env.companionPettingPointerId !== event.pointerId) return;
+        cancelCompanionPetting(env.companionPetting);
     }
 
     function renderShowcase() {
@@ -3190,10 +3291,62 @@ function init() {
             ${Array.isArray(view.lootItems) && view.lootItems.length && !view.compact ? `<div class="reward-pop-loot-row">${view.lootItems.map(rewardLootItemHTML).join('')}</div>` : ''}
             <div class="reward-pop-hint">Нажмите на экран</div>
         `;
-        overlay.onclick = () => overlay.classList.remove('active');
+        overlay.onclick = (event) => {
+            if (event.target === overlay) overlay.classList.remove('active');
+        };
         overlay.classList.remove('active');
         void overlay.offsetWidth;
         overlay.classList.add('active');
+    }
+
+    const pressableSelector = [
+        'button',
+        '.action-btn',
+        '.seed-packet',
+        '.shop-seed-card',
+        '.nav-arrow',
+        '.menu-fold-btn',
+        '.menu-exit-btn',
+        '.btn-icon',
+        '.btn-shop-large',
+        '.pot-btn',
+        '.shop-tab',
+        '.companion-action',
+        '.companion-name',
+        '.companion-stage',
+        '.companion-skin-trigger',
+        '.companion-feed-list > button',
+        '.companion-skin-list > button',
+        '.decor-buy',
+        '.sell-btn',
+        '.egg-buy',
+        '.daily-reward-card',
+        '.timed-reward-card',
+        '.reward-mini-card',
+        '.showcase-actions button',
+        '.showcase-slime',
+        '.tutorial-action',
+        '.pet-card-actions button'
+    ].join(',');
+
+    function bindPressFeedback() {
+        let activePress = null;
+        const clearPress = () => {
+            if (activePress) activePress.classList.remove('ui-press');
+            activePress = null;
+        };
+        document.addEventListener('pointerdown', (event) => {
+            const target = event.target.closest(pressableSelector);
+            if (!target || target.disabled || target.classList.contains('disabled')) return;
+            clearPress();
+            activePress = target;
+            target.classList.add('ui-press');
+        }, { passive: true });
+        document.addEventListener('pointerup', clearPress, { passive: true });
+        document.addEventListener('pointercancel', clearPress, { passive: true });
+        document.addEventListener('pointerleave', clearPress, { passive: true });
+        document.addEventListener('click', clearPress, { passive: true });
+        window.addEventListener('blur', clearPress, { passive: true });
     }
 
     function petBuffText(def, level = 1) {
