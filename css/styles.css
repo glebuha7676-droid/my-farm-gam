@@ -9557,24 +9557,23 @@
     font-size: 1.35em;
 }
 
-.slime-pet.decor-spark .slime-mouth,
-.slime-pet.decor-wave .slime-mouth {
-    width: 28% !important;
-    height: 14% !important;
-    top: 63% !important;
-    border: 0 !important;
-    border-bottom: 0.15em solid #271509 !important;
-    border-radius: 0 0 999px 999px !important;
-    background: transparent !important;
-}
-
-.slime-pet.decor-spark .slime-mouth::before,
-.slime-pet.decor-wave .slime-mouth::before {
-    inset: -24% 0 0 !important;
-    font-size: 1.08em !important;
-}
-
 /* Companion mood faces: unique eyes stay intact while the mouth follows mood. */
+.face-relaxed .slime-eye {
+    top:24%;
+    width:20%;
+    height:10%;
+    border-radius:999px;
+    transform:rotate(5deg);
+}
+.face-relaxed .slime-eye.right { transform:rotate(-5deg); }
+.face-relaxed .slime-mouth {
+    top:64%;
+    width:30%;
+    height:16%;
+    border-bottom-width:.14em;
+    transform:translateX(-50%) rotate(-3deg);
+}
+
 .companion-stage.mood-happy:not(.is-tapped):not(.is-petting) .face-cute .slime-eye {
     width:21%;
     height:28%;
@@ -9619,34 +9618,56 @@
 }
 .companion-stage.mood-happy:not(.is-tapped):not(.is-petting) :is(.decor-coin,.decor-star,.decor-ufo) .slime-mouth { width: 44% !important; height: 27% !important; }
 
-.companion-stage.mood-happy .decor-star .slime-decor::after {
-    content: '';
-    display: block !important;
-    position: absolute;
-    z-index: -1;
-    left: 4%;
-    top: -16%;
-    width: 92%;
-    height: 92%;
-    opacity: .34;
-    background: #fff59a;
-    clip-path: polygon(50% 0,61% 35%,98% 35%,68% 57%,80% 96%,50% 72%,20% 96%,32% 57%,2% 35%,39% 35%);
-    filter: blur(2px) drop-shadow(0 0 10px #fff06a);
-    animation: companionStarAura 1.8s ease-in-out infinite !important;
+.companion-stage .slime-pet { z-index:2; }
+.companion-mood-aura {
+    position:absolute;
+    z-index:1;
+    left:50%;
+    bottom:20px;
+    width:128px;
+    height:128px;
+    border-radius:50%;
+    opacity:0;
+    transform:translateX(-50%) scale(.86);
+    pointer-events:none;
 }
-@keyframes companionStarAura { 50% { opacity:.58; transform:scale(1.08) rotate(3deg); } }
+.companion-stage.skin-stargum.mood-happy .companion-mood-aura {
+    opacity:.72;
+    background:
+        radial-gradient(circle at 28% 26%,rgba(255,255,255,.9) 0 2px,transparent 3px),
+        radial-gradient(circle at 77% 33%,rgba(255,245,142,.9) 0 2px,transparent 3px),
+        radial-gradient(circle at 68% 78%,rgba(225,214,255,.85) 0 1.5px,transparent 3px),
+        radial-gradient(circle,rgba(255,239,112,.42),rgba(160,138,255,.3) 46%,transparent 72%);
+    box-shadow:0 0 20px rgba(255,235,109,.38),0 0 35px rgba(137,112,255,.28);
+    animation:companionStarAura 1.8s ease-in-out infinite;
+}
+@keyframes companionStarAura { 50% { opacity:.92; transform:translateX(-50%) scale(1.04); } }
 
-.companion-stage.mood-happy .decor-coin .slime-decor::after {
-    content: '';
-    display: block !important;
-    position: absolute;
-    inset: -12% -8%;
-    border-radius: 50%;
-    background: linear-gradient(115deg,transparent 25%,rgba(255,255,255,.85) 45%,transparent 62%);
-    filter: drop-shadow(0 0 7px #ffd43b);
-    animation: companionCoinSheen 1.7s ease-in-out infinite !important;
+.companion-flying-coin {
+    position:absolute;
+    z-index:18;
+    width:18px;
+    height:18px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border:2px solid #a96b08;
+    border-radius:50%;
+    background:linear-gradient(145deg,#fff49b,#f6c62f 58%,#d8970d);
+    color:#8b5700;
+    font-size:11px;
+    font-weight:1000;
+    line-height:1;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.72),0 2px 5px rgba(83,48,0,.26);
+    pointer-events:none;
+    animation:companionCoinArc 1.2s cubic-bezier(.22,.62,.35,1) forwards;
 }
-@keyframes companionCoinSheen { 0%,25% { opacity:0; transform:translateX(-28%) rotate(8deg); } 55% { opacity:.9; } 85%,100% { opacity:0; transform:translateX(30%) rotate(8deg); } }
+@keyframes companionCoinArc {
+    0% { opacity:0; transform:translate(-50%,-50%) scale(.55) rotate(0deg); }
+    14% { opacity:1; }
+    48% { opacity:1; transform:translate(calc(-50% + var(--coin-mid-x)),var(--coin-peak)) scale(1.05) rotate(var(--coin-mid-rotate)); }
+    100% { opacity:0; transform:translate(calc(-50% + var(--coin-x)),30px) scale(.82) rotate(var(--coin-rotate)); }
+}
 
 .companion-stage.mood-sad .decor-moon .slime-decor::before { animation:none !important; opacity:.2 !important; filter:brightness(.35) !important; }
 .companion-stage.mood-neutral .decor-moon .slime-decor::before { animation:moonGlowPulse 2.2s ease-in-out infinite !important; }

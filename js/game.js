@@ -34,7 +34,7 @@
         }
     };
 
-    let env = { ticks: 0, currentEvent: 'day', eventTimer: 0, nextEventTimer: 75, potTimer: 0, potActive: false, activeNest: 0, activeEquip: 0, petPatCooldowns: {}, companionDrawer: '', companionShower: false, companionShowerTimer: null, companionPointerDown: false, companionPointer: null, companionPointerId: null, companionPointerStartedInZone: false, companionPointerStartX: 0, companionPointerStartY: 0, companionPointerLastX: 0, companionPointerLastY: 0, companionPointerStartedAt: 0, companionPetting: false, companionHoldTimer: null, companionTapTimer: null, companionHeartTimer: null, companionHeartLastSoundAt: 0, companionSpecial: '', companionSpecialTimer: null, companionSpecialEndTimer: null, companionSpecialAnchorX: 0, companionSpecialAnchorY: 0, openMenuSections: { showcase: false, diary: false, decor: false, rewards: false, admin: false }, backroomsLampTimer: null, backroomsLampEndTimer: null, shopTab: 'seeds' };
+    let env = { ticks: 0, currentEvent: 'day', eventTimer: 0, nextEventTimer: 75, potTimer: 0, potActive: false, activeNest: 0, activeEquip: 0, petPatCooldowns: {}, companionDrawer: '', companionShower: false, companionShowerTimer: null, companionPointerDown: false, companionPointer: null, companionPointerId: null, companionPointerStartedInZone: false, companionPointerStartX: 0, companionPointerStartY: 0, companionPointerLastX: 0, companionPointerLastY: 0, companionPointerStartedAt: 0, companionPetting: false, companionHoldTimer: null, companionTapTimer: null, companionHeartTimer: null, companionHeartLastSoundAt: 0, companionSpecial: '', companionSpecialTimer: null, companionSpecialEndTimer: null, companionSpecialAnchorX: 0, companionSpecialAnchorY: 0, companionCoinBurstAt: 0, openMenuSections: { showcase: false, diary: false, decor: false, rewards: false, admin: false }, backroomsLampTimer: null, backroomsLampEndTimer: null, shopTab: 'seeds' };
     let eventActions = []; 
     let tiles = Array(12).fill().map((_, i) => ({ id: i, active: false, plantId: null, growth: 0, water: 0, hasWeed: false, mutations: [], scale: 1, weight: 5, weightMult: 1, sizeTier: 'normal', beeLock: 0 }));
     let currentTool = 'water';
@@ -1407,6 +1407,7 @@ function init() {
     function realtimeUiTick() {
         updateCompanionState();
         if (document.getElementById('side-menu')?.classList.contains('open')) renderCompanionVitals();
+        updateCompanionCoinEffect();
         updateStateIndicator();
         renderActiveStatusStrip();
     }
@@ -1651,7 +1652,7 @@ function init() {
         return 'happy';
     }
 
-    const COMPANION_FACE_CLASSES = ['happy', 'smile', 'cute', 'excited', 'angry', 'surprise', 'goofy', 'sleepy', 'blank', 'proud', 'star', 'mystic', 'sad', 'mischief', 'coin'];
+    const COMPANION_FACE_CLASSES = ['happy', 'smile', 'cute', 'excited', 'angry', 'surprise', 'goofy', 'sleepy', 'blank', 'proud', 'star', 'mystic', 'sad', 'mischief', 'coin', 'relaxed'];
 
     function companionFaceForMood(def, mood) {
         if (mood === 'sleeping') return 'sleepy';
@@ -1662,8 +1663,7 @@ function init() {
             sproutslime: { joyful: 'mischief' },
             coinblob: { sad: 'coin', neutral: 'coin', joyful: 'coin', happy: 'coin' },
             moonmelt: { neutral: 'sleepy' },
-            sparkjelly: { happy: 'excited' },
-            wavegum: { neutral: 'surprise' },
+            wavegum: { joyful: 'relaxed', happy: 'relaxed' },
             nectar: { happy: 'cute' },
             phantooze: { sad: 'blank', neutral: 'blank', joyful: 'blank', happy: 'blank' },
             sunpudding: { joyful: 'proud' },
@@ -1680,6 +1680,53 @@ function init() {
         if (!slime) return;
         COMPANION_FACE_CLASSES.forEach(face => slime.classList.remove(`face-${face}`));
         slime.classList.add(`face-${companionFaceForMood(def, mood)}`);
+    }
+
+    function emitCompanionCoinBurst() {
+        const stage = document.getElementById('companion-stage');
+        const slime = stage?.querySelector('.slime-pet');
+        if (!stage || !slime) return;
+        const stageRect = stage.getBoundingClientRect();
+        const slimeRect = slime.getBoundingClientRect();
+        const originX = slimeRect.left + slimeRect.width / 2 - stageRect.left;
+        const originY = slimeRect.top + slimeRect.height * .42 - stageRect.top;
+        const count = 2 + Math.floor(Math.random() * 2);
+        for (let index = 0; index < count; index++) {
+            setTimeout(() => {
+                if (player.companion.skin !== 'coinblob' || companionMood() !== 'happy') return;
+                const coin = document.createElement('span');
+                const travelX = Math.round((Math.random() < .5 ? -1 : 1) * (34 + Math.random() * 48));
+                coin.className = 'companion-flying-coin';
+                coin.textContent = '$';
+                coin.style.left = `${originX}px`;
+                coin.style.top = `${originY}px`;
+                coin.style.setProperty('--coin-x', `${travelX}px`);
+                coin.style.setProperty('--coin-mid-x', `${Math.round(travelX * .42)}px`);
+                coin.style.setProperty('--coin-peak', `${Math.round(-52 - Math.random() * 42)}px`);
+                const rotation = Math.round((Math.random() < .5 ? -1 : 1) * (190 + Math.random() * 220));
+                coin.style.setProperty('--coin-mid-rotate', `${Math.round(rotation * .45)}deg`);
+                coin.style.setProperty('--coin-rotate', `${rotation}deg`);
+                stage.appendChild(coin);
+                sfx.play('coinSoft');
+                setTimeout(() => coin.remove(), 1250);
+            }, index * 130);
+        }
+    }
+
+    function updateCompanionCoinEffect() {
+        const menuOpen = document.getElementById('side-menu')?.classList.contains('open');
+        if (!menuOpen || player.companion.skin !== 'coinblob' || companionMood() !== 'happy' || player.companion.sleeping) {
+            env.companionCoinBurstAt = 0;
+            return;
+        }
+        const now = Date.now();
+        if (!env.companionCoinBurstAt) {
+            env.companionCoinBurstAt = now + 8000 + Math.random() * 6000;
+            return;
+        }
+        if (now < env.companionCoinBurstAt) return;
+        env.companionCoinBurstAt = now + 8000 + Math.random() * 6000;
+        emitCompanionCoinBurst();
     }
 
     function syncCompanionSpecialClasses() {
@@ -1854,11 +1901,11 @@ function init() {
         document.getElementById('companion-level').textContent = pet.level;
         const stage = document.getElementById('companion-stage');
         stage.style.setProperty('--companion-growth', growth.toFixed(3));
-        stage.className = `companion-stage mood-${mood}`;
+        stage.className = `companion-stage skin-${def?.id || 'basic'} mood-${mood}`;
         stage.classList.toggle('is-tapped', !!env.companionTapTimer);
         stage.classList.toggle('is-petting', !!env.companionPetting);
         if ((env.companionPointerId === null && !env.companionTapTimer) || !stage.querySelector('.slime-pet')) {
-            stage.innerHTML = slimeHTML(renderedDef, {}, 'featured');
+            stage.innerHTML = `<span class="companion-mood-aura" aria-hidden="true"></span>${slimeHTML(renderedDef, {}, 'featured')}`;
         }
         applyCompanionFace(stage, def || basicDef, mood);
         syncCompanionSpecialClasses();
@@ -2786,6 +2833,7 @@ function init() {
             companionHeartTimer: null, companionHeartLastSoundAt: 0,
             companionSpecial: '', companionSpecialTimer: null, companionSpecialEndTimer: null,
             companionSpecialAnchorX: 0, companionSpecialAnchorY: 0,
+            companionCoinBurstAt: 0,
             openMenuSections: { showcase: false, diary: false, decor: false, rewards: false, admin: false },
             backroomsLampTimer: null, backroomsLampEndTimer: null, shopTab: 'seeds'
         };
