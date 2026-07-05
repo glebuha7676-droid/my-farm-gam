@@ -34,7 +34,7 @@
         }
     };
 
-    let env = { ticks: 0, currentEvent: 'day', eventTimer: 0, nextEventTimer: 75, potTimer: 0, potActive: false, activeNest: 0, activeEquip: 0, petPatCooldowns: {}, companionDrawer: '', companionShower: false, companionShowerTimer: null, companionPointerDown: false, companionPointer: null, companionPetting: false, companionPettingPointerId: null, companionPettingMoved: false, companionPettingStartX: 0, companionPettingStartY: 0, companionPettingStartedInside: false, companionPettingStartedAt: 0, companionTapCooldownUntil: 0, companionTapAnimTimer: null, companionHeartLastAt: 0, openMenuSections: { showcase: false, diary: false, decor: false, rewards: false, admin: false }, backroomsLampTimer: null, backroomsLampEndTimer: null, shopTab: 'seeds' };
+    let env = { ticks: 0, currentEvent: 'day', eventTimer: 0, nextEventTimer: 75, potTimer: 0, potActive: false, activeNest: 0, activeEquip: 0, petPatCooldowns: {}, companionDrawer: '', companionShower: false, companionShowerTimer: null, companionPointerDown: false, companionPointer: null, companionInteraction: 'idle', companionInteractionPointerId: null, companionInteractionStartedOnSlime: false, companionInteractionStartX: 0, companionInteractionStartY: 0, companionInteractionLastX: 0, companionInteractionLastY: 0, companionHoldTimer: null, companionTapTimer: null, companionHeartTimer: null, companionHeartLastSoundAt: 0, openMenuSections: { showcase: false, diary: false, decor: false, rewards: false, admin: false }, backroomsLampTimer: null, backroomsLampEndTimer: null, shopTab: 'seeds' };
     let eventActions = []; 
     let tiles = Array(12).fill().map((_, i) => ({ id: i, active: false, plantId: null, growth: 0, water: 0, hasWeed: false, mutations: [], scale: 1, weight: 5, weightMult: 1, sizeTier: 'normal', beeLock: 0 }));
     let currentTool = 'water';
@@ -1764,8 +1764,11 @@ function init() {
         const stage = document.getElementById('companion-stage');
         stage.style.setProperty('--companion-growth', growth.toFixed(3));
         stage.className = `companion-stage mood-${mood}`;
-        stage.classList.toggle('is-petting', !!env.companionPetting);
-        stage.innerHTML = slimeHTML(def || basicDef, { happy: mood === 'happy' }, 'featured');
+        stage.classList.toggle('is-tapped', env.companionInteraction === 'tap');
+        stage.classList.toggle('is-petting', env.companionInteraction === 'petting');
+        if (env.companionInteraction === 'idle' || !stage.querySelector('.slime-pet')) {
+            stage.innerHTML = slimeHTML(def || basicDef, { happy: mood === 'happy' }, 'featured');
+        }
         document.getElementById('companion-xp-label').textContent = pet.level >= 30 ? 'МАКС. УРОВЕНЬ' : `${Math.floor(pet.xp)} / ${need} XP`;
         document.getElementById('companion-xp-fill').style.width = `${pet.level >= 30 ? 100 : Math.min(100, pet.xp / need * 100)}%`;
         document.getElementById('companion-skin-name').textContent = def ? (def.shortName || def.name) : 'Базовый';
@@ -1878,10 +1881,7 @@ function init() {
         if (player.companion.sleeping) return;
         env.companionShower = !env.companionShower;
         env.companionDrawer = '';
-        if (env.companionShower) {
-            cancelCompanionPetting(false);
-            env.companionPettingPointerId = null;
-        }
+        stopCompanionInteraction();
         stopCompanionShower();
         renderCompanion();
         if (env.companionShower) showToast('Зажмите лейку над слаймом', '#42bde9');
@@ -1936,7 +1936,11 @@ function init() {
     }
 
     function companionPointerDown(event) {
-        if (!env.companionShower || player.companion.sleeping) return;
+        if (player.companion.sleeping || event.isPrimary === false || (event.pointerType === 'mouse' && event.button !== 0)) return;
+        if (!env.companionShower) {
+            beginCompanionInteraction(event);
+            return;
+        }
         event.preventDefault();
         event.stopPropagation();
         updateCompanionPointer(event);
@@ -1948,7 +1952,10 @@ function init() {
     }
 
     function companionPointerMove(event) {
-        if (!env.companionShower) return;
+        if (!env.companionShower) {
+            moveCompanionInteraction(event);
+            return;
+        }
         if (env.companionPointerDown) {
             event.preventDefault();
             event.stopPropagation();
@@ -1957,15 +1964,27 @@ function init() {
     }
 
     function companionPointerUp(event) {
-        if (!env.companionShower) return;
+        if (!env.companionShower) {
+            endCompanionInteraction(event);
+            return;
+        }
         event.preventDefault();
         stopCompanionShower();
         saveGame();
     }
 
-    function companionPointerLeave() {
-        if (env.companionPettingPointerId !== null) {
-            cancelCompanionPetting();
+    function companionPointerCancel(event) {
+        if (env.companionShower) {
+            stopCompanionShower();
+            return;
+        }
+        if (env.companionInteractionPointerId === event.pointerId) stopCompanionInteraction();
+    }
+
+    function companionPointerLeave(event) {
+        if (!env.companionShower && env.companionInteractionPointerId === event.pointerId) {
+            stopCompanionInteraction();
+            return;
         }
         if (!env.companionPointerDown) {
             const cursor = document.getElementById('companion-shower-cursor');
@@ -1976,6 +1995,7 @@ function init() {
     function toggleCompanionSleep() {
         updateCompanionState();
         env.companionShower = false;
+        stopCompanionInteraction();
         stopCompanionShower();
         player.companion.sleeping = !player.companion.sleeping;
         player.companion.energyClock = 0;
@@ -2007,124 +2027,133 @@ function init() {
         saveGame();
     }
 
-    function companionStageContact(event) {
+    function companionSlimeContact(clientX, clientY) {
         const slime = document.querySelector('#companion-stage .slime-pet');
         if (!slime || player.companion.sleeping) return false;
         const rect = slime.getBoundingClientRect();
-        const x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
-        return x >= 0 && y >= 0 && x <= rect.width && y <= rect.height;
+        return clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom;
     }
 
-    function startCompanionPettingSession(event, startedInside) {
-        env.companionPettingPointerId = event.pointerId;
-        env.companionPettingMoved = false;
-        env.companionPettingStartX = event.clientX;
-        env.companionPettingStartY = event.clientY;
-        env.companionPettingStartedInside = startedInside;
-        env.companionPettingStartedAt = Date.now();
+    function companionHabitatContact(clientX, clientY) {
+        const habitat = document.getElementById('companion-habitat');
+        if (!habitat) return false;
+        const rect = habitat.getBoundingClientRect();
+        return clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom;
     }
 
-    function stopCompanionPettingSession() {
-        env.companionPettingPointerId = null;
-        env.companionPettingMoved = false;
-        env.companionPettingStartX = 0;
-        env.companionPettingStartY = 0;
-        env.companionPettingStartedInside = false;
-        env.companionPettingStartedAt = 0;
-        env.companionPetting = false;
+    function setCompanionInteraction(next) {
+        env.companionInteraction = next;
+        const stage = document.getElementById('companion-stage');
+        if (!stage) return;
+        stage.classList.toggle('is-tapped', next === 'tap');
+        stage.classList.toggle('is-petting', next === 'petting');
     }
 
-    function cancelCompanionPetting(render = true) {
-        const hadPetting = env.companionPetting || env.companionPettingPointerId !== null;
-        stopCompanionPettingSession();
-        if (hadPetting && render) renderCompanion();
+    function stopCompanionInteraction(keepTap = false) {
+        if (env.companionHoldTimer) clearTimeout(env.companionHoldTimer);
+        if (env.companionHeartTimer) clearInterval(env.companionHeartTimer);
+        env.companionHoldTimer = null;
+        env.companionHeartTimer = null;
+        env.companionInteractionPointerId = null;
+        env.companionInteractionStartedOnSlime = false;
+        env.companionInteractionStartX = 0;
+        env.companionInteractionStartY = 0;
+        env.companionInteractionLastX = 0;
+        env.companionInteractionLastY = 0;
+        if (!keepTap && env.companionInteraction !== 'tap') setCompanionInteraction('idle');
     }
 
     function triggerCompanionTap() {
-        if (Date.now() < env.companionTapCooldownUntil) return;
         const stage = document.getElementById('companion-stage');
-        if (!stage || player.companion.sleeping) return;
-        env.companionTapCooldownUntil = Date.now() + 1000;
-        if (env.companionTapAnimTimer) clearTimeout(env.companionTapAnimTimer);
+        if (!stage || player.companion.sleeping || env.companionInteraction !== 'pending') return;
+        stopCompanionInteraction(true);
+        setCompanionInteraction('tap');
         sfx.play('blop');
-        stage.classList.remove('is-tapped');
-        void stage.offsetWidth;
-        stage.classList.add('is-tapped');
-        env.companionTapAnimTimer = setTimeout(() => {
-            if (stage) stage.classList.remove('is-tapped');
-            env.companionTapAnimTimer = null;
+        if (env.companionTapTimer) clearTimeout(env.companionTapTimer);
+        env.companionTapTimer = setTimeout(() => {
+            env.companionTapTimer = null;
+            setCompanionInteraction('idle');
             renderCompanion();
         }, 1000);
     }
 
-    function companionStagePointerDown(event) {
-        if (player.companion.sleeping) return;
-        if (env.companionShower) return;
-        if (!companionStageContact(event)) return;
+    function emitCompanionHeart() {
+        if (env.companionInteraction !== 'petting') return;
+        const x = env.companionInteractionLastX;
+        const y = env.companionInteractionLastY;
+        if (!companionSlimeContact(x, y)) return;
+        const stage = document.getElementById('companion-stage');
+        if (!stage) return;
+        const rect = stage.getBoundingClientRect();
+        const heart = document.createElement('span');
+        heart.className = 'companion-heart';
+        heart.textContent = '♥';
+        heart.style.left = `${Math.max(12, Math.min(rect.width - 12, x - rect.left))}px`;
+        heart.style.top = `${Math.max(12, Math.min(rect.height - 16, y - rect.top))}px`;
+        stage.appendChild(heart);
+        setTimeout(() => heart.remove(), 1100);
+        const now = Date.now();
+        if (now - env.companionHeartLastSoundAt >= 300) {
+            env.companionHeartLastSoundAt = now;
+            sfx.play('pop');
+        }
+    }
+
+    function startCompanionPetting() {
+        if (env.companionInteraction !== 'pending') return;
+        if (env.companionHoldTimer) clearTimeout(env.companionHoldTimer);
+        env.companionHoldTimer = null;
+        setCompanionInteraction('petting');
+        emitCompanionHeart();
+        env.companionHeartTimer = setInterval(emitCompanionHeart, 150);
+    }
+
+    function beginCompanionInteraction(event) {
+        if (env.companionInteraction !== 'idle') return;
         event.preventDefault();
         event.stopPropagation();
-        startCompanionPettingSession(event, true);
+        const startedOnSlime = companionSlimeContact(event.clientX, event.clientY);
+        env.companionInteractionPointerId = event.pointerId;
+        env.companionInteractionStartedOnSlime = startedOnSlime;
+        env.companionInteractionStartX = event.clientX;
+        env.companionInteractionStartY = event.clientY;
+        env.companionInteractionLastX = event.clientX;
+        env.companionInteractionLastY = event.clientY;
+        setCompanionInteraction('pending');
         event.currentTarget.setPointerCapture?.(event.pointerId);
+        if (startedOnSlime) {
+            env.companionHoldTimer = setTimeout(() => {
+                if (env.companionInteraction === 'pending' && companionSlimeContact(env.companionInteractionLastX, env.companionInteractionLastY)) {
+                    startCompanionPetting();
+                }
+            }, 220);
+        }
     }
 
-    function companionStagePointerMove(event) {
-        if (player.companion.sleeping || env.companionShower) return;
-        const target = event.currentTarget;
-        const inside = companionStageContact(event);
-        const pressed = event.buttons === 1 || event.pointerType === 'touch';
-        if (!pressed) return;
-        if (env.companionPettingPointerId === null && inside) {
-            startCompanionPettingSession(event, false);
-            env.companionPetting = true;
-            env.companionPettingMoved = true;
-            renderCompanion();
-        }
-        if (env.companionPettingPointerId !== event.pointerId) return;
-        if (!inside) {
-            if (env.companionPetting) cancelCompanionPetting();
+    function moveCompanionInteraction(event) {
+        if (env.companionInteractionPointerId !== event.pointerId) return;
+        event.preventDefault();
+        env.companionInteractionLastX = event.clientX;
+        env.companionInteractionLastY = event.clientY;
+        if (!companionHabitatContact(event.clientX, event.clientY)) {
+            stopCompanionInteraction();
             return;
         }
-        if (inside) {
-            const dx = event.clientX - env.companionPettingStartX;
-            const dy = event.clientY - env.companionPettingStartY;
-            const holdMs = Date.now() - env.companionPettingStartedAt;
-            const movedEnough = Math.hypot(dx, dy) >= 12;
-            const canStartPetting = !env.companionPettingStartedInside || movedEnough || holdMs >= 160;
-            if (!env.companionPetting && canStartPetting) {
-                env.companionPetting = true;
-                env.companionPettingMoved = true;
-                renderCompanion();
-            }
-            if (!env.companionPetting) return;
-            const now = Date.now();
-            if (now - env.companionHeartLastAt >= 120) {
-                env.companionHeartLastAt = now;
-                sfx.play('pop');
-                const stageRect = target.getBoundingClientRect();
-                const heart = document.createElement('span');
-                heart.className = 'companion-heart';
-                heart.textContent = '♥';
-                heart.style.left = `${Math.max(12, Math.min(stageRect.width - 12, event.clientX - stageRect.left))}px`;
-                heart.style.top = `${Math.max(12, Math.min(stageRect.height - 16, event.clientY - stageRect.top))}px`;
-                target.appendChild(heart);
-                setTimeout(() => heart.remove(), 1100);
-            }
+        if (env.companionInteraction !== 'pending') return;
+        const distance = Math.hypot(event.clientX - env.companionInteractionStartX, event.clientY - env.companionInteractionStartY);
+        if (companionSlimeContact(event.clientX, event.clientY) && (!env.companionInteractionStartedOnSlime || distance >= 10)) {
+            startCompanionPetting();
         }
     }
 
-    function companionStagePointerUp(event) {
-        if (env.companionShower) return;
-        if (env.companionPettingPointerId !== event.pointerId) return;
-        const shouldTap = !env.companionPetting && env.companionPettingStartedInside && companionStageContact(event);
-        cancelCompanionPetting(env.companionPetting);
-        if (shouldTap) triggerCompanionTap();
-    }
-
-    function companionStagePointerLeave(event) {
-        if (env.companionShower) return;
-        if (env.companionPettingPointerId !== event.pointerId) return;
-        cancelCompanionPetting();
+    function endCompanionInteraction(event) {
+        if (env.companionInteractionPointerId !== event.pointerId) return;
+        event.preventDefault();
+        const isTap = env.companionInteraction === 'pending'
+            && env.companionInteractionStartedOnSlime
+            && companionSlimeContact(event.clientX, event.clientY);
+        if (isTap) triggerCompanionTap();
+        else stopCompanionInteraction();
     }
 
     function renderShowcase() {
@@ -2626,6 +2655,10 @@ function init() {
             activeNest: 0, activeEquip: 0, petPatCooldowns: {},
             companionDrawer: '',
             companionShower: false, companionShowerTimer: null, companionPointerDown: false, companionPointer: null,
+            companionInteraction: 'idle', companionInteractionPointerId: null, companionInteractionStartedOnSlime: false,
+            companionInteractionStartX: 0, companionInteractionStartY: 0,
+            companionInteractionLastX: 0, companionInteractionLastY: 0,
+            companionHoldTimer: null, companionTapTimer: null, companionHeartTimer: null, companionHeartLastSoundAt: 0,
             openMenuSections: { showcase: false, diary: false, decor: false, rewards: false, admin: false },
             backroomsLampTimer: null, backroomsLampEndTimer: null, shopTab: 'seeds'
         };

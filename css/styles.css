@@ -55,10 +55,8 @@
     overflow:visible; touch-action:none;
 }
 .companion-stage .slime-pet { transform:scale(calc(var(--companion-growth) * 1.42)); transform-origin:50% 100%; filter:drop-shadow(0 9px 4px rgba(64,39,21,.24)); animation:companionIdle 2.6s ease-in-out infinite; }
-.companion-stage .slime-pet:active { animation:none !important; }
-.companion-stage.is-petted .slime-pet { animation:companionPet .48s ease-out; }
+.companion-stage .slime-pet:active { animation:companionIdle 2.6s ease-in-out infinite !important; }
 @keyframes companionIdle { 0%,100%{transform:scale(calc(var(--companion-growth) * 1.42)) translateY(0)} 50%{transform:scale(calc(var(--companion-growth) * 1.45),calc(var(--companion-growth) * 1.39)) translateY(-3px)} }
-@keyframes companionPet { 0%,100%{transform:scale(calc(var(--companion-growth) * 1.42))} 45%{transform:scale(calc(var(--companion-growth) * 1.58),calc(var(--companion-growth) * 1.23))} }
 .companion-stage.mood-hungry .slime-mouth,
 .companion-stage.mood-tired .slime-mouth,
 .companion-stage.mood-dirty .slime-mouth { border-top:3px solid #2d1b15 !important; border-bottom:0 !important; border-radius:50% 50% 0 0 !important; top:15px !important; }
