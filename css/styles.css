@@ -9660,13 +9660,15 @@
     line-height:1;
     box-shadow:inset 0 1px 0 rgba(255,255,255,.72),0 2px 5px rgba(83,48,0,.26);
     pointer-events:none;
-    animation:companionCoinArc 1.45s cubic-bezier(.22,.62,.35,1) forwards;
+    animation:companionCoinArc 1.15s linear forwards;
 }
 @keyframes companionCoinArc {
-    0% { opacity:0; transform:translate(-50%,-50%) scale(.55) rotate(0deg); }
-    10% { opacity:1; }
-    52% { opacity:1; transform:translate(calc(-50% + var(--coin-mid-x)),var(--coin-peak)) scale(1.08) rotate(var(--coin-mid-rotate)); }
-    100% { opacity:0; transform:translate(calc(-50% + var(--coin-x)),42px) scale(.78) rotate(var(--coin-rotate)); }
+    0% { opacity:0; transform:translate(-50%,-50%) scale(.62) rotate(0deg); animation-timing-function:cubic-bezier(.12,.72,.2,1); }
+    8% { opacity:1; }
+    26% { opacity:1; transform:translate(calc(-50% + var(--coin-quarter-x)),var(--coin-peak)) scale(1.06) rotate(var(--coin-mid-rotate)); animation-timing-function:cubic-bezier(.32,.02,.78,.3); }
+    50% { opacity:1; transform:translate(calc(-50% + var(--coin-half-x)),var(--coin-shoulder)) scale(1) rotate(var(--coin-mid-rotate)); animation-timing-function:cubic-bezier(.35,.08,.82,.38); }
+    74% { opacity:1; transform:translate(calc(-50% + var(--coin-three-quarter-x)),-12px) scale(.9) rotate(var(--coin-rotate)); animation-timing-function:ease-in; }
+    100% { opacity:0; transform:translate(calc(-50% + var(--coin-x)),68px) scale(.72) rotate(var(--coin-rotate)); }
 }
 
 .decor-coin .slime-decor::before {

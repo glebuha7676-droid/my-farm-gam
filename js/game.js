@@ -1700,14 +1700,18 @@ function init() {
                 if (player.companion.skin !== 'coinblob' || companionMood() !== 'happy') return;
                 const coin = document.createElement('span');
                 const direction = directions[index];
-                const travelX = Math.round(direction * (48 + Math.random() * 58));
+                const travelX = Math.round(direction * (32 + Math.random() * 36));
+                const peakY = Math.round(-82 - Math.random() * 42);
                 coin.className = 'companion-flying-coin';
                 coin.textContent = '$';
                 coin.style.left = `${originX}px`;
                 coin.style.top = `${originY}px`;
                 coin.style.setProperty('--coin-x', `${travelX}px`);
-                coin.style.setProperty('--coin-mid-x', `${Math.round(travelX * .42)}px`);
-                coin.style.setProperty('--coin-peak', `${Math.round(-78 - Math.random() * 50)}px`);
+                coin.style.setProperty('--coin-quarter-x', `${Math.round(travelX * .24)}px`);
+                coin.style.setProperty('--coin-half-x', `${Math.round(travelX * .5)}px`);
+                coin.style.setProperty('--coin-three-quarter-x', `${Math.round(travelX * .76)}px`);
+                coin.style.setProperty('--coin-peak', `${peakY}px`);
+                coin.style.setProperty('--coin-shoulder', `${Math.round(peakY * .72)}px`);
                 const rotation = Math.round((Math.random() < .5 ? -1 : 1) * (190 + Math.random() * 220));
                 coin.style.setProperty('--coin-mid-rotate', `${Math.round(rotation * .45)}deg`);
                 coin.style.setProperty('--coin-rotate', `${rotation}deg`);
@@ -1716,10 +1720,10 @@ function init() {
                 const coinsLabel = document.getElementById('ui-coins');
                 if (coinsLabel) coinsLabel.textContent = player.coins;
                 sfx.play('coinSoft');
-                setTimeout(() => coin.remove(), 1500);
-            }, index * 180);
+                setTimeout(() => coin.remove(), 1250);
+            }, index * 360);
         }
-        setTimeout(saveGame, count * 180 + 120);
+        setTimeout(saveGame, count * 360 + 120);
     }
 
     function updateCompanionCoinEffect() {
