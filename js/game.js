@@ -703,9 +703,10 @@
         const mutations = crop.mutations || [];
         const mutClasses = mutations.map(mId => `mut-${mId}`).join(' ');
         const primary = mutations[0] ? `primary-${mutations[0]}` : '';
+        const glowHtml = mutations.length ? '<span class="showcase-glow"></span>' : '';
         return `
             <div class="showcase-crop-art showcase-plant-preview tile occupied ready crop-${crop.sizeTier || 'normal'} ${mutClasses} ${primary}" style="--plant-scale:${scale}; --crop-color:${p.color};">
-                <span class="showcase-glow"></span>
+                ${glowHtml}
                 ${cropMutationAuraHTML(mutations)}
                 ${cropBadgesHTML(mutations)}
                 <div class="plant-wrapper">
@@ -2056,13 +2057,11 @@ function init() {
     function companionStagePointerDown(event) {
         if (player.companion.sleeping) return;
         if (env.companionShower) return;
+        if (!companionStageContact(event)) return;
         event.preventDefault();
         event.stopPropagation();
-        if (env.companionPettingPointerId !== null) return;
-        if (!companionStageContact(event)) return;
         startCompanionPettingSession(event, true);
         event.currentTarget.setPointerCapture?.(event.pointerId);
-        triggerCompanionTap();
     }
 
     function companionStagePointerMove(event) {
@@ -2073,8 +2072,15 @@ function init() {
         if (!pressed) return;
         if (env.companionPettingPointerId === null && inside) {
             startCompanionPettingSession(event, false);
+            env.companionPetting = true;
+            env.companionPettingMoved = true;
+            renderCompanion();
         }
         if (env.companionPettingPointerId !== event.pointerId) return;
+        if (!inside) {
+            if (env.companionPetting) cancelCompanionPetting();
+            return;
+        }
         if (inside) {
             const dx = event.clientX - env.companionPettingStartX;
             const dy = event.clientY - env.companionPettingStartY;
@@ -2104,7 +2110,15 @@ function init() {
     function companionStagePointerUp(event) {
         if (env.companionShower) return;
         if (env.companionPettingPointerId !== event.pointerId) return;
+        const shouldTap = !env.companionPetting && env.companionPettingStartedInside && companionStageContact(event);
         cancelCompanionPetting(env.companionPetting);
+        if (shouldTap) triggerCompanionTap();
+    }
+
+    function companionStagePointerLeave(event) {
+        if (env.companionShower) return;
+        if (env.companionPettingPointerId !== event.pointerId) return;
+        cancelCompanionPetting();
     }
 
     function renderShowcase() {

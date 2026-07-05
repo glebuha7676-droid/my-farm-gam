@@ -52,7 +52,7 @@
 .companion-stage {
     --companion-growth:.45; position:absolute; z-index:4; left:50%; bottom:23px; width:220px; height:200px; padding:0;
     transform:translateX(-50%); border:0; background:transparent; display:flex; align-items:flex-end; justify-content:center;
-    overflow:visible; touch-action:manipulation;
+    overflow:visible; touch-action:none;
 }
 .companion-stage .slime-pet { transform:scale(calc(var(--companion-growth) * 1.42)); transform-origin:50% 100%; filter:drop-shadow(0 9px 4px rgba(64,39,21,.24)); animation:companionIdle 2.6s ease-in-out infinite; }
 .companion-stage.is-petted .slime-pet { animation:companionPet .48s ease-out; }
@@ -112,6 +112,7 @@
 .companion-feed-list,.companion-skin-list { display:grid; grid-template-columns:1fr 1fr; gap:6px; max-height:188px; overflow-y:auto; overscroll-behavior:contain; }
 .companion-feed-list>button,.companion-skin-list>button { min-width:0; min-height:55px; display:grid; grid-template-columns:38px 1fr; align-items:center; gap:6px; padding:6px; border:2px solid #dbc099; border-radius:8px; background:#fff; color:#56351d; font-family:inherit; text-align:left; }
 .companion-feed-list .seed-icon-art { transform:scale(.68); transform-origin:center; }
+.companion-feed-card .showcase-glow { display:none; }
 .companion-feed-list span,.companion-skin-list span { min-width:0; display:flex; flex-direction:column; }
 .companion-feed-list b,.companion-skin-list b { overflow:hidden; font-size:10px; white-space:nowrap; text-overflow:ellipsis; }
 .companion-feed-list small,.companion-skin-list small { margin-top:3px; color:#806447; font-size:8px; line-height:1.1; font-weight:800; }
@@ -9496,11 +9497,28 @@
             height: 32%;
         }
 
-        .slime-pet.is-happy .slime-mouth::before {
-            font-size: 1.35em;
-        }
+.slime-pet.is-happy .slime-mouth::before {
+    font-size: 1.35em;
+}
 
-        .pet-heart {
+.slime-pet.decor-spark .slime-mouth,
+.slime-pet.decor-wave .slime-mouth {
+    width: 28% !important;
+    height: 14% !important;
+    top: 63% !important;
+    border: 0 !important;
+    border-bottom: 0.15em solid #271509 !important;
+    border-radius: 0 0 999px 999px !important;
+    background: transparent !important;
+}
+
+.slime-pet.decor-spark .slime-mouth::before,
+.slime-pet.decor-wave .slime-mouth::before {
+    inset: -24% 0 0 !important;
+    font-size: 1.08em !important;
+}
+
+.pet-heart {
             top: -2%;
             font-size: 28px;
             z-index: 20;
