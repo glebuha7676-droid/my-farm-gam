@@ -32,7 +32,7 @@
     position:relative; height:272px; overflow:hidden; border:3px solid #7c4d28; border-radius:8px;
     background:linear-gradient(180deg,#bfe6d0 0 68%,#8bb07c 68% 70%,#d3a96e 70% 100%);
     box-shadow:inset 0 0 0 3px rgba(255,255,255,.28), inset 0 -18px 24px rgba(89,49,18,.14);
-    transition:filter .25s ease, background .25s ease;
+    transition:filter .25s ease, background .25s ease; touch-action:none;
 }
 .companion-habitat::before {
     content:""; position:absolute; inset:0; pointer-events:none; opacity:.46;
@@ -8968,11 +8968,11 @@
         }
 
         .companion-stage.is-tapped .slime-pet {
-            animation: companionTapPulse 1s cubic-bezier(.18,.85,.22,1) both;
+            animation: companionTapPulse .36s cubic-bezier(.2,.9,.28,1) both !important;
         }
 
         .companion-stage.is-petting .slime-pet {
-            animation: companionPetWobble 0.42s ease-in-out infinite;
+            animation: companionPetWobble .34s ease-in-out infinite !important;
             filter: drop-shadow(0 9px 4px rgba(64,39,21,.24));
         }
 
@@ -8984,28 +8984,28 @@
             font-weight: 1000;
             text-shadow: 0 1px 0 rgba(255,255,255,.65), 0 0 10px rgba(255,111,168,.35);
             pointer-events: none;
-            animation: companionHeartFloat 1.05s ease-out forwards;
+            animation: companionHeartFloat .9s cubic-bezier(.18,.72,.3,1) forwards;
         }
 
         @keyframes companionTapPulse {
             0% { transform: scale(calc(var(--companion-growth) * 1.42)); }
-            18% { transform: scale(calc(var(--companion-growth) * 1.86), calc(var(--companion-growth) * 1.12)); }
-            36% { transform: scale(calc(var(--companion-growth) * 1.56), calc(var(--companion-growth) * 1.34)); }
-            58% { transform: scale(calc(var(--companion-growth) * 1.72), calc(var(--companion-growth) * 1.2)); }
+            28% { transform: scale(calc(var(--companion-growth) * 1.62), calc(var(--companion-growth) * 1.25)) translateY(2px); }
+            55% { transform: scale(calc(var(--companion-growth) * 1.31), calc(var(--companion-growth) * 1.55)) translateY(-3px); }
+            78% { transform: scale(calc(var(--companion-growth) * 1.48), calc(var(--companion-growth) * 1.37)); }
             100% { transform: scale(calc(var(--companion-growth) * 1.42)); }
         }
 
         @keyframes companionPetWobble {
             0%, 100% { transform: scale(calc(var(--companion-growth) * 1.42)) translate(0, 0); }
-            25% { transform: scale(calc(var(--companion-growth) * 1.44), calc(var(--companion-growth) * 1.39)) translate(0, -1px); }
-            50% { transform: scale(calc(var(--companion-growth) * 1.41), calc(var(--companion-growth) * 1.45)) translate(0, 1px); }
-            75% { transform: scale(calc(var(--companion-growth) * 1.44), calc(var(--companion-growth) * 1.39)) translate(0, -1px); }
+            25% { transform: scale(calc(var(--companion-growth) * 1.49), calc(var(--companion-growth) * 1.36)) translate(-3px, -1px) rotate(-1.5deg); }
+            50% { transform: scale(calc(var(--companion-growth) * 1.38), calc(var(--companion-growth) * 1.49)) translate(0, 1px); }
+            75% { transform: scale(calc(var(--companion-growth) * 1.49), calc(var(--companion-growth) * 1.36)) translate(3px, -1px) rotate(1.5deg); }
         }
 
         @keyframes companionHeartFloat {
-            0% { opacity: 0; transform: translate(-50%, 4px) scale(.6); }
+            0% { opacity: 0; transform: translate(-50%, 5px) scale(.45) rotate(0deg); }
             18% { opacity: 1; }
-            100% { opacity: 0; transform: translate(-50%, -58px) scale(1.2); }
+            100% { opacity: 0; transform: translate(calc(-50% + var(--heart-x)), var(--heart-y)) scale(var(--heart-scale)) rotate(var(--heart-rotate)); }
         }
 
         .slime-pet::after {

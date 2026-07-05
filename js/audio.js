@@ -1,9 +1,21 @@
 ﻿const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const activeSfx = new Map();
     const sfx = {
-        play: (type) => {
+        play: (type, restartKey = '') => {
             if (audioCtx.state === 'suspended') audioCtx.resume();
+            if (restartKey && activeSfx.has(restartKey)) {
+                const previous = activeSfx.get(restartKey);
+                try { previous.stop(); } catch (_) {}
+                activeSfx.delete(restartKey);
+            }
             const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
             osc.connect(gain); gain.connect(audioCtx.destination); const now = audioCtx.currentTime;
+            if (restartKey) {
+                activeSfx.set(restartKey, osc);
+                osc.addEventListener('ended', () => {
+                    if (activeSfx.get(restartKey) === osc) activeSfx.delete(restartKey);
+                }, { once: true });
+            }
             
             if (type === 'pop') { osc.type = 'sine'; osc.frequency.setValueAtTime(400, now); osc.frequency.exponentialRampToValueAtTime(600, now+0.1); gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.01, now+0.1); osc.start(now); osc.stop(now+0.1); }
             else if (type === 'coin') { osc.type = 'sine'; osc.frequency.setValueAtTime(1200, now); osc.frequency.setValueAtTime(1600, now+0.05); gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.01, now+0.2); osc.start(now); osc.stop(now+0.2); }
