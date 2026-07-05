@@ -34,7 +34,7 @@
         }
     };
 
-    let env = { ticks: 0, currentEvent: 'day', eventTimer: 0, nextEventTimer: 75, potTimer: 0, potActive: false, activeNest: 0, activeEquip: 0, petPatCooldowns: {}, companionDrawer: '', companionShower: false, companionShowerTimer: null, companionPointerDown: false, companionPointer: null, companionPointerId: null, companionPointerStartedInZone: false, companionPointerStartX: 0, companionPointerStartY: 0, companionPointerLastX: 0, companionPointerLastY: 0, companionPointerStartedAt: 0, companionPetting: false, companionHoldTimer: null, companionTapTimer: null, companionHeartTimer: null, companionHeartLastSoundAt: 0, openMenuSections: { showcase: false, diary: false, decor: false, rewards: false, admin: false }, backroomsLampTimer: null, backroomsLampEndTimer: null, shopTab: 'seeds' };
+    let env = { ticks: 0, currentEvent: 'day', eventTimer: 0, nextEventTimer: 75, potTimer: 0, potActive: false, activeNest: 0, activeEquip: 0, petPatCooldowns: {}, companionDrawer: '', companionShower: false, companionShowerTimer: null, companionPointerDown: false, companionPointer: null, companionPointerId: null, companionPointerStartedInZone: false, companionPointerStartX: 0, companionPointerStartY: 0, companionPointerLastX: 0, companionPointerLastY: 0, companionPointerStartedAt: 0, companionPetting: false, companionHoldTimer: null, companionTapTimer: null, companionHeartTimer: null, companionHeartLastSoundAt: 0, companionSpecial: '', companionSpecialTimer: null, companionSpecialEndTimer: null, openMenuSections: { showcase: false, diary: false, decor: false, rewards: false, admin: false }, backroomsLampTimer: null, backroomsLampEndTimer: null, shopTab: 'seeds' };
     let eventActions = []; 
     let tiles = Array(12).fill().map((_, i) => ({ id: i, active: false, plantId: null, growth: 0, water: 0, hasWeed: false, mutations: [], scale: 1, weight: 5, weightMult: 1, sizeTier: 'normal', beeLock: 0 }));
     let currentTool = 'water';
@@ -731,6 +731,7 @@ function init() {
         setInterval(gameTick, 1000);
         setInterval(realtimeUiTick, 250);
         setInterval(saveGame, 5000);
+        scheduleCompanionSpecial();
     }
 
     function handleGardenDecorTap(event) {
@@ -1636,13 +1637,89 @@ function init() {
         return player.companion.skin === 'basic' ? null : PET_DEFS[player.companion.skin];
     }
 
-    function companionMood() {
+    function companionMoodScore() {
         const pet = player.companion;
-        if (pet.sleeping) return 'sleeping';
-        if (pet.hunger < 25) return 'hungry';
-        if (pet.energy < 25) return 'tired';
-        if (pet.clean < 25) return 'dirty';
+        return Math.round(Math.max(0, Math.min(100, pet.hunger * 0.35 + pet.clean * 0.35 + pet.energy * 0.30)));
+    }
+
+    function companionMood() {
+        if (player.companion.sleeping) return 'sleeping';
+        const score = companionMoodScore();
+        if (score < 25) return 'sad';
+        if (score < 50) return 'neutral';
+        if (score < 75) return 'joyful';
         return 'happy';
+    }
+
+    const COMPANION_FACE_CLASSES = ['happy', 'smile', 'cute', 'excited', 'angry', 'surprise', 'goofy', 'sleepy', 'blank', 'proud', 'star', 'mystic', 'sad', 'mischief', 'coin'];
+
+    function companionFaceForMood(def, mood) {
+        if (mood === 'sleeping') return 'sleepy';
+        const id = def?.id || 'basic';
+        const generic = { sad: 'sad', neutral: 'blank', joyful: 'happy', happy: 'cute' };
+        const unique = {
+            dewdrop: { sad: 'sad', neutral: 'sad', joyful: 'blank', happy: 'happy' },
+            sproutslime: { joyful: 'mischief' },
+            coinblob: { sad: 'coin', neutral: 'coin', joyful: 'coin', happy: 'coin' },
+            moonmelt: { neutral: 'sleepy' },
+            sparkjelly: { happy: 'excited' },
+            wavegum: { neutral: 'surprise' },
+            nectar: { happy: 'cute' },
+            phantooze: { sad: 'blank', neutral: 'blank', joyful: 'blank', happy: 'blank' },
+            sunpudding: { joyful: 'proud' },
+            embergoo: { sad: 'angry' },
+            stargum: { sad: 'star', neutral: 'star', joyful: 'star', happy: 'star' },
+            voidpuddle: { sad: 'mystic', neutral: 'mystic', joyful: 'mystic', happy: 'mystic' }
+        };
+        if (id === 'voidpuddle' && env.companionSpecial === 'levitating') return 'surprise';
+        return unique[id]?.[mood] || generic[mood] || def?.face || 'happy';
+    }
+
+    function applyCompanionFace(stage, def, mood) {
+        const slime = stage?.querySelector('.slime-pet');
+        if (!slime) return;
+        COMPANION_FACE_CLASSES.forEach(face => slime.classList.remove(`face-${face}`));
+        slime.classList.add(`face-${companionFaceForMood(def, mood)}`);
+    }
+
+    function syncCompanionSpecialClasses() {
+        const stage = document.getElementById('companion-stage');
+        if (!stage) return;
+        ['materialized', 'levitating', 'landing', 'sun-glow'].forEach(name => stage.classList.toggle(`special-${name}`, env.companionSpecial === name));
+        applyCompanionFace(stage, companionSkinDef(), companionMood());
+    }
+
+    function clearCompanionSpecial(scheduleNext = true) {
+        if (env.companionSpecialEndTimer) clearTimeout(env.companionSpecialEndTimer);
+        env.companionSpecialEndTimer = null;
+        env.companionSpecial = '';
+        syncCompanionSpecialClasses();
+        if (scheduleNext) scheduleCompanionSpecial();
+    }
+
+    function startCompanionSpecial(type) {
+        env.companionSpecial = type;
+        syncCompanionSpecialClasses();
+        if (type === 'levitating') {
+            env.companionSpecialEndTimer = setTimeout(() => {
+                env.companionSpecial = 'landing';
+                syncCompanionSpecialClasses();
+                env.companionSpecialEndTimer = setTimeout(() => clearCompanionSpecial(), 2000);
+            }, 5000);
+            return;
+        }
+        env.companionSpecialEndTimer = setTimeout(() => clearCompanionSpecial(), 5000);
+    }
+
+    function scheduleCompanionSpecial() {
+        if (env.companionSpecialTimer) clearTimeout(env.companionSpecialTimer);
+        env.companionSpecialTimer = setTimeout(() => {
+            env.companionSpecialTimer = null;
+            const id = player.companion.skin;
+            const special = id === 'phantooze' ? 'materialized' : (id === 'voidpuddle' ? 'levitating' : (id === 'sunpudding' ? 'sun-glow' : ''));
+            if (special && !player.companion.sleeping && !env.companionPetting && Math.random() < 0.55) startCompanionSpecial(special);
+            else scheduleCompanionSpecial();
+        }, 25000 + Math.random() * 10000);
     }
 
     function companionBuffText() {
@@ -1713,8 +1790,9 @@ function init() {
         const mood = companionMood();
         const stage = document.getElementById('companion-stage');
         if (stage) {
-            ['happy', 'hungry', 'tired', 'dirty', 'sleeping'].forEach(name => stage.classList.remove(`mood-${name}`));
+            ['sad', 'neutral', 'joyful', 'happy', 'sleeping'].forEach(name => stage.classList.remove(`mood-${name}`));
             stage.classList.add(`mood-${mood}`);
+            applyCompanionFace(stage, companionSkinDef(), mood);
         }
         root.classList.toggle('is-sleeping', pet.sleeping);
         root.classList.toggle('is-dirty', pet.clean < 35);
@@ -1747,8 +1825,9 @@ function init() {
         updateCompanionState();
         const pet = player.companion;
         const def = companionSkinDef();
-        const basicDef = { rarity: 'common', face: 'happy', slime: { body: '#72db68', shade: '#35a84c', blush: '#ffc1cf', decor: 'none' } };
+        const basicDef = { id: 'basic', rarity: 'common', face: 'happy', slime: { body: '#72db68', shade: '#35a84c', blush: '#ffc1cf', decor: 'none' } };
         const mood = companionMood();
+        const renderedDef = { ...(def || basicDef), face: companionFaceForMood(def || basicDef, mood) };
         const growth = 0.45 + ((pet.level - 1) / 29) * 1.05;
         const need = companionXpNeed();
         root.classList.toggle('is-sleeping', pet.sleeping);
@@ -1767,8 +1846,10 @@ function init() {
         stage.classList.toggle('is-tapped', !!env.companionTapTimer);
         stage.classList.toggle('is-petting', !!env.companionPetting);
         if ((env.companionPointerId === null && !env.companionTapTimer) || !stage.querySelector('.slime-pet')) {
-            stage.innerHTML = slimeHTML(def || basicDef, { happy: mood === 'happy' }, 'featured');
+            stage.innerHTML = slimeHTML(renderedDef, {}, 'featured');
         }
+        applyCompanionFace(stage, def || basicDef, mood);
+        syncCompanionSpecialClasses();
         document.getElementById('companion-xp-label').textContent = pet.level >= 30 ? 'МАКС. УРОВЕНЬ' : `${Math.floor(pet.xp)} / ${need} XP`;
         document.getElementById('companion-xp-fill').style.width = `${pet.level >= 30 ? 100 : Math.min(100, pet.xp / need * 100)}%`;
         document.getElementById('companion-skin-name').textContent = def ? (def.shortName || def.name) : 'Базовый';
@@ -1995,6 +2076,7 @@ function init() {
     function toggleCompanionSleep() {
         updateCompanionState();
         env.companionShower = false;
+        clearCompanionSpecial();
         stopCompanionInteraction();
         stopCompanionShower();
         player.companion.sleeping = !player.companion.sleeping;
@@ -2020,22 +2102,22 @@ function init() {
 
     function selectCompanionSkin(id) {
         if (id !== 'basic' && !PET_DEFS[id]) return;
+        clearCompanionSpecial(false);
         player.companion.skin = id;
         env.companionDrawer = '';
         sfx.play('pop');
         renderCompanion();
+        scheduleCompanionSpecial();
         saveGame();
     }
 
     function companionInteractionZone() {
-        const slime = document.querySelector('#companion-stage .slime-pet');
         const habitat = document.getElementById('companion-habitat');
-        if (!slime || !habitat || player.companion.sleeping) return null;
-        const rect = slime.getBoundingClientRect();
+        if (!habitat || player.companion.sleeping) return null;
         const room = habitat.getBoundingClientRect();
         const size = Math.min(160, room.width - 16, room.height - 16);
-        const centerX = Math.max(room.left + size / 2 + 8, Math.min(room.right - size / 2 - 8, rect.left + rect.width / 2));
-        const centerY = Math.max(room.top + size / 2 + 8, Math.min(room.bottom - size / 2 - 8, rect.top + rect.height / 2));
+        const centerX = room.left + room.width / 2;
+        const centerY = room.top + room.height / 2;
         return { left: centerX - size / 2, right: centerX + size / 2, top: centerY - size / 2, bottom: centerY + size / 2 };
     }
 
@@ -2075,6 +2157,7 @@ function init() {
     function triggerCompanionTap() {
         const stage = document.getElementById('companion-stage');
         if (!stage || player.companion.sleeping) return;
+        if (player.companion.skin === 'voidpuddle' && env.companionSpecial) clearCompanionSpecial();
         setCompanionPetting(false);
         stage.classList.remove('is-tapped');
         void stage.offsetWidth;
@@ -2639,6 +2722,8 @@ function init() {
     }
 
     function resetProgress() {
+        if (env.companionSpecialTimer) clearTimeout(env.companionSpecialTimer);
+        if (env.companionSpecialEndTimer) clearTimeout(env.companionSpecialEndTimer);
         player = {
             coins: BALANCE.startCoins || 50, lvl: 1, xp: 0, xpNeed: BALANCE.xpNeedStart || 100,
             rares: {}, unlockedMutations: [],
@@ -2677,6 +2762,7 @@ function init() {
             companionPointerLastX: 0, companionPointerLastY: 0, companionPointerStartedAt: 0,
             companionPetting: false, companionHoldTimer: null, companionTapTimer: null,
             companionHeartTimer: null, companionHeartLastSoundAt: 0,
+            companionSpecial: '', companionSpecialTimer: null, companionSpecialEndTimer: null,
             openMenuSections: { showcase: false, diary: false, decor: false, rewards: false, admin: false },
             backroomsLampTimer: null, backroomsLampEndTimer: null, shopTab: 'seeds'
         };
@@ -2694,6 +2780,7 @@ function init() {
         generateQuestsIfNeeded();
         updateUI();
         refreshTutorial();
+        scheduleCompanionSpecial();
         saveGame();
         showToast('Прогресс сброшен', '#f1c40f');
     }
