@@ -55,12 +55,35 @@
     overflow:visible; touch-action:none;
 }
 .companion-stage .slime-pet { transform:scale(calc(var(--companion-growth) * 1.42)); transform-origin:50% 100%; filter:drop-shadow(0 9px 4px rgba(64,39,21,.24)); animation:companionIdle 2.6s ease-in-out infinite; }
+.companion-stage .slime-pet:active { animation:none !important; }
 .companion-stage.is-petted .slime-pet { animation:companionPet .48s ease-out; }
 @keyframes companionIdle { 0%,100%{transform:scale(calc(var(--companion-growth) * 1.42)) translateY(0)} 50%{transform:scale(calc(var(--companion-growth) * 1.45),calc(var(--companion-growth) * 1.39)) translateY(-3px)} }
 @keyframes companionPet { 0%,100%{transform:scale(calc(var(--companion-growth) * 1.42))} 45%{transform:scale(calc(var(--companion-growth) * 1.58),calc(var(--companion-growth) * 1.23))} }
 .companion-stage.mood-hungry .slime-mouth,
 .companion-stage.mood-tired .slime-mouth,
 .companion-stage.mood-dirty .slime-mouth { border-top:3px solid #2d1b15 !important; border-bottom:0 !important; border-radius:50% 50% 0 0 !important; top:15px !important; }
+.companion-stage.mood-hungry .decor-spark .slime-eye,
+.companion-stage.mood-hungry .decor-wave .slime-eye,
+.companion-stage.mood-tired .decor-spark .slime-eye,
+.companion-stage.mood-tired .decor-wave .slime-eye,
+.companion-stage.mood-dirty .decor-spark .slime-eye,
+.companion-stage.mood-dirty .decor-wave .slime-eye {
+    height: 14% !important;
+    top: 25% !important;
+    border-radius: 999px !important;
+}
+.companion-stage.mood-hungry .decor-spark .slime-eye.left,
+.companion-stage.mood-hungry .decor-wave .slime-eye.left,
+.companion-stage.mood-tired .decor-spark .slime-eye.left,
+.companion-stage.mood-tired .decor-wave .slime-eye.left,
+.companion-stage.mood-dirty .decor-spark .slime-eye.left,
+.companion-stage.mood-dirty .decor-wave .slime-eye.left { transform: rotate(-12deg) !important; }
+.companion-stage.mood-hungry .decor-spark .slime-eye.right,
+.companion-stage.mood-hungry .decor-wave .slime-eye.right,
+.companion-stage.mood-tired .decor-spark .slime-eye.right,
+.companion-stage.mood-tired .decor-wave .slime-eye.right,
+.companion-stage.mood-dirty .decor-spark .slime-eye.right,
+.companion-stage.mood-dirty .decor-wave .slime-eye.right { transform: rotate(12deg) !important; }
 .companion-stage.mood-sleeping .slime-eye { height:3px !important; border-radius:99px !important; }
 .companion-stage.mood-sleeping .slime-mouth { animation:companionSnoreMouth 1.8s ease-in-out infinite; }
 .companion-sleep-note { display:none; position:absolute; z-index:7; left:50%; top:16px; transform:translateX(-50%); width:max-content; padding:6px 10px; border-radius:999px; background:#41365f; color:#f4eeff; font-size:10px; font-weight:900; }

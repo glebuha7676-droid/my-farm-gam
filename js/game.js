@@ -34,7 +34,7 @@
         }
     };
 
-    let env = { ticks: 0, currentEvent: 'day', eventTimer: 0, nextEventTimer: 75, potTimer: 0, potActive: false, activeNest: 0, activeEquip: 0, petPatCooldowns: {}, companionDrawer: '', companionShower: false, companionShowerTimer: null, companionPointerDown: false, companionPointer: null, companionPetting: false, companionPettingPointerId: null, companionPettingMoved: false, companionPettingStartX: 0, companionPettingStartY: 0, companionPettingStartedInside: false, companionTapCooldownUntil: 0, companionHeartLastAt: 0, openMenuSections: { showcase: false, diary: false, decor: false, rewards: false, admin: false }, backroomsLampTimer: null, backroomsLampEndTimer: null, shopTab: 'seeds' };
+    let env = { ticks: 0, currentEvent: 'day', eventTimer: 0, nextEventTimer: 75, potTimer: 0, potActive: false, activeNest: 0, activeEquip: 0, petPatCooldowns: {}, companionDrawer: '', companionShower: false, companionShowerTimer: null, companionPointerDown: false, companionPointer: null, companionPetting: false, companionPettingPointerId: null, companionPettingMoved: false, companionPettingStartX: 0, companionPettingStartY: 0, companionPettingStartedInside: false, companionPettingStartedAt: 0, companionTapCooldownUntil: 0, companionTapAnimTimer: null, companionHeartLastAt: 0, openMenuSections: { showcase: false, diary: false, decor: false, rewards: false, admin: false }, backroomsLampTimer: null, backroomsLampEndTimer: null, shopTab: 'seeds' };
     let eventActions = []; 
     let tiles = Array(12).fill().map((_, i) => ({ id: i, active: false, plantId: null, growth: 0, water: 0, hasWeed: false, mutations: [], scale: 1, weight: 5, weightMult: 1, sizeTier: 'normal', beeLock: 0 }));
     let currentTool = 'water';
@@ -2022,6 +2022,7 @@ function init() {
         env.companionPettingStartX = event.clientX;
         env.companionPettingStartY = event.clientY;
         env.companionPettingStartedInside = startedInside;
+        env.companionPettingStartedAt = Date.now();
     }
 
     function stopCompanionPettingSession() {
@@ -2030,6 +2031,7 @@ function init() {
         env.companionPettingStartX = 0;
         env.companionPettingStartY = 0;
         env.companionPettingStartedInside = false;
+        env.companionPettingStartedAt = 0;
         env.companionPetting = false;
     }
 
@@ -2044,12 +2046,14 @@ function init() {
         const stage = document.getElementById('companion-stage');
         if (!stage || player.companion.sleeping) return;
         env.companionTapCooldownUntil = Date.now() + 1000;
+        if (env.companionTapAnimTimer) clearTimeout(env.companionTapAnimTimer);
         sfx.play('blop');
         stage.classList.remove('is-tapped');
         void stage.offsetWidth;
         stage.classList.add('is-tapped');
-        setTimeout(() => {
+        env.companionTapAnimTimer = setTimeout(() => {
             if (stage) stage.classList.remove('is-tapped');
+            env.companionTapAnimTimer = null;
             renderCompanion();
         }, 1000);
     }
@@ -2084,8 +2088,10 @@ function init() {
         if (inside) {
             const dx = event.clientX - env.companionPettingStartX;
             const dy = event.clientY - env.companionPettingStartY;
-            const movedEnough = Math.hypot(dx, dy) >= 8;
-            if (!env.companionPetting && (!env.companionPettingStartedInside || movedEnough)) {
+            const holdMs = Date.now() - env.companionPettingStartedAt;
+            const movedEnough = Math.hypot(dx, dy) >= 12;
+            const canStartPetting = !env.companionPettingStartedInside || movedEnough || holdMs >= 160;
+            if (!env.companionPetting && canStartPetting) {
                 env.companionPetting = true;
                 env.companionPettingMoved = true;
                 renderCompanion();
@@ -3352,6 +3358,7 @@ function init() {
         document.addEventListener('pointerdown', (event) => {
             const target = event.target.closest(pressableSelector);
             if (!target || target.disabled || target.classList.contains('disabled')) return;
+            if (target.id === 'companion-stage') return;
             clearPress();
             activePress = target;
             target.classList.add('ui-press');
