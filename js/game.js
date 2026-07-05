@@ -34,7 +34,7 @@
         }
     };
 
-    let env = { ticks: 0, currentEvent: 'day', eventTimer: 0, nextEventTimer: 75, potTimer: 0, potActive: false, activeNest: 0, activeEquip: 0, petPatCooldowns: {}, companionDrawer: '', companionShower: false, companionShowerTimer: null, companionPointerDown: false, companionPointer: null, companionPointerId: null, companionPointerStartedInZone: false, companionPointerStartX: 0, companionPointerStartY: 0, companionPointerLastX: 0, companionPointerLastY: 0, companionPointerStartedAt: 0, companionPetting: false, companionHoldTimer: null, companionTapTimer: null, companionHeartTimer: null, companionHeartLastSoundAt: 0, companionSpecial: '', companionSpecialTimer: null, companionSpecialEndTimer: null, openMenuSections: { showcase: false, diary: false, decor: false, rewards: false, admin: false }, backroomsLampTimer: null, backroomsLampEndTimer: null, shopTab: 'seeds' };
+    let env = { ticks: 0, currentEvent: 'day', eventTimer: 0, nextEventTimer: 75, potTimer: 0, potActive: false, activeNest: 0, activeEquip: 0, petPatCooldowns: {}, companionDrawer: '', companionShower: false, companionShowerTimer: null, companionPointerDown: false, companionPointer: null, companionPointerId: null, companionPointerStartedInZone: false, companionPointerStartX: 0, companionPointerStartY: 0, companionPointerLastX: 0, companionPointerLastY: 0, companionPointerStartedAt: 0, companionPetting: false, companionHoldTimer: null, companionTapTimer: null, companionHeartTimer: null, companionHeartLastSoundAt: 0, companionSpecial: '', companionSpecialTimer: null, companionSpecialEndTimer: null, companionSpecialAnchorX: 0, companionSpecialAnchorY: 0, openMenuSections: { showcase: false, diary: false, decor: false, rewards: false, admin: false }, backroomsLampTimer: null, backroomsLampEndTimer: null, shopTab: 'seeds' };
     let eventActions = []; 
     let tiles = Array(12).fill().map((_, i) => ({ id: i, active: false, plantId: null, growth: 0, water: 0, hasWeed: false, mutations: [], scale: 1, weight: 5, weightMult: 1, sizeTier: 'normal', beeLock: 0 }));
     let currentTool = 'water';
@@ -1684,8 +1684,10 @@ function init() {
 
     function syncCompanionSpecialClasses() {
         const stage = document.getElementById('companion-stage');
+        const habitat = document.getElementById('companion-habitat');
         if (!stage) return;
         ['materialized', 'levitating', 'landing', 'sun-glow'].forEach(name => stage.classList.toggle(`special-${name}`, env.companionSpecial === name));
+        habitat?.classList.toggle('cosmic-shadow', env.companionSpecial === 'levitating' || env.companionSpecial === 'landing');
         applyCompanionFace(stage, companionSkinDef(), companionMood());
     }
 
@@ -1694,18 +1696,28 @@ function init() {
         env.companionSpecialEndTimer = null;
         env.companionSpecial = '';
         syncCompanionSpecialClasses();
+        env.companionSpecialAnchorX = 0;
+        env.companionSpecialAnchorY = 0;
         if (scheduleNext) scheduleCompanionSpecial();
     }
 
     function startCompanionSpecial(type) {
+        if (type === 'levitating') {
+            const slime = document.querySelector('#companion-stage .slime-pet');
+            const rect = slime?.getBoundingClientRect();
+            if (rect) {
+                env.companionSpecialAnchorX = rect.left + rect.width / 2;
+                env.companionSpecialAnchorY = rect.top + rect.height / 2;
+            }
+        }
         env.companionSpecial = type;
         syncCompanionSpecialClasses();
         if (type === 'levitating') {
             env.companionSpecialEndTimer = setTimeout(() => {
                 env.companionSpecial = 'landing';
                 syncCompanionSpecialClasses();
-                env.companionSpecialEndTimer = setTimeout(() => clearCompanionSpecial(), 2000);
-            }, 5000);
+                env.companionSpecialEndTimer = setTimeout(() => clearCompanionSpecial(), 2500);
+            }, 8000);
             return;
         }
         env.companionSpecialEndTimer = setTimeout(() => clearCompanionSpecial(), 5000);
@@ -1719,7 +1731,7 @@ function init() {
             const special = id === 'phantooze' ? 'materialized' : (id === 'voidpuddle' ? 'levitating' : (id === 'sunpudding' ? 'sun-glow' : ''));
             if (special && !player.companion.sleeping && !env.companionPetting && Math.random() < 0.55) startCompanionSpecial(special);
             else scheduleCompanionSpecial();
-        }, 25000 + Math.random() * 10000);
+        }, player.companion.skin === 'voidpuddle' ? 40000 : (25000 + Math.random() * 10000));
     }
 
     function companionBuffText() {
@@ -2113,12 +2125,22 @@ function init() {
 
     function companionInteractionZone() {
         const habitat = document.getElementById('companion-habitat');
-        if (!habitat || player.companion.sleeping) return null;
+        const slime = document.querySelector('#companion-stage .slime-pet');
+        if (!habitat || !slime || player.companion.sleeping) return null;
         const room = habitat.getBoundingClientRect();
-        const size = Math.min(160, room.width - 16, room.height - 16);
-        const centerX = room.left + room.width / 2;
-        const centerY = room.top + room.height / 2;
-        return { left: centerX - size / 2, right: centerX + size / 2, top: centerY - size / 2, bottom: centerY + size / 2 };
+        const size = Math.min(140, room.width - 12, room.height - 12);
+        const slimeRect = slime.getBoundingClientRect();
+        const hasFixedAnchor = player.companion.skin === 'voidpuddle'
+            && (env.companionSpecial === 'levitating' || env.companionSpecial === 'landing')
+            && env.companionSpecialAnchorX > 0;
+        const rawX = hasFixedAnchor ? env.companionSpecialAnchorX : slimeRect.left + slimeRect.width / 2;
+        const rawY = hasFixedAnchor ? env.companionSpecialAnchorY : slimeRect.top + slimeRect.height / 2;
+        return {
+            left: Math.max(room.left + 6, rawX - size / 2),
+            right: Math.min(room.right - 6, rawX + size / 2),
+            top: Math.max(room.top + 6, rawY - size / 2),
+            bottom: Math.min(room.bottom - 6, rawY + size / 2)
+        };
     }
 
     function companionZoneContact(clientX, clientY) {
@@ -2763,6 +2785,7 @@ function init() {
             companionPetting: false, companionHoldTimer: null, companionTapTimer: null,
             companionHeartTimer: null, companionHeartLastSoundAt: 0,
             companionSpecial: '', companionSpecialTimer: null, companionSpecialEndTimer: null,
+            companionSpecialAnchorX: 0, companionSpecialAnchorY: 0,
             openMenuSections: { showcase: false, diary: false, decor: false, rewards: false, admin: false },
             backroomsLampTimer: null, backroomsLampEndTimer: null, shopTab: 'seeds'
         };

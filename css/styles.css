@@ -9658,7 +9658,7 @@
 .companion-stage .decor-sun .slime-mouth { color:#45bfe8 !important; border-color:#45bfe8 !important; }
 .companion-stage .decor-sun { transition:box-shadow 1s ease,filter 1s ease !important; }
 .companion-stage.special-sun-glow .decor-sun {
-    box-shadow:0 0 24px 7px rgba(255,213,62,.64),0 0 48px 15px rgba(255,244,166,.32) !important;
+    box-shadow:0 0 28px 10px rgba(255,213,62,.7),0 0 55px 20px rgba(255,244,166,.38) !important;
     filter:drop-shadow(0 9px 4px rgba(64,39,21,.2)) brightness(1.13) !important;
 }
 
@@ -9669,54 +9669,44 @@
     filter:drop-shadow(0 8px 7px rgba(55,61,70,.42)) grayscale(.75) !important;
 }
 
-.companion-stage.special-levitating { animation:companionLevitate 5s ease-in-out both; }
-.companion-stage.special-landing { animation:companionLanding 2s ease-out both; }
+.companion-stage.special-levitating { animation:companionLevitate 8s ease-in-out both; }
+.companion-stage.special-landing { animation:companionLanding 2.5s ease-out both; }
 .companion-stage.special-levitating::before {
     content:'';
     position:absolute;
     z-index:-1;
     left:50%;
-    bottom:13px;
-    width:115px;
-    height:68px;
+    bottom:8px;
+    width:145px;
+    height:92px;
     border-radius:50%;
     transform:translateX(-50%);
-    background:radial-gradient(ellipse,rgba(80,255,225,.3),rgba(74,71,207,.2) 42%,transparent 72%);
-    box-shadow:0 0 18px rgba(64,255,210,.35);
+    background:
+        radial-gradient(circle at 20% 30%,rgba(255,255,255,.9) 0 2px,transparent 3px),
+        radial-gradient(circle at 80% 24%,rgba(116,225,255,.9) 0 1.5px,transparent 2.5px),
+        radial-gradient(circle at 70% 76%,rgba(196,151,255,.85) 0 2px,transparent 3px),
+        radial-gradient(ellipse,rgba(80,255,225,.42),rgba(74,71,207,.3) 44%,transparent 74%);
+    box-shadow:0 0 26px rgba(64,255,210,.5);
     animation:companionCosmicAura 1.4s ease-in-out infinite;
 }
-.companion-stage.special-levitating::after,
-.companion-stage.special-landing::after {
+.companion-habitat.cosmic-shadow::after {
     content:'';
     position:absolute;
-    z-index:-2;
+    z-index:3;
     left:50%;
-    bottom:1px;
-    width:78px;
-    height:15px;
+    bottom:14px;
+    width:92px;
+    height:17px;
     border-radius:50%;
     transform:translateX(-50%);
-    background:rgba(20,20,42,.32);
-    filter:blur(4px);
+    background:rgba(20,20,42,.4);
+    filter:blur(5px);
+    animation:companionGroundShadow 1.5s ease-in-out infinite;
 }
-@keyframes companionLevitate { 0%{transform:translateX(-50%) translateY(0)} 20%{transform:translateX(-50%) translateY(-18px)} 42%{transform:translateX(-50%) translateY(-15px)} 65%{transform:translateX(-50%) translateY(-20px)} 100%{transform:translateX(-50%) translateY(-18px)} }
-@keyframes companionLanding { from{transform:translateX(-50%) translateY(-18px)} to{transform:translateX(-50%) translateY(0)} }
+@keyframes companionLevitate { 0%{transform:translateX(-50%) translateY(0)} 14%{transform:translateX(-50%) translateY(-36px)} 38%{transform:translateX(-50%) translateY(-31px)} 62%{transform:translateX(-50%) translateY(-39px)} 84%,100%{transform:translateX(-50%) translateY(-36px)} }
+@keyframes companionLanding { from{transform:translateX(-50%) translateY(-36px)} to{transform:translateX(-50%) translateY(0)} }
 @keyframes companionCosmicAura { 50%{opacity:.55;transform:translateX(-50%) scale(1.12)} }
-
-.companion-stage.special-sun-glow::before {
-    content:'';
-    position:absolute;
-    z-index:-1;
-    left:50%;
-    bottom:28px;
-    width:145px;
-    height:145px;
-    border-radius:50%;
-    transform:translateX(-50%);
-    background:radial-gradient(circle,rgba(255,249,174,.68),rgba(255,196,44,.3) 42%,transparent 72%);
-    animation:companionSunGlow 1.25s ease-in-out infinite;
-}
-@keyframes companionSunGlow { 50%{opacity:.62;transform:translateX(-50%) scale(1.1)} }
+@keyframes companionGroundShadow { 50%{opacity:.68;transform:translateX(-50%) scale(.86)} }
 
 .pet-heart {
             top: -2%;
