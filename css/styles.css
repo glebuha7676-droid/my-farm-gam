@@ -9660,13 +9660,29 @@
     line-height:1;
     box-shadow:inset 0 1px 0 rgba(255,255,255,.72),0 2px 5px rgba(83,48,0,.26);
     pointer-events:none;
-    animation:companionCoinArc 1.2s cubic-bezier(.22,.62,.35,1) forwards;
+    animation:companionCoinArc 1.45s cubic-bezier(.22,.62,.35,1) forwards;
 }
 @keyframes companionCoinArc {
     0% { opacity:0; transform:translate(-50%,-50%) scale(.55) rotate(0deg); }
-    14% { opacity:1; }
-    48% { opacity:1; transform:translate(calc(-50% + var(--coin-mid-x)),var(--coin-peak)) scale(1.05) rotate(var(--coin-mid-rotate)); }
-    100% { opacity:0; transform:translate(calc(-50% + var(--coin-x)),30px) scale(.82) rotate(var(--coin-rotate)); }
+    10% { opacity:1; }
+    52% { opacity:1; transform:translate(calc(-50% + var(--coin-mid-x)),var(--coin-peak)) scale(1.08) rotate(var(--coin-mid-rotate)); }
+    100% { opacity:0; transform:translate(calc(-50% + var(--coin-x)),42px) scale(.78) rotate(var(--coin-rotate)); }
+}
+
+.decor-coin .slime-decor::before {
+    content:'$' !important;
+    display:flex !important;
+    align-items:center;
+    justify-content:center;
+    box-sizing:border-box;
+    background:linear-gradient(145deg,#fff49b,#f6c62f 58%,#d8970d) !important;
+    color:#8b5700;
+    border:2px solid #a96b08 !important;
+    border-radius:50% !important;
+    font-size:clamp(7px,1em,12px);
+    font-weight:1000;
+    line-height:1;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.72),0 2px 4px rgba(83,48,0,.24) !important;
 }
 
 .companion-stage.mood-sad .decor-moon .slime-decor::before { animation:none !important; opacity:.2 !important; filter:brightness(.35) !important; }

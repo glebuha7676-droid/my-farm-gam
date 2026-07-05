@@ -1622,10 +1622,10 @@ function init() {
         }
 
         pet.energyClock += elapsed;
-        const energyInterval = pet.sleeping ? 1 : 3;
+        const energyInterval = pet.sleeping ? 1 : 2;
         const energySteps = Math.floor(pet.energyClock / energyInterval);
         if (energySteps > 0) {
-            const energyDelta = energySteps * (pet.sleeping ? 3 : 2);
+            const energyDelta = energySteps * (pet.sleeping ? 5 : 1);
             pet.energy = pet.sleeping ? Math.min(100, pet.energy + energyDelta) : Math.max(0, pet.energy - energyDelta);
             pet.energyClock %= energyInterval;
         }
@@ -1690,27 +1690,36 @@ function init() {
         const slimeRect = slime.getBoundingClientRect();
         const originX = slimeRect.left + slimeRect.width / 2 - stageRect.left;
         const originY = slimeRect.top + slimeRect.height * .42 - stageRect.top;
-        const count = 2 + Math.floor(Math.random() * 2);
+        const count = 1 + Math.floor(Math.random() * 3);
+        const directions = count === 1
+            ? [Math.random() < .5 ? -1 : 1]
+            : (count === 2 ? [-1, 1] : [-1, (Math.random() - .5) * .35, 1]);
+        directions.sort(() => Math.random() - .5);
         for (let index = 0; index < count; index++) {
             setTimeout(() => {
                 if (player.companion.skin !== 'coinblob' || companionMood() !== 'happy') return;
                 const coin = document.createElement('span');
-                const travelX = Math.round((Math.random() < .5 ? -1 : 1) * (34 + Math.random() * 48));
+                const direction = directions[index];
+                const travelX = Math.round(direction * (48 + Math.random() * 58));
                 coin.className = 'companion-flying-coin';
                 coin.textContent = '$';
                 coin.style.left = `${originX}px`;
                 coin.style.top = `${originY}px`;
                 coin.style.setProperty('--coin-x', `${travelX}px`);
                 coin.style.setProperty('--coin-mid-x', `${Math.round(travelX * .42)}px`);
-                coin.style.setProperty('--coin-peak', `${Math.round(-52 - Math.random() * 42)}px`);
+                coin.style.setProperty('--coin-peak', `${Math.round(-78 - Math.random() * 50)}px`);
                 const rotation = Math.round((Math.random() < .5 ? -1 : 1) * (190 + Math.random() * 220));
                 coin.style.setProperty('--coin-mid-rotate', `${Math.round(rotation * .45)}deg`);
                 coin.style.setProperty('--coin-rotate', `${rotation}deg`);
                 stage.appendChild(coin);
+                player.coins += 10;
+                const coinsLabel = document.getElementById('ui-coins');
+                if (coinsLabel) coinsLabel.textContent = player.coins;
                 sfx.play('coinSoft');
-                setTimeout(() => coin.remove(), 1250);
-            }, index * 130);
+                setTimeout(() => coin.remove(), 1500);
+            }, index * 180);
         }
+        setTimeout(saveGame, count * 180 + 120);
     }
 
     function updateCompanionCoinEffect() {
@@ -1721,11 +1730,11 @@ function init() {
         }
         const now = Date.now();
         if (!env.companionCoinBurstAt) {
-            env.companionCoinBurstAt = now + 8000 + Math.random() * 6000;
+            env.companionCoinBurstAt = now + 4000 + Math.random() * 4000;
             return;
         }
         if (now < env.companionCoinBurstAt) return;
-        env.companionCoinBurstAt = now + 8000 + Math.random() * 6000;
+        env.companionCoinBurstAt = now + 4000 + Math.random() * 4000;
         emitCompanionCoinBurst();
     }
 
