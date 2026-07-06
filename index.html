@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Grow a Farm: Mobile Edition</title>
-    <link rel="stylesheet" href="css/styles.css?v=20260705f">
+    <link rel="stylesheet" href="css/styles.css?v=20260707a">
 </head>
 <body>
     <div class="holy-bg-rays"></div>
@@ -197,6 +197,19 @@
     <div class="pet-reveal" id="pet-reveal">
         <div class="pet-reveal-card" id="pet-reveal-card"></div>
     </div>
+    <div class="companion-name-modal" id="companion-name-modal" onclick="closeCompanionRename(event)">
+        <div class="companion-name-card">
+            <button class="companion-name-close" type="button" onclick="closeCompanionRename()">✕</button>
+            <div class="companion-name-badge">✎</div>
+            <b>Имя слайма</b>
+            <small>Придумай короткое и милое имя для своего помощника</small>
+            <input id="companion-name-input" class="companion-name-input" type="text" maxlength="14" placeholder="Например, Лайм" onkeydown="handleCompanionRenameKey(event)">
+            <div class="companion-name-actions">
+                <button class="companion-name-btn ghost" type="button" onclick="closeCompanionRename()">Отмена</button>
+                <button class="companion-name-btn save" type="button" onclick="submitCompanionRename()">Сохранить</button>
+            </div>
+        </div>
+    </div>
     <div class="reward-pop" id="reward-pop">
         <div class="reward-pop-card" id="reward-pop-card"></div>
     </div>
@@ -210,6 +223,6 @@
     </div>
     <script src="js/data.js?v=20260702f" defer></script>
     <script src="js/audio.js?v=20260705d" defer></script>
-    <script src="js/game.js?v=20260705f" defer></script>
+    <script src="js/game.js?v=20260707a" defer></script>
 </body>
 </html>

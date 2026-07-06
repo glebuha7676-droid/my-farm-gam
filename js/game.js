@@ -2156,14 +2156,46 @@ function init() {
     }
 
     function renameCompanion() {
-        const next = window.prompt('Как зовут вашего слайма?', player.companion.name);
-        if (next === null) return;
-        const name = next.trim().slice(0, 14);
+        const modal = document.getElementById('companion-name-modal');
+        const input = document.getElementById('companion-name-input');
+        if (!modal || !input) return;
+        input.value = player.companion.name || '';
+        modal.classList.add('active');
+        setTimeout(() => {
+            input.focus();
+            input.select();
+        }, 30);
+    }
+
+    function closeCompanionRename(event) {
+        if (event && event.target !== event.currentTarget) return;
+        document.getElementById('companion-name-modal')?.classList.remove('active');
+    }
+
+    function handleCompanionRenameKey(event) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            submitCompanionRename();
+            return;
+        }
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            closeCompanionRename();
+        }
+    }
+
+    function submitCompanionRename() {
+        const input = document.getElementById('companion-name-input');
+        if (!input) return;
+        const name = input.value.trim().slice(0, 14);
         if (!name) {
             showToast('Введите имя', '#ff7675');
+            input.focus();
             return;
         }
         player.companion.name = name;
+        closeCompanionRename();
+        sfx.play('pop');
         renderCompanion();
         saveGame();
     }
