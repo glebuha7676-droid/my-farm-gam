@@ -1121,7 +1121,6 @@ function init() {
     }
 
     function runTutorialTick() {
-        updateIncubatorAndPets();
         const step = tutorialStep();
         const firstTile = tiles[player.tutorial.readyTile];
         const weedTile = tiles[player.tutorial.weedTile];
@@ -1258,8 +1257,6 @@ function init() {
             }
         }
 
-        updateIncubatorAndPets();
-        if (env.openMenuSections?.pets) renderPets();
         if (env.openMenuSections?.rewards) renderRewards();
         if (document.getElementById('shop-modal')?.classList.contains('open')) renderShop();
         renderActiveStatusStrip();
@@ -1394,7 +1391,6 @@ function init() {
         renderQuests();
         renderActiveStatusStrip();
         renderCompanion();
-        renderPets();
         renderDecorShop();
         renderShowcase();
         renderDiary();
@@ -2856,7 +2852,6 @@ function init() {
         document.getElementById('side-menu').classList.remove('open');
         document.getElementById('shop-modal').classList.remove('open');
         document.getElementById('pet-reveal').classList.remove('active');
-        document.getElementById('pet-sell-modal').classList.remove('active');
         document.querySelectorAll('.action-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tool === 'water'));
         localStorage.removeItem('FarmMobileV2');
         renderGarden();
@@ -2922,87 +2917,6 @@ function init() {
         }
     }
 
-    function plantMagicSeed() {
-        startEgg('common');
-    }
-
-    function switchNest(dir) {
-        env.activeEquip = (env.activeEquip + dir + 3) % 3;
-        renderPets();
-    }
-
-    function startEgg(rarityId) {
-        const egg = EGG_RARITIES[rarityId];
-        if (!egg || egg.locked) { showToast("Это яйцо пока неизвестно", "gray"); return; }
-        const slot = player.incubator.findIndex(x => !x);
-        if (slot < 0) { showToast("Все гнёзда заняты!", "#ff7675"); return; }
-        if (player.coins < egg.cost) { showToast(`Нужно ${egg.cost} монет!`, "#ff7675"); return; }
-        player.coins -= egg.cost;
-        env.activeNest = slot;
-        const now = Date.now();
-        player.incubator[slot] = {
-            rarity: rarityId,
-            startedAt: now,
-            duration: egg.hatchSeconds,
-            readyAt: now + (TEST_HATCH_INSTANT ? 1200 : egg.hatchSeconds * 1000),
-            hatching: false,
-            ready: false
-        };
-        sfx.play('pop');
-        showToast(`${egg.name} в гнезде ${slot + 1}`, egg.color);
-        updateUI();
-    }
-
-    function hatchNest(slot = env.activeNest) {
-        const nest = player.incubator[slot];
-        if (!nest || nest.hatching) return;
-        if (player.petInventory.length >= (BALANCE.petInventoryMax || 8)) { showToast("Освободи место в инвентаре", "#ff7675"); return; }
-        const now = Date.now();
-        if (!nest.ready && now < nest.readyAt) { showToast("Яйцо ещё греется", "#74b9ff"); return; }
-        nest.ready = true;
-        nest.hatching = true;
-        env.activeNest = slot;
-        const reserved = {
-            uid: `reserved-${Date.now()}-${slot}`,
-            reserved: true,
-            id: null,
-            level: 1,
-            hunger: 100,
-            size: 'normal',
-            shiny: 'normal',
-            happy: false
-        };
-        player.petInventory.push(reserved);
-        renderPets();
-        setTimeout(() => {
-            const petDef = rollPetFromEgg(nest.rarity);
-            const variant = rollPetVariant();
-            Object.assign(reserved, {
-                uid: `pet-${Date.now()}-${Math.floor(Math.random() * 9999)}`,
-                reserved: false,
-                id: petDef.id,
-                level: 1,
-                hunger: 100,
-                size: variant.size || 'normal',
-                shiny: variant.shiny || 'normal',
-                happy: false
-            });
-            if (!player.equippedPets[0]) player.equippedPets[0] = reserved.uid;
-            player.incubator[slot] = null;
-            sfx.play('mut');
-            showPetReveal(reserved);
-            updateUI();
-        }, 1450);
-    }
-
-    function rollPetFromEgg(rarityId) {
-        const pool = Object.values(PET_DEFS).filter(p => p.egg === rarityId);
-        const secret = pool.find(p => p.secret);
-        const regular = pool.filter(p => !p.secret);
-        if (secret && Math.random() < 0.04) return secret;
-        return regular[Math.floor(Math.random() * regular.length)] || pool[0];
-    }
-
     function addPetToInventory(petId, variant = {}) {
         const pet = {
             uid: `pet-${Date.now()}-${Math.floor(Math.random() * 9999)}`,
@@ -3035,134 +2949,6 @@ function init() {
 
     function closePetReveal() {
         document.getElementById('pet-reveal').classList.remove('active');
-    }
-
-    function equipPet(uid, slot = -1) {
-        const pet = getPetInstance(uid);
-        if (!pet) return;
-        const current = player.equippedPets.indexOf(uid);
-        if (current >= 0) { player.equippedPets[current] = null; updateUI(); return; }
-        let target = slot >= 0 ? slot : env.activeEquip;
-        if (player.equippedPets[target]) target = player.equippedPets.findIndex((x, i) => i < player.unlockedPetSlots && !x);
-        if (target < 0) { showToast("Свободных слотов нет", "#ff7675"); return; }
-        if (target >= player.unlockedPetSlots) { showToast("Слот закрыт", "#ff7675"); return; }
-        player.equippedPets[target] = uid;
-        sfx.play('pop');
-        updateUI();
-    }
-
-    function sellPet(uid) {
-        const pet = getPetInstance(uid);
-        if (!pet) return;
-        if (player.equippedPets.includes(uid)) { showToast("Сначала сними слайма", "#ff7675"); return; }
-        const def = PET_DEFS[pet.id];
-        const price = getPetSellPrice(pet);
-        player.petInventory = player.petInventory.filter(p => p.uid !== uid);
-        player.coins += price;
-        sfx.play('coin');
-        showToast(`Продано за ${price}$`, "#f1c40f");
-        closeSellConfirm();
-        updateUI();
-    }
-
-    function getPetSellPrice(pet) {
-        const def = PET_DEFS[pet.id];
-        const base = def.rarity === 'legendary' ? 1200 : def.rarity === 'rare' ? 320 : def.rarity === 'secret' ? 1800 : 80;
-        return Math.ceil(base * getPetPowerMult(pet));
-    }
-
-    function openSellConfirm(uid) {
-        const pet = getPetInstance(uid);
-        if (!pet) return;
-        if (player.equippedPets.includes(uid)) { showToast("Сначала сними слайма", "#ff7675"); return; }
-        const def = PET_DEFS[pet.id];
-        const style = PET_RARITY_STYLE[def.rarity] || PET_RARITY_STYLE.common;
-        const price = getPetSellPrice(pet);
-        const overlay = document.getElementById('pet-sell-modal');
-        const card = document.getElementById('pet-sell-card');
-        if (!overlay || !card) return;
-        card.style.setProperty('--rarity-color', style.color);
-        card.className = `pet-sell-card rarity-${def.rarity} ${pet.shiny === 'gold' ? 'card-gold' : ''} ${pet.shiny === 'rainbow' ? 'card-rainbow' : ''}`;
-        card.innerHTML = `
-            <div class="sell-preview">${slimeHTML(def, pet, 'inventory')}</div>
-            <b>Продать ${petDisplayName(pet)}?</b>
-            <small>${petRarityHTML(pet, def)}</small>
-            <span>Ты получишь ${price}$</span>
-            <div class="sell-confirm-actions">
-                <button type="button" class="sell-no" onclick="closeSellConfirm()">Нет</button>
-                <button type="button" class="sell-yes" onclick="sellPet('${uid}')">Да</button>
-            </div>`;
-        overlay.classList.add('active');
-    }
-
-    function closeSellConfirm() {
-        const overlay = document.getElementById('pet-sell-modal');
-        if (overlay) overlay.classList.remove('active');
-    }
-
-    function unlockPetSlot(slot) {
-        const costs = [0, BALANCE.petSlot2Cost || 2500, BALANCE.petSlot3Cost || 12000];
-        if (slot !== player.unlockedPetSlots || slot >= 3) return;
-        if (player.coins < costs[slot]) { showToast(`Нужно ${costs[slot]} монет!`, "#ff7675"); return; }
-        player.coins -= costs[slot];
-        player.unlockedPetSlots++;
-        sfx.play('coin');
-        updateUI();
-    }
-
-    function feedPet(uid) {
-        const pet = getPetInstance(uid);
-        if (!pet) return;
-        const cost = Math.ceil(35 * getPetPowerMult(pet));
-        if (player.coins < cost) { showToast(`Корм стоит ${cost}$`, "#ff7675"); return; }
-        player.coins -= cost;
-        pet.hunger = 100;
-        pet.happy = true;
-        sfx.play('slime');
-        showToast(`${petDisplayName(pet)} сыт`, "#00b894");
-        setTimeout(() => { pet.happy = false; renderPets(); }, 1200);
-        updateUI();
-        const el = document.querySelector(`[data-pet-uid="${uid}"]`);
-        if (el) {
-            el.classList.add('fed');
-            setTimeout(() => el.classList.remove('fed'), 700);
-        }
-    }
-
-    function petPet(uid) {
-        const pet = getPetInstance(uid);
-        const now = Date.now();
-        if (!env.petPatCooldowns) env.petPatCooldowns = {};
-        if (env.petPatCooldowns[uid] && env.petPatCooldowns[uid] > now) return;
-        env.petPatCooldowns[uid] = now + 2000;
-        if (pet) {
-            pet.happy = true;
-            setTimeout(() => { pet.happy = false; renderPets(); }, 1500);
-        }
-        renderPets();
-        const el = document.querySelector(`.slime-showcase[data-pet-uid="${uid}"]`);
-        if (el) {
-            el.classList.remove('petted');
-            void el.offsetWidth;
-            el.classList.add('petted');
-            const heart = document.createElement('span');
-            heart.className = 'pet-heart';
-            heart.textContent = '♥';
-            el.appendChild(heart);
-            setTimeout(() => heart.remove(), 1300);
-            setTimeout(() => el.classList.remove('petted'), 1500);
-        }
-        sfx.play('slime');
-    }
-
-    function updateIncubatorAndPets() {
-        const now = Date.now();
-        player.incubator.forEach((nest, idx) => {
-            if (nest && !nest.hatching && !nest.ready && now >= nest.readyAt) {
-                nest.ready = true;
-                renderPets();
-            }
-        });
     }
 
     function formatTime(ms) {
@@ -3379,15 +3165,9 @@ function init() {
         `).join('');
     }
 
-    function hasReadyPets() {
-        return (player.incubator || []).some(nest => nest && !nest.hatching && (nest.ready || Date.now() >= nest.readyAt));
-    }
-
     function updateMenuMarkers() {
         const rewardsMarker = document.getElementById('rewards-ready-marker');
-        const petsMarker = document.getElementById('pets-ready-marker');
         if (rewardsMarker) rewardsMarker.classList.toggle('visible', hasClaimableRewards());
-        if (petsMarker) petsMarker.classList.toggle('visible', hasReadyPets());
     }
 
     function buildCoinsRewardPop(amount, options = {}) {
@@ -3560,15 +3340,11 @@ function init() {
         '.companion-feed-list > button',
         '.companion-skin-list > button',
         '.decor-buy',
-        '.sell-btn',
-        '.egg-buy',
         '.daily-reward-card',
         '.timed-reward-card',
         '.reward-mini-card',
         '.showcase-actions button',
-        '.showcase-slime',
-        '.tutorial-action',
-        '.pet-card-actions button'
+        '.tutorial-action'
     ].join(',');
 
     function bindPressFeedback() {
@@ -3602,96 +3378,6 @@ function init() {
         if (def.stat === 'hybridGrowth') return `+${pct}% рост и вес`;
         if (def.stat === 'all') return `+${pct}% ко всему`;
         return def.role;
-    }
-
-    function renderPets() {
-        const list = document.getElementById('pet-list');
-        const shop = document.getElementById('egg-shop');
-        const nestView = document.getElementById('nest-view');
-        const dots = document.getElementById('nest-dots');
-        const equipSlots = document.getElementById('equip-slots');
-        const inventoryTitle = document.getElementById('pet-inventory-title');
-        if (!list || !shop || !nestView || !dots || !equipSlots) return;
-        if (inventoryTitle) inventoryTitle.textContent = `Инвентарь ${BALANCE.petInventoryMax || 8} мест`;
-
-        shop.innerHTML = Object.values(EGG_RARITIES).map(egg => `
-            <button class="egg-buy rarity-${egg.id} ${egg.locked ? 'locked' : ''}" ${egg.locked ? 'disabled' : ''} onclick="startEgg('${egg.id}')">
-                <span class="egg-model egg-${egg.id}"></span><b>${egg.label}</b><small>${egg.locked ? 'Скоро' : `${egg.cost}$ • ${Math.floor(egg.hatchSeconds / 60)} мин`}</small>
-            </button>`).join('');
-
-        const activeSlotUnlocked = env.activeEquip < player.unlockedPetSlots;
-        const activeUid = player.equippedPets[env.activeEquip];
-        const activePet = activeUid ? getPetInstance(activeUid) : null;
-        const activeDef = activePet ? PET_DEFS[activePet.id] : null;
-        if (!activeSlotUnlocked) {
-            const costs = [0, BALANCE.petSlot2Cost || 2500, BALANCE.petSlot3Cost || 12000];
-            nestView.innerHTML = `<div class="slime-showcase locked"><div class="big-lock">🔒</div><div class="nest-info"><b>Слот ${env.activeEquip + 1} закрыт</b><span>Открыть за ${costs[env.activeEquip]}$</span></div><button class="pot-btn" onclick="unlockPetSlot(${env.activeEquip})">Открыть</button></div>`;
-        } else if (!activePet || !activeDef) {
-            nestView.innerHTML = `<div class="slime-showcase empty"><div class="big-slime empty"><span class="slime-face"><span class="slime-eye left"></span><span class="slime-eye right"></span><span class="slime-mouth"></span></span><i class="slime-decor"></i></div><div class="nest-info"><b>СЛОТ ${env.activeEquip + 1}</b><span>Нажми галочку у слайма</span></div></div>`;
-        } else {
-            const style = PET_RARITY_STYLE[activeDef.rarity] || PET_RARITY_STYLE.common;
-            nestView.innerHTML = `<div class="slime-showcase ${activePet.shiny === 'gold' ? 'card-gold' : ''} ${activePet.shiny === 'rainbow' ? 'card-rainbow' : ''} rarity-${activeDef.rarity}" data-pet-uid="${activePet.uid}" style="--rarity-color:${style.color}">
-                <button type="button" class="showcase-slime" onpointerdown="petPet('${activePet.uid}')">${slimeHTML(activeDef, activePet, 'featured')}</button>
-                <div class="showcase-info">
-                    <b>${petDisplayName(activePet)}</b>
-                    <small>${petRarityHTML(activePet, activeDef)}</small>
-                    <em>${petBuffText(activeDef, getPetPowerMult(activePet))}</em>
-                </div>
-                <button class="showcase-remove" type="button" onclick="equipPet('${activePet.uid}')">Снять</button>
-            </div>`;
-        }
-
-        dots.innerHTML = [0, 1, 2].map(i => {
-            const unlocked = i < player.unlockedPetSlots;
-            const uid = player.equippedPets[i];
-            const pet = uid ? getPetInstance(uid) : null;
-            const def = pet ? PET_DEFS[pet.id] : null;
-            return `<button class="nest-dot equip-dot ${i === env.activeEquip ? 'active' : ''} ${!unlocked ? 'locked' : ''} ${pet ? 'busy' : ''}" onclick="env.activeEquip=${i}; renderPets();">${!unlocked ? '🔒' : pet ? slimeHTML(def, pet, 'dot') : '•'}</button>`;
-        }).join('');
-
-        equipSlots.innerHTML = player.incubator.map((nest, i) => {
-            const egg = nest ? EGG_RARITIES[nest.rarity] : null;
-            const remaining = nest ? nest.readyAt - Date.now() : 0;
-            const pct = nest ? Math.min(100, Math.max(0, ((nest.duration * 1000 - remaining) / (nest.duration * 1000)) * 100)) : 0;
-            const isReady = nest && (nest.ready || remaining <= 0);
-            if (!nest) return `<div class="egg-window empty"><span>Гнездо ${i + 1}</span><b>Пусто</b></div>`;
-            return `<button class="egg-window rarity-${nest.rarity} ${nest.hatching ? 'hatching' : ''} ${isReady ? 'ready' : ''}" onclick="hatchNest(${i})">
-                ${isReady && !nest.hatching ? '<em class="ready-badge">Готово</em>' : ''}
-                <span class="egg-model egg-${nest.rarity}"></span>
-                <b>${egg.label}</b>
-                <small>${nest.hatching ? 'Трещит...' : isReady ? 'Нажми' : formatTime(remaining)}</small>
-                <div class="incubator-progress"><div style="width:${isReady ? 100 : pct}%"></div></div>
-            </button>`;
-        }).join('');
-
-        const inventoryLimit = BALANCE.petInventoryMax || 8;
-        const inventory = player.petInventory.slice(0, inventoryLimit);
-        const visibleSlots = Math.min(inventoryLimit, Math.max(4, Math.ceil(Math.max(4, inventory.length) / 2) * 2));
-        const petCardsHtml = inventory.map(pet => {
-            if (pet.reserved) {
-                return `<div class="pet-card mini-pet-card inventory-reserved">
-                    <div class="mini-pet-portrait"><span class="egg-model egg-common hatching"></span></div>
-                    <div class="pet-card-main"><span class="pet-copy"><b>ОТКРЫВАЕТСЯ</b><small>место занято</small><strong>Слайм скоро появится</strong></span></div>
-                    <div class="pet-card-actions"><button disabled>...</button><button disabled>...</button></div>
-                </div>`;
-            }
-            const def = PET_DEFS[pet.id]; const style = PET_RARITY_STYLE[def.rarity] || PET_RARITY_STYLE.common;
-            const equipped = player.equippedPets.includes(pet.uid);
-            const cardClass = `pet-card mini-pet-card rarity-${def.rarity} ${equipped ? 'equipped' : ''} ${pet.shiny === 'gold' ? 'card-gold' : ''} ${pet.shiny === 'rainbow' ? 'card-rainbow' : ''} ${pet.size === 'huge' ? 'card-huge' : ''}`;
-            return `<div class="${cardClass}" style="--rarity-color:${style.color}" data-pet-uid="${pet.uid}">
-                <div class="mini-pet-portrait">${slimeHTML(def, pet, 'inventory')}</div>
-                <div class="pet-card-main">
-                    <span class="pet-copy"><b>${petDisplayName(pet)}</b><small>${petRarityHTML(pet, def)}</small><strong>${petBuffText(def, getPetPowerMult(pet))}</strong></span>
-                </div>
-                <div class="pet-card-actions">
-                    <button class="equip-toggle ${equipped ? 'active' : ''}" type="button" title="${equipped ? 'Снять' : 'Надеть'}" onclick="equipPet('${pet.uid}')">✓</button>
-                    <button class="sell-btn" type="button" title="Продать" onclick="openSellConfirm('${pet.uid}')">✕$</button>
-                </div>
-            </div>`;
-        }).join('');
-        const emptySlotsHtml = Array.from({ length: Math.max(0, visibleSlots - inventory.length) }, () => `<div class="pet-card mini-pet-card inventory-empty"><div class="mini-pet-portrait"><span class="inventory-plus">+</span></div></div>`).join('');
-        list.innerHTML = petCardsHtml + emptySlotsHtml;
-
     }
 
     function calcOfflineBank() {
@@ -3744,7 +3430,6 @@ function init() {
             console.warn('Не удалось загрузить сохранение', error);
         }
         normalizePetState();
-        renderPets();
     }
 
     function normalizePetState() {
