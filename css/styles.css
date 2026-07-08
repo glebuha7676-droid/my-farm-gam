@@ -12121,6 +12121,106 @@ body.event-alien .companion-panel.room-style-backroom .companion-window::after {
     transition:filter .25s ease,box-shadow .25s ease;
 }
 
+/* Room cleanup pass: tighter rods, separated floors and clearer side decor. */
+.companion-panel.room-style-sunset .companion-habitat:not(.wash-pop)::after {
+    left:3px;
+    width:107px;
+}
+
+.companion-panel.room-style-sunset .companion-shelf {
+    right:14px;
+}
+
+.companion-panel.room-style-ocean .companion-habitat:not(.wash-pop)::after {
+    top:79px;
+    right:24px;
+}
+
+.companion-panel.room-style-candyroom .companion-habitat {
+    background:
+        repeating-linear-gradient(90deg,rgba(255,214,178,.12) 0 28px,rgba(88,42,34,.14) 28px 31px) 0 100%/100% 30% no-repeat,
+        linear-gradient(180deg,#f4ccdc 0 68%,#a9577d 68% 70%,#6f3c2d 70% 100%);
+}
+.companion-panel.room-style-candyroom .companion-habitat::before {
+    opacity:.28;
+    background:linear-gradient(180deg,rgba(255,255,255,.18),rgba(255,255,255,0));
+}
+.companion-panel.room-style-candyroom .companion-habitat:not(.wash-pop)::after {
+    left:10px;
+    width:93px;
+}
+.companion-panel.room-style-candyroom .companion-shelf {
+    right:13px;
+    top:59px;
+}
+
+.companion-panel.room-style-starlight .companion-habitat:not(.wash-pop)::after {
+    left:7px;
+    width:99px;
+}
+.companion-panel.room-style-starlight .companion-shelf {
+    right:18px;
+}
+
+.companion-panel.room-style-gamer .companion-habitat {
+    background:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='54' viewBox='0 0 72 54'%3E%3Crect width='72' height='54' fill='%236f706d'/%3E%3Cg fill='none' stroke='%234e504f' stroke-width='3'%3E%3Cpath d='M0 8h23l6 10h24l7-10h12M0 31h14l8-9h25l8 9h17M0 49h27l5-10h22l7 10h11'/%3E%3Cpath d='M14 0l-2 8M53 0l2 8M7 31l-3 18M66 31l-4 18M29 18l-7 4M47 22l6 9'/%3E%3C/g%3E%3C/svg%3E") 0 100%/72px 30% repeat-x,
+        linear-gradient(180deg,#b98247 0 68%,#6f4b2d 68% 70%,#6f706d 70% 100%);
+}
+.companion-panel.room-style-gamer .companion-window {
+    left:22px;
+    box-shadow:inset 0 0 0 3px #9a6935,3px 3px 0 #3e2a19;
+}
+.companion-panel.room-style-gamer .companion-window::before {
+    background:
+        linear-gradient(135deg,transparent 0 18%,rgba(225,248,255,.75) 19% 23%,transparent 24% 100%) 7px 5px/27px 27px repeat,
+        repeating-linear-gradient(90deg,transparent 0 30px,rgba(187,229,239,.52) 30px 33px),
+        repeating-linear-gradient(0deg,transparent 0 31px,rgba(187,229,239,.48) 31px 34px);
+}
+.companion-panel.room-style-gamer .companion-room-light {
+    right:58px;
+}
+.companion-panel.room-style-gamer .companion-shelf {
+    right:20px;
+}
+.companion-panel.is-sleeping.room-style-gamer .companion-habitat {
+    background:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='54' viewBox='0 0 72 54'%3E%3Crect width='72' height='54' fill='%233f4141'/%3E%3Cg fill='none' stroke='%233b3d3c' stroke-width='3'%3E%3Cpath d='M0 8h23l6 10h24l7-10h12M0 31h14l8-9h25l8 9h17M0 49h27l5-10h22l7 10h11'/%3E%3Cpath d='M14 0l-2 8M53 0l2 8M7 31l-3 18M66 31l-4 18M29 18l-7 4M47 22l6 9'/%3E%3C/g%3E%3C/svg%3E") 0 100%/72px 30% repeat-x,
+        linear-gradient(180deg,#66523f 0 68%,#47372c 68% 70%,#3f4141 70% 100%);
+}
+
+.companion-panel.room-style-backroom .companion-habitat {
+    background:
+        repeating-linear-gradient(90deg,rgba(56,50,27,.06) 0 2px,transparent 2px 8px) 0 100%/100% 30% no-repeat,
+        linear-gradient(180deg,#c5b45b 0 68%,#786b37 68% 70%,#847444 70% 100%);
+}
+.companion-panel.room-style-backroom .companion-room-light {
+    top:-13px;
+}
+.companion-panel.room-style-backroom .companion-window::before {
+    left:20px;
+    top:-6px;
+    width:28px;
+    height:11px;
+}
+.companion-panel.room-style-backroom .companion-shelf {
+    right:18px;
+    top:43px;
+    width:72px;
+    height:98px;
+    border:6px solid #51451f;
+    border-bottom:0;
+    background:#030303;
+    box-shadow:inset 12px 0 18px #000,inset -12px 0 18px #000,inset 0 10px 16px #000;
+}
+.companion-panel.room-style-backroom .companion-shelf i {
+    top:43px;
+    width:9px;
+    height:5px;
+}
+.companion-panel.room-style-backroom .companion-shelf i:first-child { left:19px; }
+.companion-panel.room-style-backroom .companion-shelf i:last-child { right:19px; }
+
 .active-status-panel {
     padding: 11px !important;
     border: 3px solid #754514 !important;
@@ -12611,4 +12711,153 @@ body.event-alien .companion-panel.room-style-backroom .companion-window::after {
         width: 50px;
         height: 72px;
     }
+
+    .companion-panel.room-style-sunset .companion-window {
+        left: 16px;
+    }
+
+    .companion-panel.room-style-sunset .companion-habitat {
+        background:
+            repeating-linear-gradient(90deg,rgba(255,198,143,.08) 0 45px,rgba(31,17,15,.12) 45px 47px) 0 100%/100% 30% no-repeat,
+            linear-gradient(180deg,#d88f76 0 68%,#874f43 68% 70%,#674235 70% 100%) !important;
+        background-size: 100% 30%, 100% 100% !important;
+    }
+
+    .companion-panel.room-style-sunset .companion-habitat:not(.wash-pop)::after {
+        left: 7px;
+        width: 80px;
+    }
+
+    .companion-panel.room-style-sunset .companion-shelf {
+        right: 13px;
+    }
+
+    .companion-panel.room-style-ocean .companion-habitat:not(.wash-pop)::after {
+        right: 20px;
+        top: 76px;
+        width: 35px;
+        height: 35px;
+    }
+
+    .companion-panel.room-style-ocean .companion-habitat {
+        background:
+            repeating-linear-gradient(0deg,rgba(218,190,139,.08) 0 15px,rgba(32,58,68,.14) 15px 17px) 0 100%/100% 30% no-repeat,
+            linear-gradient(180deg,#c9e1e8 0 68%,#557b89 68% 70%,#456675 70% 100%) !important;
+        background-size: 100% 30%, 100% 100% !important;
+    }
+
+    .companion-panel.room-style-candyroom .companion-habitat {
+        background:
+            repeating-linear-gradient(90deg,rgba(255,214,178,.12) 0 26px,rgba(88,42,34,.13) 26px 29px) 0 100%/100% 30% no-repeat,
+            linear-gradient(180deg,#f4ccdc 0 68%,#a9577d 68% 70%,#6f3c2d 70% 100%) !important;
+    }
+
+    .companion-panel.room-style-candyroom .companion-habitat::before {
+        background: linear-gradient(180deg,rgba(255,255,255,.18),rgba(255,255,255,0));
+    }
+
+    .companion-panel.room-style-candyroom .companion-window {
+        left: 15px;
+    }
+
+    .companion-panel.room-style-candyroom .companion-habitat:not(.wash-pop)::after {
+        left: 10px;
+        width: 72px;
+    }
+
+    .companion-panel.room-style-candyroom .companion-shelf {
+        right: 13px;
+        top: 63px;
+        width: 62px;
+        height: 82px;
+    }
+
+    .companion-panel.room-style-starlight .companion-window {
+        left: 16px;
+    }
+
+    .companion-panel.room-style-starlight .companion-habitat:not(.wash-pop)::after {
+        left: 8px;
+        width: 74px;
+    }
+
+    .companion-panel.room-style-starlight .companion-shelf {
+        right: 14px;
+    }
+
+    .companion-panel.room-style-gamer .companion-habitat {
+        background:
+            url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='54' viewBox='0 0 72 54'%3E%3Crect width='72' height='54' fill='%236f706d'/%3E%3Cg fill='none' stroke='%234e504f' stroke-width='3'%3E%3Cpath d='M0 8h23l6 10h24l7-10h12M0 31h14l8-9h25l8 9h17M0 49h27l5-10h22l7 10h11'/%3E%3Cpath d='M14 0l-2 8M53 0l2 8M7 31l-3 18M66 31l-4 18M29 18l-7 4M47 22l6 9'/%3E%3C/g%3E%3C/svg%3E") 0 100%/72px 30% repeat-x,
+            linear-gradient(180deg,#b98247 0 68%,#6f4b2d 68% 70%,#6f706d 70% 100%) !important;
+        background-size: 72px 30%, 100% 100% !important;
+    }
+
+    .companion-panel.room-style-gamer .companion-window {
+        left: 16px;
+        width: 50px;
+        height: 52px;
+        border-width: 7px;
+    }
+
+    .companion-panel.room-style-gamer .companion-room-light {
+        right: 30px;
+    }
+
+    .companion-panel.room-style-gamer .companion-shelf {
+        left: auto;
+        right: 16px;
+        top: 78px;
+        transform: scale(.74);
+        transform-origin: 100% 0;
+    }
+
+    .companion-panel.is-sleeping.room-style-gamer .companion-habitat {
+        background:
+            url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='54' viewBox='0 0 72 54'%3E%3Crect width='72' height='54' fill='%233f4141'/%3E%3Cg fill='none' stroke='%233b3d3c' stroke-width='3'%3E%3Cpath d='M0 8h23l6 10h24l7-10h12M0 31h14l8-9h25l8 9h17M0 49h27l5-10h22l7 10h11'/%3E%3Cpath d='M14 0l-2 8M53 0l2 8M7 31l-3 18M66 31l-4 18M29 18l-7 4M47 22l6 9'/%3E%3C/g%3E%3C/svg%3E") 0 100%/72px 30% repeat-x,
+            linear-gradient(180deg,#66523f 0 68%,#47372c 68% 70%,#3f4141 70% 100%) !important;
+        background-size: 72px 30%, 100% 100% !important;
+    }
+
+    .companion-panel.room-style-backroom .companion-habitat,
+    .companion-panel.is-sleeping.room-style-backroom .companion-habitat {
+        background:
+            repeating-linear-gradient(90deg,rgba(56,50,27,.06) 0 2px,transparent 2px 8px) 0 100%/100% 30% no-repeat,
+            linear-gradient(180deg,#c5b45b 0 68%,#786b37 68% 70%,#847444 70% 100%) !important;
+    }
+
+    .companion-panel.room-style-backroom .companion-room-light {
+        top: -8px;
+    }
+
+    .companion-panel.room-style-backroom .companion-window {
+        left: 19px;
+        top: 30px;
+        width: 50px;
+        height: 46px;
+    }
+
+    .companion-panel.room-style-backroom .companion-window::before {
+        left: 16px;
+        top: -5px;
+        width: 22px;
+        height: 9px;
+    }
+
+    .companion-panel.room-style-backroom .companion-shelf {
+        right: 18px;
+        top: 42px;
+        width: 48px;
+        height: 66px;
+        border-width: 5px;
+        border-bottom: 0;
+    }
+
+    .companion-panel.room-style-backroom .companion-shelf i {
+        top: 29px;
+        width: 7px;
+        height: 4px;
+    }
+
+    .companion-panel.room-style-backroom .companion-shelf i:first-child { left: 13px; }
+    .companion-panel.room-style-backroom .companion-shelf i:last-child { right: 13px; }
 }
