@@ -92,6 +92,17 @@ const DECOR_STYLES = {
     block:     { id: 'block',     name: 'Блочный',     cost: 10000, lvl: 17, icon: '🧱', desc: 'Кубический стиль' }
 };
 
+const ROOM_DECOR_STYLES = {
+    cozy:      { id: 'cozy',      name: 'Уют',      cost: 3200,  lvl: 1,  icon: '●', desc: 'Теплая базовая комната с деревом и мягким текстилем' },
+    mint:      { id: 'mint',      name: 'Мята',     cost: 6800,  lvl: 3,  icon: '◐', desc: 'Светлый свежий интерьер с аккуратными стеклянными акцентами' },
+    sunset:    { id: 'sunset',    name: 'Закат',    cost: 11000, lvl: 5,  icon: '◒', desc: 'Теплые стены, янтарная лампа и уютные полки' },
+    ocean:     { id: 'ocean',     name: 'Лагуна',   cost: 14500, lvl: 7,  icon: '◌', desc: 'Холодный морской интерьер с глубиной и контрастом' },
+    candyroom: { id: 'candyroom', name: 'Сладкая',  cost: 18500, lvl: 9,  icon: '◎', desc: 'Яркая карамельная комната с декоративными мелочами' },
+    starlight: { id: 'starlight', name: 'Звездная', cost: 24000, lvl: 12, icon: '✦', desc: 'Дорогая ночная комната с насыщенными тенями и золотым светом' },
+    gamer:     { id: 'gamer',     name: 'Геймерская', cost: 32000, lvl: 15, icon: '▦', desc: 'Пиксельная комната с дубовыми стенами, верстаком и печью' },
+    backroom:  { id: 'backroom',  name: 'Бэкрумс',    cost: 45000, lvl: 18, icon: '▥', desc: 'Лиминальная желтая комната с гулким светом и бесконечным проходом' }
+};
+
 const BALANCE = {
     xpRewardRate:               0.18,
     xpNeedStart:                80,

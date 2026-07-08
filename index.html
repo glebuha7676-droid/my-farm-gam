@@ -132,13 +132,6 @@
                 <div class="diary-mutations" id="diary-mutations"></div>
             </section>
 
-            <button class="menu-fold-btn decor-fold-btn" type="button" onclick="toggleMenuSection('decor')">
-                <span>🎨</span><strong>Декор</strong><em id="decor-fold-mark">＋</em>
-            </button>
-            <section class="menu-panel decor-panel menu-fold" id="decor-section">
-                <div class="decor-shop" id="decor-shop"></div>
-            </section>
-
             <button class="menu-fold-btn" type="button" onclick="toggleMenuSection('rewards')">
                 <span>🎁</span><strong>Награды</strong><i class="menu-attn-marker" id="rewards-ready-marker" aria-hidden="true"></i><em id="rewards-fold-mark">＋</em>
             </button>
@@ -162,6 +155,7 @@
                     <button onclick="startEvent('bee')" title="Пчелы">🐝</button>
                     <button onclick="startEvent('alien')" title="Вторжение">🛸</button>
                     <button onclick="addTestCoins()" title="Монеты">💰</button>
+                    <button onclick="setTestLevel30()" title="Уровень 30">30</button>
                     <button onclick="resetProgress()" title="Сброс">↺</button>
                 </div>
             </section>
@@ -190,6 +184,7 @@
             </div>
             <div class="shop-tabs">
                 <button id="shop-tab-seeds" class="shop-tab active" type="button" onclick="selectShopTab('seeds')"><span class="shop-tab-icon" aria-hidden="true">🌱</span><span>Семена</span></button>
+                <button id="shop-tab-decor" class="shop-tab" type="button" onclick="selectShopTab('decor')"><span class="shop-tab-icon" aria-hidden="true">🎨</span><span>Декор</span></button>
                 <button id="shop-tab-merchant" class="shop-tab" type="button" onclick="selectShopTab('merchant')"><span class="shop-tab-icon" aria-hidden="true">🔮</span><span>Торговец</span></button>
             </div>
         </div>
@@ -221,6 +216,7 @@
             <button id="tutorial-action" class="tutorial-action" type="button" onclick="tutorialAdvance()">Далее</button>
         </div>
     </div>
+    <script src="js/yandex-sdk.js?v=20260708a" defer></script>
     <script src="js/data.js?v=20260702f" defer></script>
     <script src="js/audio.js?v=20260705d" defer></script>
     <script src="js/game.js?v=20260707a" defer></script>

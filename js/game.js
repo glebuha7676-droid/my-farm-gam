@@ -3,7 +3,7 @@
         rares: {}, unlockedMutations: [],
         pets: [], petLevels: {}, petInventory: [], equippedPets: [null, null, null], unlockedPetSlots: 1,
         incubator: [null, null, null], quests: [], lastSaved: Date.now(), bank: 0,
-        plotStyle: 'default', ownedDecor: ['default'], decorPaintColor: '#ff7675',
+        plotStyle: 'default', ownedDecor: ['default'], decorPaintColor: '#ff7675', roomStyle: 'cozy', ownedRoomDecor: ['cozy'],
         seedInventory: { carrot: 8, cucumber: 6, tomato: 4, pepper: 3 },
         shop: { stock: {}, refreshAt: 0, merchantStock: {}, merchantArrivesAt: 0, merchantLeavesAt: 0 },
         showcase: [null, null, null],
@@ -34,7 +34,7 @@
         }
     };
 
-    let env = { ticks: 0, currentEvent: 'day', eventTimer: 0, nextEventTimer: 75, potTimer: 0, potActive: false, activeNest: 0, activeEquip: 0, petPatCooldowns: {}, companionDrawer: '', companionShower: false, companionShowerTimer: null, companionPointerDown: false, companionPointer: null, companionPointerId: null, companionPointerStartedInZone: false, companionPointerStartX: 0, companionPointerStartY: 0, companionPointerLastX: 0, companionPointerLastY: 0, companionPointerStartedAt: 0, companionPetting: false, companionHoldTimer: null, companionTapTimer: null, companionHeartTimer: null, companionHeartLastSoundAt: 0, companionSpecial: '', companionSpecialTimer: null, companionSpecialEndTimer: null, companionSpecialAnchorX: 0, companionSpecialAnchorY: 0, companionCoinBurstAt: 0, openMenuSections: { showcase: false, diary: false, decor: false, rewards: false, admin: false }, backroomsLampTimer: null, backroomsLampEndTimer: null, shopTab: 'seeds' };
+    let env = { ticks: 0, currentEvent: 'day', eventTimer: 0, nextEventTimer: 75, potTimer: 0, potActive: false, activeNest: 0, activeEquip: 0, petPatCooldowns: {}, companionDrawer: '', companionShower: false, companionShowerTimer: null, companionPointerDown: false, companionPointer: null, companionPointerId: null, companionPointerStartedInZone: false, companionPointerStartX: 0, companionPointerStartY: 0, companionPointerLastX: 0, companionPointerLastY: 0, companionPointerStartedAt: 0, companionPetting: false, companionHoldTimer: null, companionTapTimer: null, companionHeartTimer: null, companionHeartLastSoundAt: 0, companionSpecial: '', companionSpecialTimer: null, companionSpecialEndTimer: null, companionSpecialAnchorX: 0, companionSpecialAnchorY: 0, companionCoinBurstAt: 0, openMenuSections: { showcase: false, diary: false, decor: false, rewards: false, admin: false }, backroomsLampTimer: null, backroomsLampEndTimer: null, shopTab: 'seeds', decorShopTab: 'plots' };
     let eventActions = []; 
     let tiles = Array(12).fill().map((_, i) => ({ id: i, active: false, plantId: null, growth: 0, water: 0, hasWeed: false, mutations: [], scale: 1, weight: 5, weightMult: 1, sizeTier: 'normal', beeLock: 0 }));
     let currentTool = 'water';
@@ -732,6 +732,7 @@ function init() {
         setInterval(realtimeUiTick, 250);
         setInterval(saveGame, 5000);
         scheduleCompanionSpecial();
+        window.YandexGames?.gameReady();
     }
 
     function handleGardenDecorTap(event) {
@@ -1391,7 +1392,6 @@ function init() {
         renderQuests();
         renderActiveStatusStrip();
         renderCompanion();
-        renderDecorShop();
         renderShowcase();
         renderDiary();
         renderRewards();
@@ -1429,6 +1429,11 @@ function init() {
         renderShop();
     }
 
+    function selectDecorShopTab(tab) {
+        env.decorShopTab = tab === 'room' ? 'room' : 'plots';
+        renderShop();
+    }
+
     function toggleShop(force) {
         const modal = document.getElementById('shop-modal');
         if (!modal) return;
@@ -1451,7 +1456,8 @@ function init() {
         const affordable = !soldOut && player.coins >= p.cost;
         const disabled = soldOut;
         const stateClass = soldOut ? 'soldout' : affordable ? 'affordable' : 'pricey';
-        const label = soldOut ? 'Ресток' : `${p.cost}$`;
+        const label = soldOut ? 'Ресток' : affordable ? `${p.cost}$` : `Нужно ${p.cost}$`;
+        const priceClass = soldOut ? 'soldout' : affordable ? 'can-buy' : 'need-money';
         return `<button class="shop-seed-card ${disabled ? 'disabled' : ''} ${stateClass}" style="--shop-seed-color:${p.color};" type="button" onclick="buySeedFromShop('${source}','${id}', this)">
             <div class="pkt-top"></div>
             <div class="pkt-bg"></div>
@@ -1461,7 +1467,7 @@ function init() {
             </div>
             <div class="shop-seed-art">${seedIcon(id, 'shop-seed-icon')}</div>
             <div class="shop-seed-bottom">
-                <em>${label}</em>
+                <em class="${priceClass}">${label}</em>
             </div>
         </button>`;
     }
@@ -1479,10 +1485,12 @@ function init() {
         const headerTitle = document.getElementById('shop-title');
         const headerMeter = document.getElementById('shop-header-meter');
         const seedsTab = document.getElementById('shop-tab-seeds');
+        const decorTab = document.getElementById('shop-tab-decor');
         const merchantTab = document.getElementById('shop-tab-merchant');
-        if (!modal || !content || !headerTitle || !headerMeter || !seedsTab || !merchantTab) return;
+        if (!modal || !content || !headerTitle || !headerMeter || !seedsTab || !decorTab || !merchantTab) return;
         modal.classList.toggle('merchant-theme', env.shopTab === 'merchant');
         seedsTab.classList.toggle('active', env.shopTab === 'seeds');
+        decorTab.classList.toggle('active', env.shopTab === 'decor');
         merchantTab.classList.toggle('active', env.shopTab === 'merchant');
 
         const now = Date.now();
@@ -1520,6 +1528,12 @@ function init() {
                     </div>
                 </div>`;
             }
+            return;
+        }
+
+        if (env.shopTab === 'decor') {
+            headerTitle.textContent = 'Магазин декора';
+            content.innerHTML = renderDecorShop();
             return;
         }
 
@@ -1864,6 +1878,7 @@ function init() {
         }
         root.classList.toggle('is-sleeping', pet.sleeping);
         root.classList.toggle('is-dirty', pet.clean < 35);
+        applyCompanionRoomStyle(root);
         applyCompanionDirt(root, pet.clean);
         const sleepBtn = document.getElementById('companion-sleep-btn');
         if (sleepBtn) sleepBtn.querySelector('b').textContent = pet.sleeping ? 'Разбудить' : 'Спать';
@@ -1885,6 +1900,14 @@ function init() {
         const rarity = def?.rarity || 'common';
         const count = (PET_RARITY_STYLE[rarity] || PET_RARITY_STYLE.common).stars || 1;
         return `<span class="companion-skin-stars" aria-label="${count} звезд">${'★'.repeat(count)}</span>`;
+    }
+
+    function applyCompanionRoomStyle(root) {
+        if (!root) return;
+        Array.from(root.classList)
+            .filter(cls => cls.startsWith('room-style-'))
+            .forEach(cls => root.classList.remove(cls));
+        root.classList.add(`room-style-${player.roomStyle || 'cozy'}`);
     }
 
     function renderCompanion() {
@@ -2745,22 +2768,45 @@ function init() {
         }, delay);
     }
 
-    function renderDecorShop() {
-        const shop = document.getElementById('decor-shop');
-        if (!shop || typeof DECOR_STYLES === 'undefined') return;
-        const owned = Array.isArray(player.ownedDecor) ? player.ownedDecor : ['default'];
-        shop.innerHTML = Object.values(DECOR_STYLES).map(style => {
-            const bought = owned.includes(style.id);
-            const active = (player.plotStyle || 'default') === style.id;
+    function renderDecorCards(styles, ownedList, activeId, actionName) {
+        return Object.values(styles).map(style => {
+            const bought = ownedList.includes(style.id);
+            const active = activeId === style.id;
             const locked = player.lvl < (style.lvl || 1);
-            const canBuy = style.cost > 0 && !bought && !locked && player.coins >= style.cost;
-            return `<div class="decor-card ${active ? 'active' : ''} ${locked ? 'locked' : ''} style-${style.id}">
+            const canBuy = !bought && !locked && ((style.cost || 0) <= 0 || player.coins >= style.cost);
+            const pricey = style.cost > 0 && !bought && !locked && !canBuy;
+            const stateClass = locked ? 'locked' : active ? 'active' : bought ? 'owned' : canBuy ? 'can-buy' : pricey ? 'pricey' : '';
+            const actionText = locked ? `Ур. ${style.lvl}` : active ? 'Выбран' : bought ? 'Выбрать' : canBuy ? 'Купить' : 'Не хватает';
+            return `<div class="decor-card ${stateClass} style-${style.id}" data-lock-label="${locked ? `Уровень ${style.lvl}` : ''}">
                 <div class="decor-preview"></div>
                 <b>${style.name}</b>
-                ${style.cost > 0 && !bought && !locked ? `<em class="${canBuy ? 'can-buy' : ''}">${style.cost}$</em>` : ''}
-                <button type="button" class="decor-buy ${active ? 'selected' : ''}" onclick="buyOrSelectDecor('${style.id}')">${locked ? `Ур. ${style.lvl}` : active ? 'Выбран' : bought ? 'Выбрать' : 'Купить'}</button>
+                <small>${style.desc || ''}</small>
+                ${style.cost > 0 && !bought && !locked ? `<em class="${canBuy ? 'can-buy' : 'need-money'}">${style.cost}$</em>` : '<em></em>'}
+                <button type="button" class="decor-buy ${active ? 'selected' : ''} ${pricey ? 'need-money' : ''}" onclick="${actionName}('${style.id}')">${actionText}</button>
             </div>`;
         }).join('');
+    }
+
+    function renderDecorShop() {
+        const plotOwned = Array.isArray(player.ownedDecor) ? player.ownedDecor : ['default'];
+        const roomOwned = Array.isArray(player.ownedRoomDecor) ? player.ownedRoomDecor : ['cozy'];
+        const decorTab = env.decorShopTab === 'room' ? 'room' : 'plots';
+        return `<div class="shop-pane decor-pane">
+            <div class="decor-switcher" role="tablist" aria-label="Категории декора">
+                <button type="button" class="decor-switch ${decorTab === 'plots' ? 'active' : ''}" onclick="selectDecorShopTab('plots')">Грядки</button>
+                <button type="button" class="decor-switch ${decorTab === 'room' ? 'active' : ''}" onclick="selectDecorShopTab('room')">Комната</button>
+            </div>
+            <div class="decor-switch-panels ${decorTab === 'room' ? 'show-room' : 'show-plots'}">
+                <section class="decor-shop-pane plots-pane">
+                    <div class="shop-info-banner"><span>Стили грядок</span><b>Геометрия сохранена</b></div>
+                    <div class="decor-shop">${renderDecorCards(DECOR_STYLES, plotOwned, player.plotStyle || 'default', 'buyOrSelectDecor')}</div>
+                </section>
+                <section class="decor-shop-pane room-pane">
+                    <div class="shop-info-banner"><span>Комната слайма</span><b>Меняем только отделку и наполнение</b></div>
+                    <div class="decor-shop room-decor-shop">${renderDecorCards(ROOM_DECOR_STYLES, roomOwned, player.roomStyle || 'cozy', 'buyOrSelectRoomDecor')}</div>
+                </section>
+            </div>
+        </div>`;
     }
 
     function ensureRewardsState() {
@@ -2816,6 +2862,24 @@ function init() {
         updateUI();
     }
 
+    function buyOrSelectRoomDecor(styleId) {
+        const style = ROOM_DECOR_STYLES[styleId];
+        if (!style) return;
+        if (player.lvl < (style.lvl || 1)) { showToast(`Нужен уровень ${style.lvl}`, "#ff7675"); return; }
+        if (!Array.isArray(player.ownedRoomDecor)) player.ownedRoomDecor = ['cozy'];
+        const bought = player.ownedRoomDecor.includes(styleId);
+        if (!bought) {
+            if (player.coins < style.cost) { showToast(`Нужно ${style.cost} монет`, "#ff7675"); return; }
+            player.coins -= style.cost;
+            player.ownedRoomDecor.push(styleId);
+            sfx.play('coin');
+        } else {
+            sfx.play('pop');
+        }
+        player.roomStyle = styleId;
+        updateUI();
+    }
+
     function setDecorPaintColor(color) {
         if (!DECOR_PAINT_COLORS.includes(color)) return;
         player.decorPaintColor = color;
@@ -2831,6 +2895,18 @@ function init() {
         updateUI();
     }
 
+    function setTestLevel30() {
+        while (player.lvl < 30) {
+            player.lvl++;
+            player.xpNeed = Math.floor(player.xpNeed * (BALANCE.xpNeedMult || 1.5));
+        }
+        player.xp = 0;
+        sfx.play('pop');
+        showToast('Уровень повышен до 30', '#a29bfe');
+        updateUI();
+        saveGame();
+    }
+
     function resetProgress() {
         if (env.companionSpecialTimer) clearTimeout(env.companionSpecialTimer);
         if (env.companionSpecialEndTimer) clearTimeout(env.companionSpecialEndTimer);
@@ -2839,7 +2915,7 @@ function init() {
             rares: {}, unlockedMutations: [],
             pets: [], petLevels: {}, petInventory: [], equippedPets: [null, null, null], unlockedPetSlots: 1,
             incubator: [null, null, null], quests: [], lastSaved: Date.now(), bank: 0,
-            plotStyle: 'default', ownedDecor: ['default'], decorPaintColor: '#ff7675',
+            plotStyle: 'default', ownedDecor: ['default'], decorPaintColor: '#ff7675', roomStyle: 'cozy', ownedRoomDecor: ['cozy'],
             seedInventory: defaultSeedInventory(),
             shop: defaultShopState(),
             showcase: [null, null, null],
@@ -2876,7 +2952,7 @@ function init() {
             companionSpecialAnchorX: 0, companionSpecialAnchorY: 0,
             companionCoinBurstAt: 0,
             openMenuSections: { showcase: false, diary: false, decor: false, rewards: false, admin: false },
-            backroomsLampTimer: null, backroomsLampEndTimer: null, shopTab: 'seeds'
+            backroomsLampTimer: null, backroomsLampEndTimer: null, shopTab: 'seeds', decorShopTab: 'plots'
         };
         eventActions = [];
         currentTool = 'water';
@@ -3481,6 +3557,9 @@ function init() {
         if (!Array.isArray(player.ownedDecor)) player.ownedDecor = ['default'];
         player.ownedDecor = player.ownedDecor.filter(id => DECOR_STYLES[id]);
         if (!player.ownedDecor.includes('default')) player.ownedDecor.unshift('default');
+        if (!Array.isArray(player.ownedRoomDecor)) player.ownedRoomDecor = ['cozy'];
+        player.ownedRoomDecor = player.ownedRoomDecor.filter(id => ROOM_DECOR_STYLES[id]);
+        if (!player.ownedRoomDecor.includes('cozy')) player.ownedRoomDecor.unshift('cozy');
         if (!Array.isArray(player.showcase)) player.showcase = [null, null, null];
         player.showcase = [player.showcase[0] || null, player.showcase[1] || null, player.showcase[2] || null].map(crop => {
             if (!crop || !PLANTS[crop.plantId]) return null;
@@ -3494,6 +3573,8 @@ function init() {
         if (!DECOR_PAINT_COLORS.includes(player.decorPaintColor)) player.decorPaintColor = DECOR_PAINT_COLORS[0];
         if (!DECOR_STYLES[player.plotStyle]) player.plotStyle = 'default';
         if (!player.ownedDecor.includes(player.plotStyle)) player.plotStyle = 'default';
+        if (!ROOM_DECOR_STYLES[player.roomStyle]) player.roomStyle = 'cozy';
+        if (!player.ownedRoomDecor.includes(player.roomStyle)) player.roomStyle = 'cozy';
 
         const oldPetMap = { dog: 'dewdrop', cat: 'coinblob', dragon: 'sparkjelly', drop: 'dewdrop', dew: 'dewdrop', sun: 'coinblob', bun: 'coinblob', spark: 'sparkjelly', glimmer: 'sparkjelly', clover: 'sproutslime', sprig: 'sproutslime' };
         player.pets.forEach(id => {
