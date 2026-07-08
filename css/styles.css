@@ -13027,3 +13027,57 @@ body.event-alien .companion-panel.room-style-backroom .companion-window::after {
     .companion-panel.room-style-backroom .companion-shelf i:first-child { left: 11px; }
     .companion-panel.room-style-backroom .companion-shelf i:last-child { right: 11px; }
 }
+
+/* Final micro-adjustments. */
+.companion-panel.room-style-sunset .companion-habitat:not(.wash-pop)::after,
+.companion-panel.room-style-candyroom .companion-habitat:not(.wash-pop)::after,
+.companion-panel.room-style-starlight .companion-habitat:not(.wash-pop)::after {
+    top: 17px;
+}
+
+.companion-panel.room-style-backroom .companion-shelf {
+    top: 40px;
+}
+
+.companion-panel.room-style-backroom .companion-shelf i {
+    width: 9px;
+    height: 5px;
+}
+
+.companion-panel.room-style-backroom .companion-shelf i:first-child { left: 20px; }
+.companion-panel.room-style-backroom .companion-shelf i:last-child { right: 20px; }
+
+.companion-panel.is-sleeping.room-style-backroom .companion-shelf i {
+    filter: none !important;
+    opacity: 1 !important;
+    width: 9px;
+    height: 5px;
+    background: #fffef1;
+    box-shadow: 0 0 9px rgba(255,255,242,.82);
+}
+
+@media (max-width: 560px) {
+    .companion-panel.room-style-sunset .companion-habitat:not(.wash-pop)::after,
+    .companion-panel.room-style-candyroom .companion-habitat:not(.wash-pop)::after,
+    .companion-panel.room-style-starlight .companion-habitat:not(.wash-pop)::after {
+        top: 13px;
+    }
+
+    .companion-panel.room-style-backroom .companion-shelf {
+        top: 41px;
+    }
+
+    .companion-panel.room-style-backroom .companion-shelf i {
+        top: 29px;
+        width: 7px;
+        height: 4px;
+    }
+
+    .companion-panel.room-style-backroom .companion-shelf i:first-child { left: 14px; }
+    .companion-panel.room-style-backroom .companion-shelf i:last-child { right: 14px; }
+
+    .companion-panel.is-sleeping.room-style-backroom .companion-shelf i {
+        width: 7px;
+        height: 4px;
+    }
+}
