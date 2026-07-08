@@ -12861,3 +12861,169 @@ body.event-alien .companion-panel.room-style-backroom .companion-window::after {
     .companion-panel.room-style-backroom .companion-shelf i:first-child { left: 13px; }
     .companion-panel.room-style-backroom .companion-shelf i:last-child { right: 13px; }
 }
+
+/* Final room polish pass. */
+.companion-panel.room-style-sunset .companion-habitat:not(.wash-pop)::after {
+    left: 0;
+    width: 112px;
+}
+
+.companion-panel.room-style-candyroom .companion-habitat:not(.wash-pop)::after {
+    left: 8px;
+    width: 87px;
+}
+
+.companion-panel.room-style-candyroom .companion-shelf {
+    top: 54px;
+}
+
+.companion-panel.room-style-starlight .companion-habitat:not(.wash-pop)::after {
+    left: 2px;
+    width: 107px;
+}
+
+.companion-panel.room-style-backroom .companion-habitat {
+    transition: filter .25s ease, box-shadow .25s ease !important;
+}
+
+.companion-panel.room-style-backroom .companion-room-light {
+    top: -11px;
+}
+
+.companion-panel.room-style-backroom .companion-window::before {
+    left: 21px;
+    top: -4px;
+    width: 24px;
+    height: 8px;
+}
+
+.companion-panel.room-style-backroom .companion-shelf {
+    top: 44px;
+}
+
+.companion-panel.room-style-backroom .companion-shelf i {
+    width: 8px;
+    height: 4px;
+}
+
+.companion-panel.room-style-backroom .companion-shelf i:first-child { left: 18px; }
+.companion-panel.room-style-backroom .companion-shelf i:last-child { right: 18px; }
+
+.companion-panel.is-sleeping.room-style-backroom .companion-habitat {
+    background:
+        linear-gradient(rgba(11,11,10,.46), rgba(11,11,10,.46)),
+        repeating-linear-gradient(90deg,rgba(56,50,27,.06) 0 2px,transparent 2px 8px) 0 100%/100% 30% no-repeat,
+        linear-gradient(180deg,#c5b45b 0 68%,#786b37 68% 70%,#847444 70% 100%) !important;
+}
+
+.companion-panel.is-sleeping.room-style-backroom .companion-window,
+.companion-panel.is-sleeping.room-style-backroom .companion-window::before,
+.companion-panel.is-sleeping.room-style-backroom .companion-window::after,
+.companion-panel.is-sleeping.room-style-backroom .companion-shelf,
+.companion-panel.is-sleeping.room-style-backroom .companion-room-light,
+.companion-panel.is-sleeping.room-style-backroom .companion-stage,
+.companion-panel.is-sleeping.room-style-backroom .companion-habitat::before {
+    filter: brightness(.32) saturate(.62) !important;
+}
+
+.companion-panel.is-sleeping.room-style-backroom .companion-shelf i {
+    filter: none !important;
+    opacity: 1 !important;
+}
+
+.companion-panel.is-sleeping.room-style-sunset .companion-habitat {
+    background:
+        linear-gradient(rgba(17,14,14,.34), rgba(17,14,14,.34)),
+        repeating-linear-gradient(90deg,rgba(255,198,143,.08) 0 45px,rgba(31,17,15,.12) 45px 47px) 0 100%/100% 30% no-repeat,
+        linear-gradient(180deg,#d88f76 0 68%,#874f43 68% 70%,#674235 70% 100%) !important;
+}
+
+.companion-panel.is-sleeping.room-style-sunset .companion-window,
+.companion-panel.is-sleeping.room-style-sunset .companion-window::before,
+.companion-panel.is-sleeping.room-style-sunset .companion-window::after,
+.companion-panel.is-sleeping.room-style-sunset .companion-shelf,
+.companion-panel.is-sleeping.room-style-sunset .companion-habitat:not(.wash-pop)::after,
+.companion-panel.is-sleeping.room-style-sunset .companion-stage,
+.companion-panel.is-sleeping.room-style-sunset .companion-habitat::before {
+    filter: brightness(.44) saturate(.68) !important;
+}
+
+.companion-panel.is-sleeping.room-style-ocean .companion-habitat {
+    background:
+        linear-gradient(rgba(11,16,19,.34), rgba(11,16,19,.34)),
+        repeating-linear-gradient(0deg,rgba(218,190,139,.08) 0 15px,rgba(32,58,68,.14) 15px 17px) 0 100%/100% 30% no-repeat,
+        linear-gradient(180deg,#c9e1e8 0 68%,#557b89 68% 70%,#456675 70% 100%) !important;
+}
+
+.companion-panel.is-sleeping.room-style-ocean .companion-window,
+.companion-panel.is-sleeping.room-style-ocean .companion-window::before,
+.companion-panel.is-sleeping.room-style-ocean .companion-window::after,
+.companion-panel.is-sleeping.room-style-ocean .companion-shelf,
+.companion-panel.is-sleeping.room-style-ocean .companion-habitat:not(.wash-pop)::after,
+.companion-panel.is-sleeping.room-style-ocean .companion-stage,
+.companion-panel.is-sleeping.room-style-ocean .companion-habitat::before {
+    filter: brightness(.42) saturate(.66) !important;
+}
+
+.companion-panel.is-sleeping.room-style-candyroom .companion-habitat {
+    background:
+        linear-gradient(rgba(18,12,16,.36), rgba(18,12,16,.36)),
+        repeating-linear-gradient(90deg,rgba(255,214,178,.12) 0 28px,rgba(88,42,34,.14) 28px 31px) 0 100%/100% 30% no-repeat,
+        linear-gradient(180deg,#f4ccdc 0 68%,#a9577d 68% 70%,#6f3c2d 70% 100%) !important;
+}
+
+.companion-panel.is-sleeping.room-style-candyroom .companion-window,
+.companion-panel.is-sleeping.room-style-candyroom .companion-window::before,
+.companion-panel.is-sleeping.room-style-candyroom .companion-window::after,
+.companion-panel.is-sleeping.room-style-candyroom .companion-shelf,
+.companion-panel.is-sleeping.room-style-candyroom .companion-habitat:not(.wash-pop)::after,
+.companion-panel.is-sleeping.room-style-candyroom .companion-stage,
+.companion-panel.is-sleeping.room-style-candyroom .companion-habitat::before {
+    filter: brightness(.42) saturate(.66) !important;
+}
+
+@media (max-width: 560px) {
+    .companion-panel.room-style-sunset .companion-habitat:not(.wash-pop)::after {
+        left: 7px;
+        width: 73px;
+    }
+
+    .companion-panel.room-style-candyroom .companion-habitat:not(.wash-pop)::after {
+        left: 10px;
+        width: 68px;
+    }
+
+    .companion-panel.room-style-candyroom .companion-shelf {
+        top: 59px;
+    }
+
+    .companion-panel.room-style-starlight .companion-habitat:not(.wash-pop)::after {
+        left: 8px;
+        width: 76px;
+    }
+
+    .companion-panel.room-style-backroom .companion-room-light {
+        top: -10px;
+    }
+
+    .companion-panel.room-style-backroom .companion-window::before {
+        left: 14px;
+        top: -4px;
+        width: 20px;
+        height: 8px;
+    }
+
+    .companion-panel.room-style-backroom .companion-shelf {
+        top: 47px;
+        height: 69px;
+    }
+
+    .companion-panel.room-style-backroom .companion-shelf i {
+        top: 30px;
+        width: 6px;
+        height: 3px;
+    }
+
+    .companion-panel.room-style-backroom .companion-shelf i:first-child { left: 11px; }
+    .companion-panel.room-style-backroom .companion-shelf i:last-child { right: 11px; }
+}
