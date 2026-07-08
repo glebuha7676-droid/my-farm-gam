@@ -48,6 +48,7 @@
             <div class="action-btn active" data-tool="water" onclick="selectAction('water')">💧</div>
             <div class="action-btn" data-tool="harvest" onclick="selectAction('harvest')">🖐🏻</div>
             <div class="action-btn" data-tool="shovel" onclick="selectAction('shovel')">⛏️</div>
+            <div class="action-btn" data-tool="inspect" onclick="selectAction('inspect')">🔎</div>
         </div>
         <div class="seeds-carousel">
             <button class="nav-arrow disabled" id="btn-left" onclick="scrollSeeds(-1)">&#10094;</button>
@@ -57,6 +58,8 @@
             <button class="nav-arrow" id="btn-right" onclick="scrollSeeds(1)">&#10095;</button>
         </div>
     </div>
+
+    <div class="plant-inspect-card" id="plant-inspect-card" hidden></div>
 
     <div class="side-menu" id="side-menu">
         <div class="menu-header">

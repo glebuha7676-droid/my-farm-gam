@@ -54,6 +54,7 @@
     const DAILY_REWARD_INTERVAL = 24 * 60 * 60 * 1000;
     const TIMED_REWARD_STEP = 10 * 60 * 1000;
     const TIMED_REWARD_COOLDOWN = 5 * 60 * 60 * 1000;
+    const TILE_TRANSIENT_EFFECT_CLASSES = new Set(['sprout-mut-hit', 'strike', 'star-hit', 'candy-hit', 'toxic-hit', 'holy-hit', 'hell-hit', 'alien-hit']);
     const TEST_UNLOCK_ALL_REWARDS = false;
     const DAILY_REWARDS = [
         { title: 'Монетки', icon: '$', accent: '#f2b632', rarity: 'common', claim: () => buildCoinsRewardPop(grantCoinsReward(900 + player.lvl * 150), { title: 'Монетки', accent: '#f2b632', glow: 'default' }) },
@@ -572,6 +573,73 @@
         return Number(value).toFixed(1).replace('.', ',');
     }
 
+    function inspectCropValue(tile) {
+        const plant = PLANTS[tile.plantId];
+        if (!plant) return 0;
+        const buffs = getBuffs();
+        const baseWeight = tile.weight || Math.max(5, Math.min(1000, plant.baseW * (tile.scale || 1)));
+        const actualWeight = Math.min(1000, Math.max(5, baseWeight * (1 + buffs.weightMult)));
+        return cropSaleValue(plant.id, tile.mutations || [], actualWeight, buffs.coinMult);
+    }
+
+    function hidePlantInspectCard() {
+        const card = document.getElementById('plant-inspect-card');
+        if (!card) return;
+        card.hidden = true;
+        card.innerHTML = '';
+    }
+
+    function showPlantInspectCard(idx) {
+        const t = tiles[idx];
+        if (!t.active || !t.plantId) {
+            hidePlantInspectCard();
+            return;
+        }
+        const plant = PLANTS[t.plantId];
+        const buffs = getBuffs();
+        const baseWeight = t.weight || Math.max(5, Math.min(1000, plant.baseW * (t.scale || 1)));
+        const actualWeight = Math.min(1000, Math.max(5, baseWeight * (1 + buffs.weightMult)));
+        const value = inspectCropValue(t);
+        const mutationTags = (t.mutations || []).length
+            ? t.mutations.map(mId => {
+                const mut = MUTATIONS[mId];
+                return mut ? `<span class="plant-inspect-tag">${mut.icon} ${mut.name}</span>` : '';
+            }).join('')
+            : '<span class="plant-inspect-tag">Нет мутаций</span>';
+        const growthLabel = t.growth >= 100 ? 'Готово' : `${Math.floor(t.growth)}%`;
+        const card = document.getElementById('plant-inspect-card');
+        if (!card) return;
+        card.innerHTML = `
+            <div class="plant-inspect-title">
+                <span>${plant.icon || '🌱'}</span>
+                <span>${plant.name}</span>
+            </div>
+            <div class="plant-inspect-grid">
+                <div class="plant-inspect-cell">
+                    <small>Стоимость</small>
+                    <b>${compactNumber(value)}$</b>
+                </div>
+                <div class="plant-inspect-cell">
+                    <small>Вес</small>
+                    <b>${formatWeight(actualWeight)} кг</b>
+                </div>
+                <div class="plant-inspect-cell">
+                    <small>Рост</small>
+                    <b>${growthLabel}</b>
+                </div>
+                <div class="plant-inspect-cell">
+                    <small>Мутаций</small>
+                    <b>${(t.mutations || []).length}</b>
+                </div>
+            </div>
+            <div class="plant-inspect-muts">
+                <small>Мутации</small>
+                <div class="plant-inspect-tags">${mutationTags}</div>
+            </div>
+        `;
+        card.hidden = false;
+    }
+
     function slimeHTML(def, pet = {}, size = 'medium') {
         const slime = def.slime || {};
         const classes = [
@@ -727,6 +795,12 @@ function init() {
         refreshTutorial();
         document.getElementById('seeds-window').addEventListener('scroll', updateCarouselArrows);
         document.getElementById('garden').addEventListener('pointerdown', handleGardenDecorTap);
+        document.addEventListener('pointerdown', (event) => {
+            const inspectCard = document.getElementById('plant-inspect-card');
+            if (!inspectCard || inspectCard.hidden) return;
+            if (event.target.closest('.tile') || event.target.closest('#plant-inspect-card') || event.target.closest('.action-btn[data-tool="inspect"]')) return;
+            hidePlantInspectCard();
+        }, { passive: true });
         bindPressFeedback();
         setInterval(gameTick, 1000);
         setInterval(realtimeUiTick, 250);
@@ -830,6 +904,7 @@ function init() {
             if (!allowed) { tutorialNudge(); return; }
         }
         currentTool = tool; decorSfx('pop', 'popitClick');
+        hidePlantInspectCard();
         document.querySelectorAll('.action-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tool === tool));
         renderSeeds();
         if (tutorialIsActive()) {
@@ -858,8 +933,10 @@ function init() {
             const allowsWeed = step === 'weed_alert' && idx === player.tutorial.weedTile && t.hasWeed;
             const allowsPlant = step === 'plant_two' && isTutorialTile && currentTool === 'carrot' && !t.active;
             const allowsHarvest = step === 'harvest_ready' && isTutorialTile && currentTool === 'harvest' && t.active && t.growth >= 100;
-            if (!allowsWeed && !allowsPlant && !allowsHarvest) { tutorialNudge(); return; }
+            const allowsInspect = currentTool === 'inspect';
+            if (!allowsWeed && !allowsPlant && !allowsHarvest && !allowsInspect) { tutorialNudge(); return; }
         }
+        if (currentTool === 'inspect') { showPlantInspectCard(idx); decorSfx('pop', 'popitClick'); return; }
         if (t.hasWeed) {
             t.hasWeed = false;
             decorSfx('pop', 'popitClick');
@@ -957,8 +1034,7 @@ function init() {
 
         playHarvestSfx(sizeTier);
         showHarvestSizeEffect(idx, sizeTier);
-        let multText = totalMult > 1 ? `<span style="font-size:16px; color:${highestColor}">x${totalMult.toFixed(1)}</span><br>` : '';
-        floatText(idx, `${multText}+${finalReward}$<br><span style="font-size:14px">⚖️ ${formatWeight(actualWeight)}кг · x${weightMult}</span>`, highestColor);
+        floatText(idx, `+${finalReward}$`, highestColor);
         if (p.id === 'carrot') updateQuest('grow_carrot', 1);
         updateQuest('harvest_any', 1);
         updateQuest('earn_coins', finalReward);
@@ -1179,18 +1255,34 @@ function init() {
         if (!t.active || t.mutations.length >= 3 || t.mutations.includes(mutType)) return;
         
         const tileEl = document.getElementById(`tile-${idx}`);
-        if (t.growth < 100) {
-            tileEl.classList.add('sprout-mut-hit');
-            setTimeout(() => tileEl.classList.remove('sprout-mut-hit'), 900);
-        }
 
         // Визуальные эффекты ударов
         if (mutType === 'electric') { sfx.play('thunder'); tileEl.classList.add('strike'); setTimeout(() => tileEl.classList.remove('strike'), 300); }
-        else if (mutType === 'stellar') { sfx.play('mut'); tileEl.classList.add('star-hit'); setTimeout(() => tileEl.classList.remove('star-hit'), 1000); }
+        else if (mutType === 'stellar') {
+            sfx.play('mut');
+            tileEl.classList.add('star-hit');
+            setTimeout(() => {
+                tileEl.classList.remove('star-hit');
+                if (t.active && t.mutations.length < 3 && !t.mutations.includes(mutType)) { t.mutations.push(mutType); updateTileDOM(idx); }
+            }, 950);
+            return;
+        }
         else if (mutType === 'candy') { sfx.play('candy'); tileEl.classList.add('candy-hit'); setTimeout(() => tileEl.classList.remove('candy-hit'), 1000); }
-        else if (mutType === 'toxic') { sfx.play('mut'); tileEl.classList.add('toxic-hit'); setTimeout(() => tileEl.classList.remove('toxic-hit'), 1000); }
+        else if (mutType === 'toxic') {
+            sfx.play('mut');
+            tileEl.classList.add('toxic-hit');
+            setTimeout(() => {
+                tileEl.classList.remove('toxic-hit');
+                if (t.active && t.mutations.length < 3 && !t.mutations.includes(mutType)) { t.mutations.push(mutType); updateTileDOM(idx); }
+            }, 1020);
+            return;
+        }
         else if (mutType === 'holy') {
             sfx.play('holy');
+            if (t.growth < 100) {
+                tileEl.classList.add('sprout-mut-hit');
+                setTimeout(() => tileEl.classList.remove('sprout-mut-hit'), 900);
+            }
             tileEl.classList.add('holy-hit');
             setTimeout(() => {
                 tileEl.classList.remove('holy-hit');
@@ -1310,11 +1402,13 @@ function init() {
         const lock = document.getElementById(`lock-${idx}`);
         const lockLevel = document.getElementById(`lock-level-${idx}`);
         const unlocked = isPlotUnlocked(idx);
+        const transientClasses = [...el.classList].filter(cls => TILE_TRANSIENT_EFFECT_CLASSES.has(cls));
         
         fill.style.width = `${t.growth}%`;
         
         // Пересобираем классы
         el.className = 'tile';
+        transientClasses.forEach(cls => el.classList.add(cls));
         if (!unlocked) el.classList.add('locked');
         if (t.active) el.classList.add('occupied');
         if (t.water > 0) el.classList.add('wet');
@@ -1322,6 +1416,10 @@ function init() {
         if (t.growth >= 100) el.classList.add('ready');
         if (t.beeLock > 0) el.classList.add('bee-arrived'); 
         if (t.active && t.sizeTier) el.classList.add(`crop-${t.sizeTier}`);
+        if (t.mutations.length > 0) {
+            t.mutations.forEach(mId => el.classList.add(`mut-${mId}`));
+            el.classList.add(`primary-${t.mutations[0]}`);
+        }
 
         if (lock && lockLevel) {
             lock.style.display = unlocked ? 'none' : 'flex';
@@ -1330,38 +1428,43 @@ function init() {
 
         wrapper.style.setProperty('--plant-scale', t.active ? t.scale : 1);
 
-        aura.innerHTML = '';
-        aura.className = 'mutation-aura';
+        const mutSig = t.mutations.join('|');
+        const prevMutSig = aura.dataset.mutSig || '';
 
-        // Стаки мутаций
-        mutContainer.innerHTML = '';
-        if (t.mutations.length > 0) {
-            t.mutations.forEach((mId, order) => {
-                const m = MUTATIONS[mId];
-                mutContainer.innerHTML += `<div class="mut-badge" style="--mut-color:${m.color};">${m.icon}</div>`;
-                aura.innerHTML += `<span class="mut-effect fx-${mId}" style="--mut-color:${m.color}; --i:${order};"></span>`;
-                el.classList.add(`mut-${mId}`); // Применяем ВСЕ мутации как классы
-            });
-            el.classList.add(`primary-${t.mutations[0]}`);
-            aura.classList.add('active', `stack-${Math.min(t.mutations.length, 3)}`);
+        if (prevMutSig !== mutSig) {
+            aura.innerHTML = '';
+            aura.className = 'mutation-aura';
+            mutContainer.innerHTML = '';
 
-            // Капли мёда
-            if (t.mutations.includes('honey')) {
-                const honeyDrops = wrapper.querySelectorAll('.honey-drop');
-                if (honeyDrops.length !== 3 || honeyDrops[0].dataset.sizeTier !== (t.sizeTier || 'normal')) {
-                    honeyDrops.forEach(d => d.remove());
-                    const offsets = t.sizeTier === 'huge' ? [-7, 0, 7] : (t.sizeTier === 'big' ? [-9, 0, 9] : [-12, 0, 12]);
-                    for(let d=0; d<3; d++) {
-                        const drop = document.createElement('div'); drop.className='honey-drop';
-                        drop.dataset.sizeTier = t.sizeTier || 'normal';
-                        drop.style.left = `calc(50% + ${offsets[d]}px)`;
-                        drop.style.animationDelay = `${d*0.5}s`;
-                        wrapper.appendChild(drop);
-                    }
+            if (t.mutations.length > 0) {
+                t.mutations.forEach((mId, order) => {
+                    const m = MUTATIONS[mId];
+                    mutContainer.innerHTML += `<div class="mut-badge" style="--mut-color:${m.color};">${m.icon}</div>`;
+                    aura.innerHTML += `<span class="mut-effect fx-${mId}" style="--mut-color:${m.color}; --i:${order};"></span>`;
+                });
+                aura.classList.add('active', `stack-${Math.min(t.mutations.length, 3)}`);
+            }
+
+            aura.dataset.mutSig = mutSig;
+        }
+
+        // Капли мёда зависят от размера, но не должны перезапускать всю аурную анимацию.
+        if (t.mutations.includes('honey')) {
+            const honeyDrops = wrapper.querySelectorAll('.honey-drop');
+            if (honeyDrops.length !== 3 || honeyDrops[0].dataset.sizeTier !== (t.sizeTier || 'normal')) {
+                honeyDrops.forEach(d => d.remove());
+                const offsets = t.sizeTier === 'huge' ? [-7, 0, 7] : (t.sizeTier === 'big' ? [-9, 0, 9] : [-12, 0, 12]);
+                for(let d=0; d<3; d++) {
+                    const drop = document.createElement('div'); drop.className='honey-drop';
+                    drop.dataset.sizeTier = t.sizeTier || 'normal';
+                    drop.style.left = `calc(50% + ${offsets[d]}px)`;
+                    drop.style.animationDelay = `${d*0.5}s`;
+                    wrapper.appendChild(drop);
                 }
-            } else { wrapper.querySelectorAll('.honey-drop').forEach(d=>d.remove()); }
-
-        } else { wrapper.querySelectorAll('.honey-drop').forEach(d=>d.remove()); }
+            }
+        } else {
+            wrapper.querySelectorAll('.honey-drop').forEach(d => d.remove());
+        }
 
         if (!unlocked) {
             aura.innerHTML = '';

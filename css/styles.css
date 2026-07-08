@@ -499,7 +499,34 @@
         .tile.strike::after { content: '⚡'; font-size: 40px; top: -15px; }
 
         @keyframes fallAnim { 0% { transform: translateY(-50px) scale(0.5); opacity: 0; } 50% { opacity: 1; } 100% { transform: translateY(10px) scale(1.5); opacity: 0; } }
-        .tile.star-hit::after { content: '⭐'; font-size: 30px; animation: fallAnim 1s forwards; }
+        @keyframes starTileImpact {
+            0% { opacity: 0; transform: translateX(-50%) translateY(-56px) scale(0.34) rotate(-16deg); }
+            24% { opacity: 1; transform: translateX(-50%) translateY(-22px) scale(0.72) rotate(-5deg); }
+            52% { opacity: 1; transform: translateX(-50%) translateY(4px) scale(0.94) rotate(8deg); }
+            68% { opacity: 1; transform: translateX(-50%) translateY(8px) scale(1.02) rotate(12deg); }
+            100% { opacity: 0; transform: translateX(-50%) translateY(18px) scale(0.78) rotate(22deg); }
+        }
+        @keyframes starImpactGlow {
+            0%, 100% { box-shadow: inset 0 10px 15px rgba(0,0,0,0.6), 0 4px 0 rgba(0,0,0,0.3); }
+            34% { box-shadow: inset 0 0 22px rgba(255,234,126,0.78), 0 0 14px rgba(255,219,101,0.66); }
+            60% { box-shadow: inset 0 0 12px rgba(255,224,118,0.48), 0 0 8px rgba(255,219,101,0.34); }
+        }
+        .tile.star-hit::before {
+            content: none;
+        }
+        .tile.star-hit::after {
+            content: '⭐';
+            left: 50%;
+            top: 18px;
+            font-size: 19px;
+            color: #ffe36c;
+            transform: translateX(-50%);
+            text-shadow: 0 0 10px rgba(255,239,156,0.96);
+            animation: starTileImpact 0.95s ease-out forwards;
+        }
+        .tile.star-hit {
+            animation: starImpactGlow 0.95s ease-out;
+        }
         .tile.candy-hit::after { content: '🍬'; font-size: 30px; animation: fallAnim 1s forwards; }
 
         .tile.sprout-mut-hit::before {
@@ -523,8 +550,60 @@
             100% { opacity: 0; transform: translate(-50%, -50%) scale(1.35); }
         }
 
-        @keyframes toxicMutate { 0% { filter: hue-rotate(90deg) brightness(2); } 100% { filter: none; } }
-        .tile.toxic-hit { animation: toxicMutate 1s; }
+        .tile.toxic-hit {
+            animation: toxicTileBloom 1.02s ease-out forwards;
+        }
+
+        .tile.toxic-hit::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(circle at 28% 34%, rgba(210,255,127,0.74) 0 12%, transparent 28%),
+                radial-gradient(circle at 72% 40%, rgba(154,255,110,0.62) 0 13%, transparent 30%),
+                radial-gradient(circle at 48% 72%, rgba(97,224,88,0.68) 0 18%, transparent 36%),
+                radial-gradient(circle at 50% 52%, rgba(90,205,72,0.62) 0 38%, rgba(62,156,59,0.38) 39% 58%, transparent 76%);
+            filter: blur(4px) saturate(1.15);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 61;
+            animation: toxicFogCover 1.02s ease-out forwards;
+        }
+
+        .tile.toxic-hit::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 100%;
+            height: 100%;
+            transform: translate(-50%, -50%);
+            background:
+                radial-gradient(circle at 50% 55%, rgba(174,255,115,0.22) 0 22%, rgba(61,190,67,0.16) 23% 44%, transparent 62%);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 60;
+            animation: toxicGasPulse 1.02s ease-out forwards;
+        }
+
+        @keyframes toxicTileBloom {
+            0%, 100% { box-shadow: inset 0 10px 15px rgba(0,0,0,0.6), 0 4px 0 rgba(0,0,0,0.3); }
+            32%, 54% { box-shadow: inset 0 0 34px rgba(155,255,101,0.8), 0 0 16px rgba(86,231,72,0.56); }
+            78% { box-shadow: inset 0 0 14px rgba(101,210,69,0.42), 0 0 8px rgba(86,231,72,0.24); }
+        }
+
+        @keyframes toxicFogCover {
+            0% { opacity: 0; transform: scale(0.76); }
+            24% { opacity: 0.92; transform: scale(1); }
+            58% { opacity: 0.96; transform: scale(1.03); }
+            100% { opacity: 0; transform: scale(1.08); }
+        }
+
+        @keyframes toxicGasPulse {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.82); }
+            34% { opacity: 1; transform: translate(-50%, -50%) scale(1.02); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1.18); }
+        }
 
         /* Золотой луч святого удара */
         @keyframes holyStrikeBeam { 0% { height: 0; opacity: 0; top: 0; } 30%, 70% { height: 250px; opacity: 1; top: -150px; box-shadow: 0 0 30px #f1c40f;} 100% { height: 0; opacity: 0; top: 100px; } }
@@ -703,6 +782,32 @@
         .harvest-size-burst { position: fixed; transform: translate(-50%, -50%); z-index: 9600; pointer-events: none; color: #fff; font-weight: 900; text-align: center; text-shadow: 0 4px 0 rgba(0,0,0,0.35), 0 0 18px rgba(255,255,255,0.9); animation: harvestBurst 0.85s ease-out forwards; }
         .harvest-size-burst.big { font-size: clamp(28px, 9vw, 50px); color: #ffd166; }
         .harvest-size-burst.huge { font-size: clamp(36px, 13vw, 72px); color: #fff56d; animation-name: hugeHarvestBurst; }
+        .plant-inspect-card {
+            position: fixed;
+            left: 50%;
+            bottom: calc(132px + env(safe-area-inset-bottom));
+            transform: translateX(-50%);
+            width: min(320px, calc(100vw - 24px));
+            padding: 12px 14px;
+            border-radius: 18px;
+            border: 3px solid rgba(112, 63, 20, 0.9);
+            background: linear-gradient(180deg, rgba(255,248,236,0.98), rgba(240,224,198,0.96));
+            box-shadow: 0 14px 34px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.75);
+            z-index: 7200;
+            color: #4b2d10;
+            pointer-events: none;
+        }
+        .plant-inspect-card[hidden] { display: none; }
+        .plant-inspect-title { display:flex; align-items:center; gap:8px; font-size:18px; font-weight:1000; line-height:1.1; }
+        .plant-inspect-title span:last-child { min-width:0; }
+        .plant-inspect-grid { display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:8px; margin-top:10px; }
+        .plant-inspect-cell { background: rgba(255,255,255,0.56); border-radius: 12px; padding: 8px 10px; box-shadow: inset 0 0 0 1px rgba(113,74,32,0.08); }
+        .plant-inspect-cell small { display:block; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.4px; color: rgba(88,56,27,0.7); margin-bottom:4px; }
+        .plant-inspect-cell b { display:block; font-size:16px; font-weight:1000; line-height:1.15; color:#5a3512; }
+        .plant-inspect-muts { margin-top:10px; background: rgba(255,255,255,0.56); border-radius: 12px; padding: 9px 10px; box-shadow: inset 0 0 0 1px rgba(113,74,32,0.08); }
+        .plant-inspect-muts small { display:block; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.4px; color: rgba(88,56,27,0.7); margin-bottom:6px; }
+        .plant-inspect-tags { display:flex; flex-wrap:wrap; gap:6px; }
+        .plant-inspect-tag { display:inline-flex; align-items:center; gap:5px; min-height:26px; padding: 4px 8px; border-radius: 999px; background: rgba(255,255,255,0.82); font-size: 12px; font-weight: 900; color:#5a3512; box-shadow: inset 0 0 0 1px rgba(113,74,32,0.08); }
         body.huge-harvest-flash::after { content: ''; position: fixed; inset: 0; z-index: 9500; pointer-events: none; background: radial-gradient(circle, rgba(255,245,109,0.34), rgba(255,107,107,0.18) 42%, transparent 68%); animation: hugeHarvestFlash 0.52s ease-out forwards; }
         @keyframes floatUp { 0% { transform: translateY(0) scale(0.5); opacity: 0; } 20% { transform: translateY(-10px) scale(1.2); opacity: 1; } 100% { transform: translateY(-50px) scale(1); opacity: 0; } }
         @keyframes harvestBurst { 0% { opacity: 0; transform: translate(-50%, -50%) scale(0.45) rotate(-8deg); } 22% { opacity: 1; transform: translate(-50%, -68%) scale(1.1) rotate(3deg); } 100% { opacity: 0; transform: translate(-50%, -120%) scale(0.9) rotate(0deg); } }
@@ -10092,14 +10197,35 @@
             animation: hellModelFlash 0.85s ease-out forwards !important;
         }
 
-        .tile.hell-hit::after {
-            content: '🔥' !important;
+        .tile.hell-hit::before {
+            content: '';
+            position: absolute;
             left: 50%;
-            bottom: 24px !important;
-            font-size: 34px !important;
+            bottom: 17%;
+            width: 52px;
+            height: 58px;
             transform: translateX(-50%);
-            animation: hellEmojiIgnite 0.85s ease-out forwards !important;
-            filter: drop-shadow(0 0 10px rgba(255,82,35,0.92));
+            background:
+                radial-gradient(ellipse at 50% 100%, rgba(255,238,130,0.96) 0 12%, rgba(255,157,58,0.95) 13% 31%, rgba(238,70,28,0.92) 32% 58%, transparent 59%),
+                radial-gradient(ellipse at 28% 100%, rgba(255,202,88,0.88) 0 10%, rgba(235,81,31,0.8) 11% 34%, transparent 35%),
+                radial-gradient(ellipse at 73% 100%, rgba(255,214,112,0.84) 0 9%, rgba(230,72,26,0.78) 10% 30%, transparent 31%);
+            filter: blur(0.4px) drop-shadow(0 0 10px rgba(255,92,38,0.82));
+            opacity: 0;
+            pointer-events: none;
+            z-index: 61;
+            animation: hellGroundFlame 0.85s ease-out forwards !important;
+        }
+
+        .tile.hell-hit::after {
+            content: '' !important;
+            left: 50%;
+            top: 50%;
+            width: 100%;
+            height: 100%;
+            transform: translate(-50%, -50%);
+            background: radial-gradient(circle, rgba(255,92,46,0.24) 0 34%, rgba(210,42,22,0.16) 35% 58%, transparent 72%);
+            animation: hellRedWash 0.85s ease-out forwards !important;
+            filter: none !important;
         }
 
         @keyframes hellTileFlashClean {
@@ -10113,11 +10239,17 @@
             100% { filter: brightness(1); }
         }
 
-        @keyframes hellEmojiIgnite {
-            0% { opacity: 0; transform: translateX(-50%) translateY(16px) scale(0.4); }
-            32% { opacity: 1; transform: translateX(-50%) translateY(-2px) scale(1.08); }
-            72% { opacity: 1; transform: translateX(-50%) translateY(-5px) scale(1); }
-            100% { opacity: 0; transform: translateX(-50%) translateY(-18px) scale(0.82); }
+        @keyframes hellGroundFlame {
+            0% { opacity: 0; transform: translateX(-50%) translateY(12px) scale(.52); }
+            28% { opacity: 1; transform: translateX(-50%) translateY(-2px) scale(1.02); }
+            65% { opacity: 1; transform: translateX(-50%) translateY(-10px) scale(1.08); }
+            100% { opacity: 0; transform: translateX(-50%) translateY(-18px) scale(.88); }
+        }
+
+        @keyframes hellRedWash {
+            0% { opacity: 0; }
+            35% { opacity: 1; }
+            100% { opacity: 0; }
         }
 
         @keyframes starDriftSpin {
@@ -13080,4 +13212,125 @@ body.event-alien .companion-panel.room-style-backroom .companion-window::after {
         width: 7px;
         height: 4px;
     }
+}
+
+/* Prevent wallpaper and floor layers from sliding during room switches/night dimming. */
+.companion-panel[class*="room-style-"] .companion-habitat {
+    transition: filter .25s ease, box-shadow .25s ease !important;
+}
+
+/* Mutation icons should stay static once acquired, even while the plant keeps growing. */
+.tile .mut-badge {
+    animation: none !important;
+}
+
+/* Electric mutation: constant visible jitter, no generic blue back-glow, outline only if primary. */
+.tile.mut-electric .model {
+    animation: electricPlantJitter 0.16s infinite alternate !important;
+}
+
+.tile.mut-electric .fx-electric {
+    opacity: 0 !important;
+    background: none !important;
+    box-shadow: none !important;
+    border: 0 !important;
+    animation: none !important;
+}
+
+.tile.mut-electric:not(.primary-electric) .plant-wrapper {
+    filter: none !important;
+}
+
+.tile.primary-electric .plant-wrapper {
+    animation: electricPlantOutlineGlow 0.78s infinite ease-in-out !important;
+}
+
+@keyframes electricPlantOutlineGlow {
+    0%, 100% {
+        filter:
+            drop-shadow(0 3px 3px rgba(0,0,0,0.18))
+            drop-shadow(0 0 1px rgba(225,250,255,0.96))
+            drop-shadow(0 0 5px rgba(96,220,255,0.92))
+            drop-shadow(0 0 9px rgba(22,181,255,0.55));
+    }
+    50% {
+        filter:
+            drop-shadow(0 3px 3px rgba(0,0,0,0.2))
+            drop-shadow(0 0 2px rgba(243,253,255,1))
+            drop-shadow(0 0 7px rgba(128,233,255,1))
+            drop-shadow(0 0 12px rgba(36,198,255,0.72));
+    }
+}
+
+/* Storm polish: clearer lightning strike and calmer permanent electric jitter. */
+.tile.strike {
+    animation: stormStrikeFlash 0.46s ease-out !important;
+}
+
+.tile.strike::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: -18px;
+    width: 18px;
+    height: 78px;
+    transform: translateX(-50%);
+    background: linear-gradient(180deg, rgba(255,255,255,0.98) 0 18%, rgba(166,231,255,0.94) 19% 52%, rgba(54,199,255,0.76) 53% 80%, transparent 81%);
+    clip-path: polygon(46% 0, 66% 0, 53% 30%, 78% 30%, 42% 68%, 58% 68%, 26% 100%, 40% 74%, 18% 74%);
+    filter: drop-shadow(0 0 10px rgba(165,233,255,0.96));
+    opacity: 0;
+    pointer-events: none;
+    z-index: 62;
+    animation: stormBoltDrop 0.46s ease-out forwards;
+}
+
+.tile.strike::after {
+    content: '';
+    left: 50%;
+    top: 50%;
+    width: 100%;
+    height: 100%;
+    transform: translate(-50%, -50%);
+    background:
+        radial-gradient(circle at 50% 50%, rgba(214,245,255,0.92) 0 10%, rgba(92,211,255,0.38) 11% 27%, transparent 42%),
+        radial-gradient(circle at 50% 50%, rgba(255,255,255,0.42) 0 24%, transparent 48%);
+    opacity: 0;
+    filter: none !important;
+    text-shadow: none !important;
+    z-index: 61;
+    animation: stormStrikePulse 0.46s ease-out forwards;
+}
+
+@keyframes stormStrikeFlash {
+    0%, 100% { box-shadow: inset 0 10px 15px rgba(0,0,0,0.6), 0 4px 0 rgba(0,0,0,0.3); }
+    28% { box-shadow: inset 0 0 26px rgba(219,247,255,0.96), 0 0 18px rgba(98,212,255,0.82); }
+    55% { box-shadow: inset 0 0 12px rgba(157,229,255,0.58), 0 0 10px rgba(98,212,255,0.48); }
+}
+
+@keyframes stormBoltDrop {
+    0% { opacity: 0; transform: translateX(-50%) translateY(-20px) scaleY(0.35); }
+    30% { opacity: 1; transform: translateX(-50%) translateY(0) scaleY(1); }
+    72% { opacity: 1; transform: translateX(-50%) translateY(2px) scaleY(1); }
+    100% { opacity: 0; transform: translateX(-50%) translateY(8px) scaleY(1.06); }
+}
+
+@keyframes stormStrikePulse {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.4); }
+    35% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1.18); }
+}
+
+.tile.mut-electric .model {
+    animation: electricPlantHum 0.42s ease-in-out infinite !important;
+}
+
+.tile.primary-electric .model {
+    animation: electricPlantHum 0.42s ease-in-out infinite !important;
+}
+
+@keyframes electricPlantHum {
+    0%, 100% { transform: translateX(-0.4px) rotate(-0.35deg); }
+    25% { transform: translateY(-0.25px) rotate(0.25deg); }
+    50% { transform: translateX(0.45px) rotate(0.4deg); }
+    75% { transform: translateY(0.2px) rotate(-0.22deg); }
 }
