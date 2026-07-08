@@ -573,6 +573,13 @@
         return Number(value).toFixed(1).replace('.', ',');
     }
 
+    function getWeedReward(level = player.lvl) {
+        const safeLevel = Math.max(1, Math.floor(Number(level) || 1));
+        const base = BALANCE.weedBaseReward || 75;
+        const growth = BALANCE.weedRewardGrowth || 0.35;
+        return Math.max(1, Math.round(base * Math.pow(1 + growth, safeLevel - 1)));
+    }
+
     function inspectCropValue(tile) {
         const plant = PLANTS[tile.plantId];
         if (!plant) return 0;
@@ -939,10 +946,14 @@ function init() {
         if (currentTool === 'inspect') { showPlantInspectCard(idx); decorSfx('pop', 'popitClick'); return; }
         if (t.hasWeed) {
             t.hasWeed = false;
-            decorSfx('pop', 'popitClick');
+            const weedReward = grantCoinsReward(getWeedReward());
+            sfx.play('coinSoft');
+            floatText(idx, `+${weedReward}$`, '#55efc4');
             showToast("🐛 Паразит изгнан!", "#00b894");
             updateTileDOM(idx);
             updateQuest('clear_weeds', 1);
+            updateQuest('earn_coins', weedReward);
+            updateQuest('earn_big', weedReward);
             if (tutorialIsActive() && tutorialStep() === 'weed_alert' && idx === player.tutorial.weedTile) {
                 player.tutorial.weedCleared = true;
                 if (!tiles[idx].mutations.includes('gold')) tiles[idx].mutations.push('gold');

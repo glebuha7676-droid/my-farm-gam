@@ -109,6 +109,8 @@ const BALANCE = {
     xpNeedMult:                 1.6,
     startCoins:                 150,
     weedChance:                 0.012,
+    weedBaseReward:             75,
+    weedRewardGrowth:           0.35,
     autoEventChance:            0.055,
     autoEventCheckEvery:        8,
     eventDuration:              20,
