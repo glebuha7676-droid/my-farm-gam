@@ -12292,6 +12292,88 @@ body.event-alien .companion-panel.room-style-backroom .companion-window::after {
 }
 
 @media (max-width: 560px) {
+    .shop-modal {
+        overflow: hidden;
+        touch-action: pan-y;
+    }
+
+    .shop-shell {
+        inset: 0;
+        height: 100dvh;
+        max-height: 100dvh;
+        border-width: 0;
+        border-radius: 0;
+        grid-template-columns: minmax(0, 1fr) 88px;
+    }
+
+    .shop-main {
+        min-height: 0;
+        height: 100%;
+    }
+
+    .shop-header {
+        min-height: 56px;
+        padding: max(8px, env(safe-area-inset-top)) 8px 8px;
+        border-bottom-width: 4px;
+    }
+
+    .shop-header span {
+        font-size: 17px;
+    }
+
+    .shop-close {
+        width: 32px;
+        height: 32px;
+    }
+
+    .shop-tabs {
+        min-height: 0;
+        padding: max(8px, env(safe-area-inset-top)) 0 calc(8px + env(safe-area-inset-bottom));
+        border-left-width: 4px;
+    }
+
+    .shop-tab {
+        min-height: 56px;
+        padding: 5px 3px;
+        font-size: 9px;
+    }
+
+    .shop-tab-icon {
+        width: 30px;
+        height: 30px;
+        font-size: 17px;
+    }
+
+    .shop-content {
+        min-height: 0;
+        height: 100%;
+        overflow-y: auto;
+        overscroll-behavior-y: contain;
+        -webkit-overflow-scrolling: touch;
+        touch-action: pan-y;
+        scrollbar-gutter: auto;
+        padding: 8px 8px calc(96px + env(safe-area-inset-bottom));
+    }
+
+    .shop-pane {
+        min-height: auto;
+        padding-bottom: 14px;
+    }
+
+    .shop-seed-grid,
+    .decor-shop {
+        gap: 7px;
+    }
+
+    .decor-card {
+        min-height: 122px;
+        padding: 6px;
+    }
+
+    .room-decor-shop .decor-card {
+        min-height: 146px;
+    }
+
     .companion-window { padding:0; }
     .companion-buff-row > .companion-skin-trigger { min-height: 54px; padding-left: 48px; }
     .companion-buff-row > .companion-skin-trigger > .companion-skin-outline { left: 10px; width: 28px; height: 23px; }
@@ -12311,4 +12393,222 @@ body.event-alien .companion-panel.room-style-backroom .companion-window::after {
     .companion-stat b { margin: 0; font-size: 10px; align-self: center; }
     .companion-stat i { height: 8px; margin: 0; align-self: center; }
     .companion-stat strong { font-size: 9px; align-self: center; text-align: right; }
+
+    .companion-panel[class*="room-style-"] .companion-habitat {
+        height: 168px;
+        overflow: hidden;
+        background-size: 100% 100% !important;
+    }
+
+    .companion-panel[class*="room-style-"] .companion-habitat::before {
+        inset: 0 0 32% 0;
+    }
+
+    .companion-panel[class*="room-style-"] .companion-room-light {
+        top: -15px;
+        transform: translateX(-50%) scale(.78);
+        transform-origin: 50% 0;
+    }
+
+    .companion-panel[class*="room-style-"] .companion-window {
+        left: 12px;
+        top: 18px;
+        width: 48px;
+        height: 54px;
+        border-width: 4px;
+    }
+
+    .companion-panel.room-style-cozy .companion-room-light {
+        top: -15px;
+        width: 78px;
+        height: 40px;
+    }
+
+    .companion-panel.room-style-cozy .companion-window {
+        left: 10px;
+        top: 20px;
+        width: 46px;
+        height: 54px;
+    }
+
+    .companion-panel.room-style-cozy .companion-shelf {
+        right: 10px;
+        top: 41px;
+        width: 42px;
+    }
+
+    .companion-panel.room-style-mint .companion-shelf {
+        right: 10px;
+        top: 37px;
+        width: 48px;
+        height: 60px;
+        border-width: 4px;
+    }
+
+    .companion-panel.room-style-sunset .companion-window::before,
+    .companion-panel.room-style-sunset .companion-window::after {
+        top: -8px;
+        width: 18px;
+        height: 118px;
+    }
+
+    .companion-panel.room-style-sunset .companion-window::before { left: -12px; }
+    .companion-panel.room-style-sunset .companion-window::after { right: -12px; }
+
+    .companion-panel.room-style-sunset .companion-habitat:not(.wash-pop)::after {
+        top: 15px;
+        left: 1px;
+        width: 84px;
+        height: 5px;
+    }
+
+    .companion-panel.room-style-sunset .companion-shelf {
+        right: 8px;
+        top: 38px;
+        width: 55px;
+        height: 47px;
+        border-width: 4px;
+    }
+
+    .companion-panel.room-style-ocean .companion-window {
+        left: 13px;
+        top: 22px;
+        width: 50px;
+        height: 50px;
+        border-width: 6px;
+    }
+
+    .companion-panel.room-style-ocean .companion-window::before {
+        width: 4px;
+    }
+
+    .companion-panel.room-style-ocean .companion-window::after {
+        height: 4px;
+    }
+
+    .companion-panel.room-style-ocean .companion-shelf {
+        right: 10px;
+        top: 45px;
+        width: 42px;
+    }
+
+    .companion-panel.room-style-ocean .companion-habitat:not(.wash-pop)::after {
+        right: 18px;
+        top: 83px;
+        width: 35px;
+        height: 35px;
+    }
+
+    .companion-panel.room-style-candyroom .companion-window {
+        left: 12px;
+        top: 18px;
+        width: 48px;
+        height: 54px;
+    }
+
+    .companion-panel.room-style-candyroom .companion-window::before,
+    .companion-panel.room-style-candyroom .companion-window::after {
+        top: -8px;
+        width: 15px;
+        height: 88px;
+    }
+
+    .companion-panel.room-style-candyroom .companion-window::before { left: -8px; }
+    .companion-panel.room-style-candyroom .companion-window::after { right: -8px; }
+
+    .companion-panel.room-style-candyroom .companion-habitat:not(.wash-pop)::after {
+        top: 15px;
+        left: 6px;
+        width: 75px;
+        height: 5px;
+    }
+
+    .companion-panel.room-style-candyroom .companion-shelf {
+        right: 7px;
+        top: 73px;
+        width: 64px;
+        height: 86px;
+        border-width: 4px;
+    }
+
+    .companion-panel.room-style-starlight .companion-window {
+        left: 13px;
+        top: 20px;
+        width: 48px;
+        height: 54px;
+    }
+
+    .companion-panel.room-style-starlight .companion-window::before,
+    .companion-panel.room-style-starlight .companion-window::after {
+        top: -8px;
+        width: 17px;
+        height: 116px;
+    }
+
+    .companion-panel.room-style-starlight .companion-window::before { left: -11px; }
+    .companion-panel.room-style-starlight .companion-window::after { right: -11px; }
+
+    .companion-panel.room-style-starlight .companion-habitat:not(.wash-pop)::after {
+        top: 16px;
+        left: 3px;
+        width: 86px;
+        height: 5px;
+    }
+
+    .companion-panel.room-style-starlight .companion-shelf {
+        right: 9px;
+        top: 48px;
+        width: 48px;
+    }
+
+    .companion-panel.room-style-starlight .companion-shelf i:first-child {
+        width: 18px;
+        height: 18px;
+    }
+
+    .companion-panel.room-style-starlight .companion-shelf i:last-child {
+        width: 17px;
+        height: 17px;
+    }
+
+    .companion-panel.room-style-gamer .companion-window {
+        left: 12px;
+        top: 20px;
+        width: 52px;
+        height: 54px;
+    }
+
+    .companion-panel.room-style-gamer .companion-room-light {
+        top: 39px;
+        right: 18px;
+        transform: scale(.78);
+        transform-origin: 100% 0;
+    }
+
+    .companion-panel.room-style-gamer .companion-shelf {
+        left: 18px;
+        right: auto;
+        top: 78px;
+        transform: scale(.76);
+        transform-origin: 0 0;
+    }
+
+    .companion-panel.room-style-backroom .companion-room-light {
+        top: 3px;
+        transform: translateX(-50%) scale(.78);
+    }
+
+    .companion-panel.room-style-backroom .companion-window {
+        left: 16px;
+        top: 28px;
+        width: 54px;
+        height: 48px;
+    }
+
+    .companion-panel.room-style-backroom .companion-shelf {
+        right: 14px;
+        top: 55px;
+        width: 50px;
+        height: 72px;
+    }
 }
