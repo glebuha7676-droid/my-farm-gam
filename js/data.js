@@ -21,13 +21,20 @@ const MUTATIONS = {
     gold:     { id: 'gold',     name: 'Золотое',      mult: 2,   color: '#f1c40f', icon: '✨', chance: 0.06,  aura: 'shine' },
     toxic:    { id: 'toxic',    name: 'Токсичное',    mult: 3,   color: '#2ecc71', icon: '☣️', chance: 0.03,  aura: 'mist' },
     electric: { id: 'electric', name: 'Грозовое',     mult: 4,   color: '#74b9ff', icon: '⚡', chance: 0.025, aura: 'spark' },
-    stellar:  { id: 'stellar',  name: 'Звездное',     mult: 4,   color: '#feca57', icon: '🌠', chance: 0.018, aura: 'stars' },
+    stellar:  { id: 'stellar',  name: 'Звездное',     mult: 4,   color: '#feca57', icon: '⭐', chance: 0.018, aura: 'stars' },
     rainbow:  { id: 'rainbow',  name: 'Радужное',     mult: 6,   color: '#a29bfe', icon: '🌈', chance: 0.003, aura: 'rainbow' },
     holy:     { id: 'holy',     name: 'Солнечное',    mult: 4.5, color: '#f5f6fa', icon: '🔆', chance: 0.012, aura: 'halo' },
     hell:     { id: 'hell',     name: 'Огненное',     mult: 4.5, color: '#e84118', icon: '🔥', chance: 0.012, aura: 'ember' },
     candy:    { id: 'candy',    name: 'Сладкое',      mult: 3.5, color: '#ff9ff3', icon: '🍬', chance: 0.015, aura: 'candy' },
     honey:    { id: 'honey',    name: 'Медовое',      mult: 3,   color: '#f9ca24', icon: '🍯', chance: 0.02,  aura: 'honey' },
-    alien:    { id: 'alien',    name: 'Инопланетное', mult: 5,   color: '#40ffd2', icon: '🛸', chance: 0.008, aura: 'alien' }
+    alien:    { id: 'alien',    name: 'Инопланетное', mult: 5,   color: '#40ffd2', icon: '🛸', chance: 0.008, aura: 'alien' },
+    diamond:  { id: 'diamond',  name: 'Бриллиантовый', mult: 7,   color: '#bff8ff', icon: '💎', chance: 0,     aura: 'diamond' },
+    eclipse:  { id: 'eclipse',  name: 'Затмение',      mult: 7.5, color: '#b3172f', icon: '🌘',  chance: 0,     aura: 'eclipse' },
+    lava:     { id: 'lava',     name: 'Магма',         mult: 7.5, color: '#d94b24', icon: '🌋', chance: 0,     aura: 'lava' },
+    meteor:   { id: 'meteor',   name: 'Комета',        mult: 7.5, color: '#b9a7ff', icon: '🌠', chance: 0,     aura: 'meteor' },
+    lunar:    { id: 'lunar',    name: 'Лунное',        mult: 5.5, color: '#aebfff', icon: '☾',  chance: 0,     aura: 'lunar' },
+    void:     { id: 'void',     name: 'Пустота',       mult: 9,   color: '#7b4dff', icon: '●',  chance: 0,     aura: 'void' },
+    phantom:  { id: 'phantom',  name: 'Призрачное',    mult: 1,   color: '#cfd6df', icon: '◌',  chance: 0,     aura: 'phantom' }
 };
 
 const EGG_RARITIES = {
@@ -40,7 +47,7 @@ const EGG_RARITIES = {
 const PET_DEFS = {
     dewdrop:     { id: 'dewdrop',     egg: 'common',    rarity: 'common',    name: 'Капельный слайм',   shortName: 'КАПЛЯ',   role: 'Ускоряет рост после полива',        stat: 'speedMult',    value: 0.10, face: 'sad',      slime: { body: '#66d9ff', shade: '#1596d1', blush: '#ff9fcf', decor: 'drop' } },
     sproutslime: { id: 'sproutslime', egg: 'common',    rarity: 'common',    name: 'Ростковый слайм',   shortName: 'РОСТОК',  role: 'Увеличивает вес урожая',            stat: 'weightMult',   value: 0.08, face: 'mischief', slime: { body: '#7ee37a', shade: '#27ae60', blush: '#ffd1dc', decor: 'leaf' } },
-    coinblob:    { id: 'coinblob',    egg: 'common',    rarity: 'common',    name: 'Монетный слайм',    shortName: 'МОНЕТКА', role: 'Добавляет монеты при сборе',        stat: 'coinMult',     value: 0.08, face: 'coin',     slime: { body: '#f6d365', shade: '#d49b17', blush: '#ffb3a7', decor: 'coin' } },
+    coinblob:    { id: 'coinblob',    egg: 'common',    rarity: 'common',    name: 'Монетный слайм',    shortName: 'МОНЕТКА', role: 'Добавляет монеты при сборе',        stat: 'coinMult',     value: 0.08, face: 'happy',    slime: { body: '#f6d365', shade: '#d49b17', blush: '#ffb3a7', decor: 'coin' } },
     moonmelt:    { id: 'moonmelt',    egg: 'common',    rarity: 'secret',    name: 'Лунный слайм',      shortName: 'ЛУНА',    role: 'Чуть усиливает шанс мутаций',       stat: 'mutChance',    value: 0.15, face: 'sleepy',   slime: { body: '#4f4aa8', shade: '#1b1857', blush: '#908cff', decor: 'moon' }, secret: true },
 
     sparkjelly:  { id: 'sparkjelly',  egg: 'rare',      rarity: 'rare',      name: 'Искристый слайм',   shortName: 'ИСКРА',   role: 'Повышает шанс редких мутаций',      stat: 'mutChance',    value: 0.22, face: 'excited',  slime: { body: '#74b9ff', shade: '#2478d4', blush: '#ffd1f4', decor: 'spark' } },
@@ -50,7 +57,7 @@ const PET_DEFS = {
 
     sunpudding:  { id: 'sunpudding',  egg: 'legendary', rarity: 'legendary', name: 'Солнечный слайм',   shortName: 'СОЛНЦЕ',  role: 'Мощно увеличивает монеты',          stat: 'coinMult',     value: 0.25, face: 'proud',    slime: { body: '#ffe66d', shade: '#f1c40f', blush: '#ffb3a7', decor: 'sun' } },
     embergoo:    { id: 'embergoo',    egg: 'legendary', rarity: 'legendary', name: 'Огненный слайм',    shortName: 'ОГОНЕК',  role: 'Ускоряет рост и вес урожая',        stat: 'hybridGrowth', value: 0.20, face: 'angry',    slime: { body: '#ff7675', shade: '#d63031', blush: '#ffd0c2', decor: 'flame' } },
-    stargum:     { id: 'stargum',     egg: 'legendary', rarity: 'legendary', name: 'Звездный слайм',    shortName: 'ЗВЕЗДА',  role: 'Сильно повышает шанс мутаций',      stat: 'mutChance',    value: 0.35, face: 'star',     slime: { body: '#a29bfe', shade: '#6c5ce7', blush: '#f8dfff', decor: 'star' } },
+    stargum:     { id: 'stargum',     egg: 'legendary', rarity: 'legendary', name: 'Звездный слайм',    shortName: 'ЗВЕЗДА',  role: 'Сильно повышает шанс мутаций',      stat: 'mutChance',    value: 0.35, face: 'happy',    slime: { body: '#a29bfe', shade: '#6c5ce7', blush: '#f8dfff', decor: 'star' } },
     voidpuddle:  { id: 'voidpuddle',  egg: 'legendary', rarity: 'secret',    name: 'Космический слайм', shortName: 'КОСМОС',  role: 'Дает понемногу всего',              stat: 'all',          value: 0.14, face: 'mystic',   slime: { body: '#2d2a72', shade: '#0d0b2d', blush: '#40ffd2', decor: 'ufo' }, secret: true }
 };
 
@@ -134,4 +141,15 @@ const PLOT_UNLOCK_LEVELS = {
     9: 20,
     10: 25,
     11: 30
+};
+
+const PLOT_PURCHASE_COSTS = {
+    2: 300,
+    5: 900,
+    6: 1600,
+    7: 2600,
+    8: 4200,
+    9: 7000,
+    10: 11000,
+    11: 16000
 };

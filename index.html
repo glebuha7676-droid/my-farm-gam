@@ -4,12 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Grow a Farm: Mobile Edition</title>
-    <link rel="stylesheet" href="css/styles.css?v=20260707a">
+    <link rel="stylesheet" href="css/styles.css?v=20260715r">
 </head>
 <body>
     <div class="holy-bg-rays"></div>
     <div class="hell-bg-fire"></div>
     <div class="weather-overlay"></div>
+    <div class="night-sky-layer" aria-hidden="true"></div>
     <div class="bg-emitters" id="bg-emitters"></div>
     <div class="toast-container" id="toasts"></div>
 
@@ -77,7 +78,11 @@
             <section class="menu-panel companion-panel" id="companion-panel">
                 <div class="companion-topline">
                     <button class="companion-name" id="companion-name" type="button" onclick="renameCompanion()">Лайм <span aria-hidden="true">✎</span></button>
-                    <div class="companion-level"><small>Lvl</small><b id="companion-level">1</b></div>
+                    <button class="companion-level" id="companion-level-trigger" type="button" onclick="toggleCompanionLevelCard()">
+                        <small>Lvl</small>
+                        <b id="companion-level">1</b>
+                        <i class="companion-level-mini-xp" aria-hidden="true"><em id="companion-level-mini-fill"></em></i>
+                    </button>
                 </div>
                 <div class="companion-habitat" id="companion-habitat" onpointerdown="companionPointerDown(event)" onpointermove="companionPointerMove(event)" onpointerup="companionPointerUp(event)" onpointercancel="companionPointerCancel(event)" onpointerleave="companionPointerLeave(event)">
                     <div class="companion-room-light"></div>
@@ -89,18 +94,27 @@
                     <div class="companion-sleep-z" aria-hidden="true"><i>Z</i><i>Z</i><i>Z</i></div>
                     <div class="companion-shower-cursor" id="companion-shower-cursor" aria-hidden="true">🚿</div>
                 </div>
-                <div class="companion-xp"><span><small>До нового уровня</small><b id="companion-xp-label">0 / 60 XP</b></span><i><em id="companion-xp-fill"></em></i></div>
                 <div class="companion-section-title">Состояние</div>
                 <div class="companion-stats" id="companion-stats"></div>
-                <div class="companion-buff-row">
-                    <div><small>АКТИВНЫЙ БОНУС</small><b id="companion-buff">Нет бонуса</b></div>
-                    <button class="companion-skin-trigger" type="button" onclick="toggleCompanionSkins()"><span class="companion-skin-outline" aria-hidden="true"></span><small>ОБЛИК</small><b id="companion-skin-name">Базовый</b></button>
+                <div class="companion-section-title ability-title">Суперспособность</div>
+                <div class="companion-ability" id="companion-ability">
+                    <div class="companion-ability-main">
+                        <div class="companion-ability-head">
+                            <b id="companion-ability-name">Слизневый толчок</b>
+                            <span id="companion-ability-percent">0%</span>
+                        </div>
+                        <div class="companion-ability-meter" id="companion-ability-meter" aria-label="Заряд способности">
+                            <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+                        </div>
+                        <small id="companion-ability-cooldown">КД: нет</small>
+                    </div>
+                    <button class="companion-ability-button" id="companion-ability-button" type="button" onclick="useCompanionAbility()" aria-label="Использовать суперспособность">
+                        <span aria-hidden="true"></span>
+                    </button>
                 </div>
-                <div class="companion-section-title actions-title">Уход</div>
-                <div class="companion-actions">
-                    <button class="companion-action feed" type="button" onclick="toggleCompanionFeed()"><span>🥕</span><b>Покормить</b></button>
-                    <button class="companion-action wash" id="companion-wash-btn" type="button" onclick="toggleCompanionShower()"><span>🚿</span><b>Помыть</b></button>
-                    <button class="companion-action sleep" id="companion-sleep-btn" type="button" onclick="toggleCompanionSleep()"><span>🌙</span><b>Спать</b></button>
+                <div class="companion-buff-row">
+                    <button class="companion-room-trigger" type="button" onclick="toggleCompanionRooms()"><span class="companion-room-outline" aria-hidden="true"></span><small>КОМНАТА</small><b id="companion-room-name">Уют</b></button>
+                    <button class="companion-skin-trigger" type="button" onclick="toggleCompanionSkins()"><span class="companion-skin-outline" aria-hidden="true"></span><small>СЛАЙМ</small><b id="companion-skin-name">Базовый</b></button>
                 </div>
                 <div class="companion-drawer" id="companion-drawer"></div>
             </section>
@@ -157,8 +171,13 @@
                     <button onclick="startEvent('candy')" title="Конфеты">🍬</button>
                     <button onclick="startEvent('bee')" title="Пчелы">🐝</button>
                     <button onclick="startEvent('alien')" title="Вторжение">🛸</button>
+                    <button onclick="startEvent('night')" title="Ночь">🌙</button>
                     <button onclick="addTestCoins()" title="Монеты">💰</button>
                     <button onclick="setTestLevel30()" title="Уровень 30">30</button>
+                    <button onclick="setTestSlimeLevel8()" title="Слайм 8 уровень">8</button>
+                    <button onclick="setTestSlimeAbility()" title="Слайм 15 + суперспособность">⚡15</button>
+                    <button onclick="resetPlantedMutations()" title="Сбросить мутации у посаженных растений">🧽</button>
+                    <button id="admin-mut-cycle-btn" onclick="applyNextTestMutationToPlanted()" title="Тест мутаций: следующая мутация на все растения">🧪</button>
                     <button onclick="resetProgress()" title="Сброс">↺</button>
                 </div>
             </section>
@@ -211,17 +230,19 @@
     <div class="reward-pop" id="reward-pop">
         <div class="reward-pop-card" id="reward-pop-card"></div>
     </div>
-    <div class="tutorial-overlay" id="tutorial-overlay">
-        <div class="tutorial-card">
-            <b id="tutorial-title">Обучение</b>
-            <p id="tutorial-text"></p>
-            <small id="tutorial-step"></small>
-            <button id="tutorial-action" class="tutorial-action" type="button" onclick="tutorialAdvance()">Далее</button>
+    <div class="plot-buy-modal" id="plot-buy-modal" onclick="closePlotBuyModal(event)">
+        <div class="plot-buy-card">
+            <b id="plot-buy-title">Купить</b>
+            <div class="plot-buy-price" id="plot-buy-price">0$</div>
+            <div class="plot-buy-actions">
+                <button class="plot-buy-btn ghost" type="button" onclick="closePlotBuyModal()">Нет</button>
+                <button class="plot-buy-btn confirm" type="button" onclick="confirmPlotPurchase()">Да</button>
+            </div>
         </div>
     </div>
     <script src="js/yandex-sdk.js?v=20260708a" defer></script>
-    <script src="js/data.js?v=20260702f" defer></script>
+    <script src="js/data.js?v=20260714a" defer></script>
     <script src="js/audio.js?v=20260705d" defer></script>
-    <script src="js/game.js?v=20260707a" defer></script>
+    <script src="js/game.js?v=20260715i" defer></script>
 </body>
 </html>
