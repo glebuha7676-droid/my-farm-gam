@@ -7,7 +7,7 @@
         seedInventory: { carrot: 6 },
         shop: { stock: {}, refreshAt: 0, merchantStock: {}, merchantArrivesAt: 0, merchantLeavesAt: 0 },
         showcase: [null, null, null],
-        companion: { name: 'Лайм', level: 1, xp: 0, slimeLevels: {}, hunger: 82, clean: 88, energy: 92, sleeping: false, skin: 'basic', lastUpdate: Date.now() },
+        companion: { name: 'Слайми', level: 1, xp: 0, slimeLevels: {}, hunger: 82, clean: 88, energy: 92, sleeping: false, skin: 'basic', lastUpdate: Date.now() },
         stats: { totalEarned: 0, maxWeight: 0, bestSale: 0, harvested: 0 },
         rewards: {
             dailyClaimed: 0,
@@ -20,30 +20,38 @@
         },
     };
 
-    let env = { ticks: 0, currentEvent: 'day', eventTimer: 0, nextEventTimer: 75, potTimer: 0, potActive: false, activeNest: 0, activeEquip: 0, petPatCooldowns: {}, companionDrawer: '', companionShower: false, companionShowerTimer: null, companionPointerDown: false, companionPointer: null, companionPointerId: null, companionPointerStartedInZone: false, companionPointerStartX: 0, companionPointerStartY: 0, companionPointerLastX: 0, companionPointerLastY: 0, companionPointerStartedAt: 0, companionPetting: false, companionHoldTimer: null, companionTapTimer: null, companionHeartTimer: null, companionHeartLastSoundAt: 0, companionSpecial: '', companionSpecialTimer: null, companionSpecialEndTimer: null, companionAbilitySpecial: '', companionAbilitySpecialTimer: null, companionAbilityPayload: null, companionGiftTimers: [], companionSpecialAnchorX: 0, companionSpecialAnchorY: 0, companionCoinBurstAt: 0, openMenuSections: { showcase: false, diary: false, decor: false, rewards: false, admin: false }, backroomsLampTimer: null, backroomsLampEndTimer: null, shopTab: 'seeds', decorShopTab: 'plots', pendingPlotPurchase: null, abilityFloodTimer: null, sunpuddingEclipseTimer: null, sunpuddingEclipseDarkTimer: null, embergooMagmaTimers: [], stargumCometTimers: [], stargumCometFrames: [], stargumCometFinale: false, moonmeltLunarTimers: [], moonmeltLunarFinale: false, nightDawnTimer: null, nightDawnActive: false, nightPaletteFrame: null, nightPalette: null };
+    let env = { ticks: 0, currentEvent: 'day', eventTimer: 0, nextEventTimer: 75, potTimer: 0, potActive: false, activeNest: 0, activeEquip: 0, petPatCooldowns: {}, companionDrawer: '', companionShower: false, companionShowerTimer: null, companionPointerDown: false, companionPointer: null, companionPointerId: null, companionPointerStartedInZone: false, companionPointerStartX: 0, companionPointerStartY: 0, companionPointerLastX: 0, companionPointerLastY: 0, companionPointerStartedAt: 0, companionPetting: false, companionHoldTimer: null, companionTapTimer: null, companionHeartTimer: null, companionSpecial: '', companionSpecialTimer: null, companionSpecialEndTimer: null, companionAbilitySpecial: '', companionAbilitySpecialTimer: null, companionAbilityPayload: null, companionGiftTimers: [], companionSpecialAnchorX: 0, companionSpecialAnchorY: 0, companionCoinBurstAt: 0, openMenuSections: { showcase: false, diary: false, decor: false, rewards: false, admin: false }, backroomsLampTimer: null, backroomsLampEndTimer: null, shopTab: 'seeds', decorShopTab: 'room', pendingPlotPurchase: null, abilityFloodTimer: null, sunpuddingEclipseTimer: null, sunpuddingEclipseDarkTimer: null, embergooMagmaTimers: [], stargumCometTimers: [], stargumCometFrames: [], stargumCometFinale: false, moonmeltLunarTimers: [], moonmeltLunarFinale: false, nightDawnTimer: null, nightDawnActive: false, nightPaletteFrame: null, nightPalette: null, nightPalettePhase: 'day' };
     let eventActions = []; 
-    let tiles = Array(12).fill().map((_, i) => ({ id: i, active: false, plantId: null, growth: 0, water: 0, slimeWater: 0, slimeWaterMult: 1, hasWeed: false, mutations: [], scale: 1, weight: 5, weightMult: 1, sizeTier: 'normal', beeLock: 0, ghostEchoPercent: 0, ghostValue: 0 }));
+    let tiles = Array(12).fill().map((_, i) => ({ id: i, active: false, plantId: null, growth: 0, water: 0, slimeWater: 0, slimeWaterMult: 1, hasWeed: false, mutations: [], scale: .4, weight: 1, weightMult: 1, sizeTier: 'small', beeLock: 0, ghostEchoPercent: 0, ghostMarked: false, ghostCopyMutationCount: 0, ghostEcho: false, ghostValue: 0 }));
     let currentTool = 'water';
     const TEST_HATCH_INSTANT = false;
-    const BIG_CROP_CHANCE = 0.08;
+    const TITANIC_CROP_CHANCE = 0.001;
     const HUGE_CROP_CHANCE = 0.01;
+    const BIG_CROP_CHANCE = 0.09;
+    const NORMAL_CROP_CHANCE = 0.65;
+    const SMALL_WEIGHT_MIN = 1;
+    const SMALL_WEIGHT_MAX = 10;
+    const NORMAL_WEIGHT_MIN = 10;
+    const NORMAL_WEIGHT_MAX = 50;
     const WATER_DURATION = 15;
     const COMPANION_ABILITY_DEFAULT_COOLDOWN_MS = 3 * 60 * 1000;
     const MATERIAL_MUTATIONS = new Set(['gold', 'rainbow', 'diamond']);
-    const BIG_WEIGHT_MIN = 100;
-    const BIG_WEIGHT_MAX = 450;
-    const HUGE_WEIGHT_MIN = 450;
+    // These models already use ::after for their own body details, so honey needs a real child layer.
+    const HONEY_CAP_MODEL_IDS = new Set(['pepper', 'corn', 'dragonfruit']);
+    const BIG_WEIGHT_MIN = 50;
+    const BIG_WEIGHT_MAX = 300;
+    const HUGE_WEIGHT_MIN = 300;
     const HUGE_WEIGHT_MAX = 1000;
     const TITANIC_WEIGHT_MIN = 1000;
-    const TITANIC_WEIGHT_MAX = 10000;
+    const TITANIC_WEIGHT_MAX = 100000;
     
     const seedKeys = Object.keys(PLANTS);
     const BASE_STORE_SEEDS = ['carrot', 'cucumber'];
     const FREQUENT_STORE_SEEDS = ['tomato', 'pepper'];
     const DECOR_PAINT_COLORS = ['#ff7675', '#fdcb6e', '#55efc4', '#74b9ff', '#a29bfe', '#2ecc71'];
     const SIZE_DIARY_ENTRIES = {
-        big: { id: 'big', name: 'Большой', icon: 'B', mult: 'x1.5+' },
-        huge: { id: 'huge', name: 'Огромный', icon: '!', mult: 'x3.5+' }
+        huge: { id: 'huge', name: 'Огромный', icon: 'H', mult: 'x3.5+' },
+        titanic: { id: 'titanic', name: 'Титанический', icon: 'T', mult: 'x7+' }
     };
     const DAILY_REWARD_INTERVAL = 24 * 60 * 60 * 1000;
     const TIMED_REWARD_STEP = 10 * 60 * 1000;
@@ -55,16 +63,20 @@
     const STARGUM_COMET_CLEANUP_DELAY_MS = 3300;
     const STARGUM_COMET_PRELUDE_MS = 1080;
     const STARGUM_COMET_GAP_MS = 520;
-    const MOONMELT_LUNAR_BEAM_COMMIT_DELAY_MS = 1480;
-    const MOONMELT_LUNAR_BEAM_REMOVE_DELAY_MS = 2120;
-    const MOONMELT_LUNAR_BEAM_GAP_MS = 720;
+    const MOONMELT_LUNAR_BEAM_COMMIT_DELAY_MS = 2050;
+    const MOONMELT_LUNAR_BEAM_REMOVE_DELAY_MS = 2900;
+    const MOONMELT_LUNAR_BEAM_GAP_MS = 960;
+    const MOONMELT_BLOODMOON_BEAM_COMMIT_DELAY_MS = 1760;
+    const MOONMELT_BLOODMOON_BEAM_REMOVE_DELAY_MS = 2500;
+    const MOONMELT_BLOODMOON_BEAM_GAP_MS = 1040;
     const NIGHT_AMBIENCE_ENTER_MS = 3000;
     const NIGHT_AMBIENCE_EXIT_MS = 2300;
+    const BLOODMOON_AMBIENCE_ENTER_MS = 1650;
     const EMBERGOO_MAGMA_FINALE_TIER2_CHANCE = 0.35;
     const EMBERGOO_MAGMA_SURGE_LEAD_MS = 3600;
     const EMBERGOO_MAGMA_COOLDOWN_MS = 1900;
-    const TILE_TRANSIENT_EFFECT_CLASSES = new Set(['planting', 'sprout-emerge', 'sprout-mut-hit', 'strike', 'star-hit', 'candy-hit', 'toxic-hit', 'holy-hit', 'eclipse-hit', 'hell-hit', 'alien-hit', 'lava-hit', 'comet-hit', 'lunar-hit', 'slime-water-hit', 'slime-water-fade', 'midas-coin-hit', 'midas-diamond-hit', 'wave-rise-hit', 'ability-flooded', 'nectar-grow-hit', 'nectar-titanic-charge', 'nectar-titanic-flash', 'nectar-titanic-growing']);
-    const TEST_MUTATION_SEQUENCE = ['hell', 'toxic', 'electric', 'stellar', 'holy', 'candy', 'honey', 'alien', 'lava', 'meteor', 'lunar', 'void', 'phantom', 'gold', 'rainbow', 'diamond', 'eclipse'];
+    const TILE_TRANSIENT_EFFECT_CLASSES = new Set(['planting', 'sprout-emerge', 'sprout-mut-hit', 'strike', 'star-hit', 'candy-hit', 'toxic-hit', 'holy-hit', 'eclipse-hit', 'hell-hit', 'alien-hit', 'lava-hit', 'comet-hit', 'lunar-hit', 'bloodmoon-hit', 'slime-water-hit', 'slime-water-fade', 'midas-coin-hit', 'midas-diamond-hit', 'wave-rise-hit', 'ability-flooded', 'nectar-grow-hit', 'nectar-titanic-charge', 'nectar-titanic-flash', 'nectar-titanic-growing']);
+    const TEST_MUTATION_SEQUENCE = ['hell', 'toxic', 'electric', 'stellar', 'holy', 'candy', 'honey', 'alien', 'lava', 'meteor', 'lunar', 'bloodmoon', 'void', 'phantom', 'gold', 'rainbow', 'diamond', 'eclipse'];
     const TEST_MUTATION_HITS = {
         electric: { classes: ['strike'], sound: 'thunder', commitDelay: 300, removeDelay: 420 },
         stellar: { classes: ['star-hit'], sound: 'mut', commitDelay: 950, removeDelay: 1040 },
@@ -156,7 +168,7 @@
 
     function resetTilesState() {
         tiles.forEach((tile, index) => {
-            Object.assign(tile, { id: index, active: false, plantId: null, growth: 0, water: 0, slimeWater: 0, slimeWaterMult: 1, hasWeed: false, mutations: [], scale: 1, weight: 5, weightMult: 1, sizeTier: 'normal', beeLock: 0, ghostEchoPercent: 0, ghostValue: 0 });
+            Object.assign(tile, { id: index, active: false, plantId: null, growth: 0, water: 0, slimeWater: 0, slimeWaterMult: 1, hasWeed: false, mutations: [], scale: .4, weight: 1, weightMult: 1, sizeTier: 'small', beeLock: 0, ghostEchoPercent: 0, ghostMarked: false, ghostCopyMutationCount: 0, ghostEcho: false, ghostValue: 0 });
         });
     }
 
@@ -217,7 +229,7 @@
     function getWeightMultiplier(weight, sizeTier = 'normal') {
         if (sizeTier === 'titanic') return 7;
         if (weight < BIG_WEIGHT_MIN) {
-            return Math.max(0.5, Math.min(1.5, 0.5 + ((weight - 5) / (BIG_WEIGHT_MIN - 5))));
+            return Math.max(0.5, Math.min(1.5, 0.5 + ((weight - SMALL_WEIGHT_MIN) / (BIG_WEIGHT_MIN - SMALL_WEIGHT_MIN))));
         }
         return 1.5 + Math.floor(weight / 100) * 0.5;
     }
@@ -226,7 +238,8 @@
         if (forceTitanic) return 'titanic';
         if (weight >= HUGE_WEIGHT_MIN) return 'huge';
         if (weight >= BIG_WEIGHT_MIN) return 'big';
-        return 'normal';
+        if (weight >= NORMAL_WEIGHT_MIN) return 'normal';
+        return 'small';
     }
 
     function weightCapForSizeTier(sizeTier = 'normal') {
@@ -237,7 +250,7 @@
         const fallbackWeight = plant ? (plant.baseW * (tile?.scale || 1)) : 5;
         const forcedTier = tile?.sizeTier === 'titanic' ? 'titanic' : 'normal';
         const cap = weightCapForSizeTier(forcedTier);
-        return Math.max(5, Math.min(cap, Number(tile?.weight) || fallbackWeight || 5));
+        return Math.max(SMALL_WEIGHT_MIN, Math.min(cap, Number(tile?.weight) || fallbackWeight || SMALL_WEIGHT_MIN));
     }
 
     function resolveTileWeightState(tile, plant = null, buffs = null) {
@@ -246,7 +259,7 @@
         const isTitanic = tile?.sizeTier === 'titanic';
         const sizeTier = sizeTierFromWeight(baseWeight, isTitanic);
         const weightCap = weightCapForSizeTier(sizeTier);
-        const actualWeight = Math.max(5, Math.min(weightCap, baseWeight * (1 + (activeBuffs.weightMult || 0))));
+        const actualWeight = Math.max(SMALL_WEIGHT_MIN, Math.min(weightCap, baseWeight * (1 + (activeBuffs.weightMult || 0))));
         const resolvedTier = sizeTierFromWeight(actualWeight, sizeTier === 'titanic');
         return {
             baseWeight: Math.round(baseWeight * 10) / 10,
@@ -382,23 +395,34 @@
     }
 
     function visualScaleForWeight(weight, tier) {
-        if (tier === 'titanic') return 5.95;
-        if (tier === 'huge') return parseFloat((3.25 + ((weight - HUGE_WEIGHT_MIN) / (HUGE_WEIGHT_MAX - HUGE_WEIGHT_MIN)) * 0.75).toFixed(2));
-        if (tier === 'big') return parseFloat((2.3 + ((weight - BIG_WEIGHT_MIN) / (BIG_WEIGHT_MAX - BIG_WEIGHT_MIN)) * 0.7).toFixed(2));
-        return parseFloat(getWeightMultiplier(weight).toFixed(2));
+        const scaleBetween = (minWeight, maxWeight, minScale, maxScale) => {
+            const progress = Math.max(0, Math.min(1, (weight - minWeight) / (maxWeight - minWeight)));
+            return parseFloat((minScale + (maxScale - minScale) * progress).toFixed(2));
+        };
+        if (tier === 'titanic') return scaleBetween(TITANIC_WEIGHT_MIN, TITANIC_WEIGHT_MAX, 2.4, 3.6);
+        if (tier === 'huge') return scaleBetween(HUGE_WEIGHT_MIN, HUGE_WEIGHT_MAX, 1.8, 2.4);
+        if (tier === 'big') return scaleBetween(BIG_WEIGHT_MIN, BIG_WEIGHT_MAX, 1.32, 1.8);
+        if (tier === 'normal') return scaleBetween(NORMAL_WEIGHT_MIN, NORMAL_WEIGHT_MAX, .84, 1.32);
+        return scaleBetween(SMALL_WEIGHT_MIN, SMALL_WEIGHT_MAX, .48, .84);
     }
 
     function rollCropWeight() {
         const r = Math.random();
-        let tier = 'normal';
-        let weight = randomRange(5, BIG_WEIGHT_MIN);
+        let tier = 'small';
+        let weight = randomRange(SMALL_WEIGHT_MIN, SMALL_WEIGHT_MAX);
 
-        if (r < HUGE_CROP_CHANCE) {
+        if (r < TITANIC_CROP_CHANCE) {
+            tier = 'titanic';
+            weight = randomRange(TITANIC_WEIGHT_MIN, TITANIC_WEIGHT_MAX);
+        } else if (r < TITANIC_CROP_CHANCE + HUGE_CROP_CHANCE) {
             tier = 'huge';
             weight = randomRange(HUGE_WEIGHT_MIN, HUGE_WEIGHT_MAX);
-        } else if (r < HUGE_CROP_CHANCE + BIG_CROP_CHANCE) {
+        } else if (r < TITANIC_CROP_CHANCE + HUGE_CROP_CHANCE + BIG_CROP_CHANCE) {
             tier = 'big';
             weight = randomRange(BIG_WEIGHT_MIN, BIG_WEIGHT_MAX);
+        } else if (r < TITANIC_CROP_CHANCE + HUGE_CROP_CHANCE + BIG_CROP_CHANCE + NORMAL_CROP_CHANCE) {
+            tier = 'normal';
+            weight = randomRange(NORMAL_WEIGHT_MIN, NORMAL_WEIGHT_MAX);
         }
 
         weight = Math.round(weight * 10) / 10;
@@ -419,6 +443,11 @@
     function formatWeightLabel(value) {
         const safe = Number(value) || 0;
         return safe >= 1000 ? formatWeight(safe) : `${formatWeight(safe)}кг`;
+    }
+
+    function formatInspectWeight(value) {
+        const safe = Math.max(0, Number(value) || 0);
+        return `${safe.toLocaleString('ru-RU', { maximumFractionDigits: 1 })} кг`;
     }
 
     function getWeedReward(level = player.lvl) {
@@ -460,6 +489,14 @@
             }).join('')
             : '<span class="plant-inspect-tag">Нет мутаций</span>';
         const growthLabel = t.growth >= 100 ? 'Готово' : `${Math.floor(t.growth)}%`;
+        const sizeLabels = {
+            small: 'Маленький',
+            normal: 'Обычный',
+            big: 'Большой',
+            huge: 'Огромный',
+            titanic: 'Титанический'
+        };
+        const sizeLabel = sizeLabels[t.sizeTier] || sizeLabels[resolved.sizeTier] || 'Обычный';
         const card = document.getElementById('plant-inspect-card');
         if (!card) return;
         card.innerHTML = `
@@ -474,15 +511,15 @@
                 </div>
                 <div class="plant-inspect-cell">
                     <small>Вес</small>
-                    <b>${formatWeightLabel(resolved.actualWeight)}</b>
+                    <b>${formatInspectWeight(resolved.actualWeight)}</b>
                 </div>
                 <div class="plant-inspect-cell">
                     <small>Рост</small>
                     <b>${growthLabel}</b>
                 </div>
                 <div class="plant-inspect-cell">
-                    <small>Мутаций</small>
-                    <b>${(t.mutations || []).length}</b>
+                    <small>Размер</small>
+                    <b>${sizeLabel}</b>
                 </div>
             </div>
             <div class="plant-inspect-muts">
@@ -521,10 +558,7 @@
     }
 
     function cropSizePercent(weight, sizeTier) {
-        if (sizeTier === 'titanic') return 100;
-        if (sizeTier === 'huge' || weight >= HUGE_WEIGHT_MIN) return 60 + Math.min(20, ((weight - HUGE_WEIGHT_MIN) / (HUGE_WEIGHT_MAX - HUGE_WEIGHT_MIN)) * 20);
-        if (sizeTier === 'big' || weight >= BIG_WEIGHT_MIN) return 40 + Math.min(20, ((weight - BIG_WEIGHT_MIN) / (BIG_WEIGHT_MAX - BIG_WEIGHT_MIN)) * 20);
-        return 20 + Math.max(0, Math.min(20, ((weight - 5) / (BIG_WEIGHT_MIN - 5)) * 20));
+        return Math.round(visualScaleForWeight(weight, sizeTier) * 100);
     }
 
     function cropSaleValue(plantId, mutations, weight, coinMult = 0, sizeTier = 'normal') {
@@ -571,7 +605,8 @@
                 showBigMutation(mId);
             }
         });
-        if (crop.sizeTier === 'big' || crop.sizeTier === 'huge') {
+        if (env.openMenuSections.diary) renderDiary();
+        if (crop.sizeTier === 'big' || crop.sizeTier === 'huge' || crop.sizeTier === 'titanic') {
             player.rares[crop.sizeTier] = (player.rares[crop.sizeTier] || 0) + 1;
         }
     }
@@ -617,7 +652,7 @@
         const candyPieces = mId === 'candy'
             ? '<i class="candy-float">🍬</i><i class="candy-float">🍭</i><i class="candy-float">🍫</i>'
             : '';
-        const lunarLight = mId === 'lunar'
+        const lunarLight = (mId === 'lunar' || mId === 'bloodmoon')
             ? '<i class="lunar-beam"></i><i class="lunar-pool"></i><i class="lunar-speck speck-one"></i><i class="lunar-speck speck-two"></i><i class="lunar-speck speck-three"></i>'
             : '';
         /* UNUSED (toxic gas-mask v7 aura): the mask now lives inside plant-wrapper with the model. */
@@ -629,7 +664,7 @@
     }
 
     function toxicPuddleHTML() {
-        return '<div class="toxic-cloud" aria-hidden="true"></div><i class="acid-bubble acid-bubble-one" aria-hidden="true"></i><i class="acid-bubble acid-bubble-two" aria-hidden="true"></i><i class="acid-bubble acid-bubble-three" aria-hidden="true"></i><i class="acid-bubble acid-bubble-four" aria-hidden="true"></i>';
+        return '<div class="toxic-cloud" aria-hidden="true"></div><i class="acid-bubble acid-bubble-one" aria-hidden="true"></i><i class="acid-bubble acid-bubble-two" aria-hidden="true"></i><i class="acid-bubble acid-bubble-three" aria-hidden="true"></i><i class="acid-bubble acid-bubble-four" aria-hidden="true"></i><i class="acid-bubble acid-bubble-five" aria-hidden="true"></i><i class="acid-bubble acid-bubble-six" aria-hidden="true"></i><i class="acid-bubble acid-bubble-seven" aria-hidden="true"></i>';
     }
 
     function cropMutationAuraHTML(mutations) {
@@ -640,25 +675,47 @@
         }).join('')}</div>`;
     }
 
+    function shouldUseHoneyCap(plantId, mutations) {
+        if (!mutations?.includes('honey')) return false;
+        return mutations[0] !== 'honey' || HONEY_CAP_MODEL_IDS.has(plantId);
+    }
+
+    function honeyCapHTML(plantId, mutations) {
+        return shouldUseHoneyCap(plantId, mutations) ? '<span class="honey-cap" aria-hidden="true"></span>' : '';
+    }
+
     function showcaseCropHTML(crop) {
         if (!crop || !PLANTS[crop.plantId]) return '';
         const p = PLANTS[crop.plantId];
-        const pct = cropSizePercent(crop.weight || 5, crop.sizeTier || 'normal');
-        const scale = Math.max(0.48, Math.min(1.88, pct / 42));
+        const pct = cropSizePercent(crop.weight || SMALL_WEIGHT_MIN, crop.sizeTier || 'small');
+        // Preserve the garden's weight progression, while keeping every tier inside its card.
+        const scale = Math.max(.52, Math.min(1.22, .42 + (pct / 100) * .25));
         const mutations = crop.mutations || [];
         const mutClasses = mutations.map(mId => `mut-${mId}`).join(' ');
         const primary = mutations[0] ? `primary-${mutations[0]}` : '';
-        const glowHtml = mutations.length ? '<span class="showcase-glow"></span>' : '';
         return `
             <div class="showcase-crop-art showcase-plant-preview tile occupied ready crop-${crop.sizeTier || 'normal'} ${mutClasses} ${primary}" style="--plant-scale:${scale}; --crop-color:${p.color};">
-                ${glowHtml}
+                ${toxicPuddleHTML()}
                 ${cropMutationAuraHTML(mutations)}
                 ${cropBadgesHTML(mutations)}
                 <div class="plant-wrapper">
-                    <div class="model visible model-${p.id} ready">${toxicGasMaskHTML()}</div>
+                    <div class="model visible model-${p.id} ready">${toxicGasMaskHTML()}${honeyCapHTML(p.id, mutations)}</div>
                 </div>
             </div>
         `;
+    }
+
+    // Showcase cards use the same model-bound mutation placement as garden tiles.
+    function syncShowcasePreviewVisuals(root) {
+        if (!root) return;
+        requestAnimationFrame(() => {
+            root.querySelectorAll('.showcase-plant-preview').forEach(preview => {
+                if (!preview.isConnected) return;
+                const aura = preview.querySelector('.mutation-aura');
+                const model = preview.querySelector('.model');
+                if (model) queueModelBoundMutationGeometry(preview, model);
+            });
+        });
     }
 
 function init() {
@@ -870,17 +927,25 @@ function init() {
         const resolved = resolveTileWeightState(t, p, buffs);
         const actualWeight = resolved.actualWeight;
         const sizeTier = resolved.sizeTier;
+        const isGhostEchoSale = !!t.ghostEcho;
+        // A ghost echo keeps the exact visual tier it inherited from the original crop.
+        const harvestSizeTier = t.ghostEcho ? (t.sizeTier || sizeTier) : sizeTier;
         const weightMult = resolved.weightMult;
         let finalReward = t.ghostValue > 0 ? Math.floor(t.ghostValue) : Math.floor(p.reward * totalMult * (1 + buffs.coinMult) * weightMult);
         let xp = Math.floor(finalReward * BALANCE.xpRewardRate);
-        const ghostEchoPercent = t.ghostEchoPercent || 0;
-        const shouldCreateGhostEcho = ghostEchoPercent > 0 && t.ghostValue <= 0;
+        const legacyGhostEchoPercent = t.ghostEchoPercent || 0;
+        const isGhostMarked = !!t.ghostMarked && t.ghostValue <= 0;
+        const retainedMutationCount = isGhostMarked
+            ? Math.max(0, Math.min(3, Math.floor(Number(t.ghostCopyMutationCount) || 0)))
+            : (legacyGhostEchoPercent >= .85 ? 3 : (legacyGhostEchoPercent >= .55 ? 1 : 0));
+        const shouldCreateGhostEcho = (isGhostMarked || legacyGhostEchoPercent > 0) && t.ghostValue <= 0;
+        const ghostMutations = shouldCreateGhostEcho ? ghostCopyMutations(t.mutations, retainedMutationCount) : [];
         const cropRecord = {
             plantId: p.id,
             mutations: [...(t.mutations || [])],
             weight: Math.round(actualWeight * 10) / 10,
             weightMult,
-            sizeTier,
+            sizeTier: harvestSizeTier,
             value: finalReward
         };
 
@@ -896,8 +961,10 @@ function init() {
             tiles.forEach((_, tileIdx) => updateTileDOM(tileIdx));
         }
 
-        playHarvestSfx(sizeTier);
-        showHarvestSizeEffect(idx, sizeTier);
+        if (!isGhostEchoSale) {
+            playHarvestSfx(harvestSizeTier);
+            showHarvestSizeEffect(idx, harvestSizeTier);
+        }
         floatText(idx, `+${finalReward}$`, highestColor);
         if (p.id === 'carrot') updateQuest('grow_carrot', 1);
         updateQuest('harvest_any', 1);
@@ -905,8 +972,12 @@ function init() {
         updateQuest('earn_big', finalReward);
         if ((p.lvl || 0) >= 7) updateQuest('harvest_rare', 1);
         clearTile(idx); updateUI();
+        if (isGhostEchoSale) {
+            spawnGhostMarkFX(idx);
+            sfx.play('ghostEcho', 'ghost-echo-sale');
+        }
         if (shouldCreateGhostEcho) {
-            const ghostValue = Math.max(1, Math.floor(finalReward * ghostEchoPercent));
+            spawnGhostDepartureFX(idx);
             Object.assign(tiles[idx], {
                 id: idx,
                 active: true,
@@ -916,17 +987,22 @@ function init() {
                 slimeWater: 0,
                 slimeWaterMult: 1,
                 hasWeed: false,
-                mutations: ['phantom'],
+                mutations: ghostMutations,
                 scale: resolved.scale,
                 weight: Math.round(actualWeight * 10) / 10,
                 weightMult,
                 sizeTier,
                 beeLock: 0,
                 ghostEchoPercent: 0,
-                ghostValue
+                ghostMarked: false,
+                ghostCopyMutationCount: 0,
+                ghostEcho: true,
+                ghostValue: 0
             });
             updateTileDOM(idx);
-            floatText(idx, `копия ${compactNumber(ghostValue)}$`, '#cfd6df');
+            spawnGhostMarkFX(idx);
+            sfx.play('ghostEcho', 'ghost-echo-copy');
+            floatText(idx, ghostMutations.length ? `копия: ${ghostMutations.length} мут.` : 'серая копия', '#cfd6df');
         }
     }
 
@@ -938,7 +1014,7 @@ function init() {
     }
 
     function showHarvestSizeEffect(idx, sizeTier) {
-        if (sizeTier !== 'big' && sizeTier !== 'huge' && sizeTier !== 'titanic') return;
+        if (sizeTier !== 'huge' && sizeTier !== 'titanic') return;
         const tileEl = document.getElementById(`tile-${idx}`);
         if (!tileEl) return;
         const rect = tileEl.getBoundingClientRect();
@@ -946,9 +1022,7 @@ function init() {
         burst.className = `harvest-size-burst ${sizeTier}`;
         if (sizeTier === 'titanic') {
             burst.innerHTML = 'ТИТАНИЧЕСКИЙ!'.split('').map((ch, index) => `<span style="--glyph-index:${index}">${ch === ' ' ? '&nbsp;' : ch}</span>`).join('');
-        } else {
-            burst.textContent = sizeTier === 'huge' ? 'ОГРОМНЫЙ!' : 'БОЛЬШОЙ';
-        }
+        } else burst.textContent = 'ОГРОМНЫЙ!';
         burst.style.left = `${rect.left + rect.width / 2}px`;
         burst.style.top = `${rect.top + rect.height / 2}px`;
         document.body.appendChild(burst);
@@ -964,7 +1038,7 @@ function init() {
     }
 
     function clearTile(idx) {
-        tiles[idx].active = false; tiles[idx].plantId = null; tiles[idx].growth = 0; tiles[idx].water = 0; tiles[idx].slimeWater = 0; tiles[idx].slimeWaterMult = 1; tiles[idx].hasWeed = false; tiles[idx].mutations = []; tiles[idx].scale = 1; tiles[idx].weight = 5; tiles[idx].weightMult = 1; tiles[idx].sizeTier = 'normal'; tiles[idx].beeLock = 0; tiles[idx].ghostEchoPercent = 0; tiles[idx].ghostValue = 0;
+        tiles[idx].active = false; tiles[idx].plantId = null; tiles[idx].growth = 0; tiles[idx].water = 0; tiles[idx].slimeWater = 0; tiles[idx].slimeWaterMult = 1; tiles[idx].hasWeed = false; tiles[idx].mutations = []; tiles[idx].scale = .4; tiles[idx].weight = 1; tiles[idx].weightMult = 1; tiles[idx].sizeTier = 'small'; tiles[idx].beeLock = 0; tiles[idx].ghostEchoPercent = 0; tiles[idx].ghostMarked = false; tiles[idx].ghostCopyMutationCount = 0; tiles[idx].ghostEcho = false; tiles[idx].ghostValue = 0;
         updateTileDOM(idx);
     }
 
@@ -1088,7 +1162,10 @@ function init() {
                 if (element.isConnected) restoreInlineStyle(element, 'border-color', styles['border-color']);
             });
         }
-        if (restore) env.nightPalette = null;
+        if (restore) {
+            env.nightPalette = null;
+            env.nightPalettePhase = 'day';
+        }
     }
 
     function captureNightGardenPalette() {
@@ -1118,25 +1195,41 @@ function init() {
         const palette = env.nightPalette;
         if (!palette) return;
 
-        const entering = phase === 'night';
-        const duration = entering ? NIGHT_AMBIENCE_ENTER_MS : NIGHT_AMBIENCE_EXIT_MS;
-        const gardenTo = entering ? [185, 190, 200] : palette.gardenFrom;
-        const borderTo = entering ? [73, 52, 94] : palette.borderFrom;
-        const tileTo = entering ? [80, 59, 103] : null;
+        const paletteColors = {
+            night: { garden: [185, 190, 200], border: [73, 52, 94], tile: [80, 59, 103] },
+            bloodmoon: { garden: [218, 140, 146], border: [118, 40, 59], tile: [145, 54, 67] }
+        };
+        const targetPhase = phase === 'bloodmoon' ? 'bloodmoon' : (phase === 'night' ? 'night' : 'day');
+        const sourcePhase = env.nightPalettePhase || 'day';
+        const sourceColors = paletteColors[sourcePhase] || null;
+        const targetColors = paletteColors[targetPhase] || null;
+        const duration = targetPhase === 'night'
+            ? NIGHT_AMBIENCE_ENTER_MS
+            : (targetPhase === 'bloodmoon' ? BLOODMOON_AMBIENCE_ENTER_MS : NIGHT_AMBIENCE_EXIT_MS);
+        const gardenTo = targetColors ? targetColors.garden : palette.gardenFrom;
+        const borderTo = targetColors ? targetColors.border : palette.borderFrom;
+        const tileTo = targetColors ? targetColors.tile : null;
+        // Dawn must start at the color currently rendered on the garden, never at a stale phase preset.
+        const currentGarden = cssColorToRgb(getComputedStyle(palette.garden).backgroundColor);
+        const currentBorder = cssColorToRgb(getComputedStyle(palette.garden).borderTopColor);
+        const currentTiles = new Map(palette.tiles.map(tile => [
+            tile.element,
+            cssColorToRgb(getComputedStyle(tile.element).borderTopColor)
+        ]));
         const startedAt = performance.now();
 
         const frame = now => {
             const progress = Math.min(1, (now - startedAt) / duration);
             const eased = nightPaletteEase(progress);
-            const gardenStart = entering ? palette.gardenFrom : [185, 190, 200];
-            const borderStart = entering ? palette.borderFrom : [73, 52, 94];
+            const gardenStart = targetPhase === 'day' ? (currentGarden || palette.gardenFrom) : (sourceColors ? sourceColors.garden : palette.gardenFrom);
+            const borderStart = targetPhase === 'day' ? (currentBorder || palette.borderFrom) : (sourceColors ? sourceColors.border : palette.borderFrom);
 
             palette.garden.style.setProperty('background', rgbCss(blendRgb(gardenStart, gardenTo, eased)), 'important');
             palette.garden.style.setProperty('border-color', rgbCss(blendRgb(borderStart, borderTo, eased)), 'important');
             palette.tiles.forEach(tile => {
                 if (!tile.element.isConnected) return;
-                const tileStart = entering ? tile.from : [80, 59, 103];
-                const tileEnd = entering ? tileTo : tile.from;
+                const tileStart = targetPhase === 'day' ? (currentTiles.get(tile.element) || tile.from) : (sourceColors ? sourceColors.tile : tile.from);
+                const tileEnd = targetColors ? tileTo : tile.from;
                 tile.element.style.setProperty('border-color', rgbCss(blendRgb(tileStart, tileEnd, eased)), 'important');
             });
 
@@ -1145,7 +1238,8 @@ function init() {
                 return;
             }
             env.nightPaletteFrame = null;
-            if (!entering) stopNightGardenPalette(true);
+            if (targetPhase === 'day') stopNightGardenPalette(true);
+            else env.nightPalettePhase = targetPhase;
         };
         env.nightPaletteFrame = requestAnimationFrame(frame);
     }
@@ -1155,6 +1249,8 @@ function init() {
         env.nightDawnTimer = null;
         env.nightDawnActive = false;
         document.body.classList.remove('night-fading');
+        document.body.classList.remove('bloodmoon-phase');
+        document.getElementById('garden')?.classList.remove('bloodmoon-dawn');
         stopNightGardenPalette(true);
     }
 
@@ -1169,11 +1265,37 @@ function init() {
         });
     }
 
+    /* UNUSED (blood moon dawn v1): direct palette interpolation avoids a red overlay over green. */
+    function startBloodmoonDawnCrossfade() {
+        const palette = env.nightPalette;
+        if (!palette?.garden) return false;
+        const { garden, gardenStyles, tiles } = palette;
+        garden.classList.add('bloodmoon-dawn');
+        Object.entries(gardenStyles).forEach(([property, saved]) => restoreInlineStyle(garden, property, saved));
+        tiles.forEach(({ element, styles }) => {
+            if (element.isConnected) restoreInlineStyle(element, 'border-color', styles['border-color']);
+        });
+        stopNightGardenPalette(true);
+        setTimeout(() => garden.classList.remove('bloodmoon-dawn'), NIGHT_AMBIENCE_EXIT_MS);
+        return true;
+    }
+
+    function restoreBloodmoonPaletteWithoutBlend() {
+        const garden = env.nightPalette?.garden;
+        // Disable only the garden transition while restoring literal day colors.
+        garden?.classList.add('bloodmoon-dawn');
+        stopNightGardenPalette(true);
+        requestAnimationFrame(() => garden?.classList.remove('bloodmoon-dawn'));
+    }
+
     function beginNightDawn() {
         if (env.currentEvent !== 'night' || env.nightDawnActive) return;
         env.nightDawnActive = true;
+        const wasBloodmoon = document.body.classList.contains('bloodmoon-phase');
         document.body.classList.remove('night-fading');
-        animateNightGardenPalette('day');
+        document.body.classList.remove('bloodmoon-phase');
+        if (wasBloodmoon) restoreBloodmoonPaletteWithoutBlend();
+        else animateNightGardenPalette('day');
         env.nightDawnTimer = setTimeout(() => {
             if (env.currentEvent !== 'night' || !env.nightDawnActive) return;
             env.nightDawnActive = false;
@@ -1181,6 +1303,12 @@ function init() {
             startEvent('day');
         }, NIGHT_AMBIENCE_EXIT_MS);
         updateStateIndicator();
+    }
+
+    function startBloodmoonAmbience() {
+        if (env.currentEvent !== 'night') return;
+        document.body.classList.add('bloodmoon-phase');
+        animateNightGardenPalette('bloodmoon');
     }
 
     function scheduleSunpuddingEclipsePhase(tier) {
@@ -1438,6 +1566,8 @@ function init() {
 
     function pickValuableTileIds(count, options = {}) {
         return activePlantTileIds(options)
+            .filter(id => !options.readyOnly || tiles[id]?.growth >= 100)
+            .filter(id => !options.excludeTitanic || tiles[id]?.sizeTier !== 'titanic')
             .map(id => ({ id, value: inspectCropValue(tiles[id]) }))
             .sort((a, b) => b.value - a.value)
             .slice(0, Math.max(0, count))
@@ -1451,10 +1581,56 @@ function init() {
         return 1;
     }
 
+    function ghostCopyMutations(sourceMutations, count) {
+        if (count <= 0) return [];
+        return shuffleList([...new Set((sourceMutations || []).filter(mId => MUTATIONS[mId]))]).slice(0, count);
+    }
+
+    function pickGhostAbilityTargets(tier) {
+        const eligible = activePlantTileIds().filter(idx => {
+            const tile = tiles[idx];
+            return tile && tile.ghostValue <= 0 && !tile.ghostEcho && !tile.ghostMarked;
+        });
+        if (tier >= 3) {
+            return eligible
+                .map(idx => ({ idx, value: inspectCropValue(tiles[idx]) }))
+                .sort((a, b) => b.value - a.value)
+                .slice(0, 1)
+                .map(entry => entry.idx);
+        }
+        return shuffleList(eligible).slice(0, tier === 2 ? 2 : 1);
+    }
+
+    function spawnGhostDepartureFX(idx) {
+        const tileEl = document.getElementById(`tile-${idx}`);
+        if (!tileEl) return;
+        const departure = document.createElement('i');
+        departure.className = 'ghost-departure-fx';
+        departure.setAttribute('aria-hidden', 'true');
+        departure.innerHTML = '<i class="ghost-departure-eyes"></i><i class="ghost-departure-pop"></i>';
+        tileEl.appendChild(departure);
+        setTimeout(() => departure.remove(), 780);
+    }
+
+    function spawnGhostMarkFX(idx) {
+        const tileEl = document.getElementById(`tile-${idx}`);
+        if (!tileEl) return;
+        const impact = document.createElement('i');
+        impact.className = 'ghost-mark-impact';
+        impact.setAttribute('aria-hidden', 'true');
+        impact.innerHTML = '<i class="ghost-impact-ring"></i><i class="ghost-impact-wisp wisp-left"></i><i class="ghost-impact-wisp wisp-right"></i><i class="ghost-impact-wisp wisp-top"></i>';
+        tileEl.appendChild(impact);
+        setTimeout(() => impact.remove(), 980);
+    }
+
     function canTileReceiveMutation(tile, mutType) {
         if (!tile || !tile.active || !MUTATIONS[mutType]) return false;
         const current = Array.isArray(tile.mutations) ? tile.mutations : [];
-        if (current.includes(mutType) || current.length >= 3) return false;
+        if (current.includes(mutType)) return false;
+        // These mutations are one state: Blood Moon upgrades Lunar and never occupies another slot.
+        if (mutType === 'lunar' && current.includes('bloodmoon')) return false;
+        if (mutType === 'bloodmoon') return current.includes('lunar');
+        if (current.length >= 3) return false;
         if (MATERIAL_MUTATIONS.has(mutType) && current.some(existing => MATERIAL_MUTATIONS.has(existing))) return false;
         return true;
     }
@@ -1462,6 +1638,7 @@ function init() {
     function commitTileMutation(idx, mutType) {
         const tile = tiles[idx];
         if (!canTileReceiveMutation(tile, mutType)) return false;
+        if (mutType === 'bloodmoon') return replaceTileMutation(idx, 'lunar', 'bloodmoon');
         tile.mutations.push(mutType);
         return true;
     }
@@ -1494,6 +1671,31 @@ function init() {
             return added >= count;
         });
         return added;
+    }
+
+    function triggerBasicRainbowMutation(idx, delay = 0) {
+        const tile = tiles[idx];
+        const tileEl = document.getElementById(`tile-${idx}`);
+        if (!tile?.active || !tileEl || !canTileReceiveMutation(tile, 'rainbow')) return false;
+        setTimeout(() => {
+            const liveTile = tiles[idx];
+            const liveTileEl = document.getElementById(`tile-${idx}`);
+            if (!liveTile?.active || !liveTileEl || !canTileReceiveMutation(liveTile, 'rainbow')) return;
+            const flare = document.createElement('i');
+            flare.className = 'basic-rainbow-mutation-flash';
+            flare.setAttribute('aria-hidden', 'true');
+            liveTileEl.appendChild(flare);
+            liveTileEl.classList.add('basic-rainbow-hit');
+            sfx.play('mut');
+            setTimeout(() => {
+                if (commitTileMutation(idx, 'rainbow')) updateTileDOM(idx);
+            }, 380);
+            setTimeout(() => {
+                liveTileEl.classList.remove('basic-rainbow-hit');
+                flare.remove();
+            }, 920);
+        }, delay);
+        return true;
     }
 
     function pickTileIdsForMutation(mutType, count, options = {}) {
@@ -1768,9 +1970,12 @@ function init() {
         env.moonmeltLunarTimers = [];
         env.moonmeltLunarFinale = false;
         document.body.classList.remove('moonmelt-night-deep');
+        document.body.classList.remove('bloodmoon-phase');
         document.getElementById('garden')?.classList.remove('moonmelt-moonlit');
         document.querySelectorAll('.lunar-mutation-beam').forEach(effect => effect.remove());
+        document.querySelectorAll('.bloodmoon-mutation-beam').forEach(effect => effect.remove());
         document.querySelectorAll('.tile.lunar-hit').forEach(tile => tile.classList.remove('lunar-hit'));
+        document.querySelectorAll('.tile.bloodmoon-hit').forEach(tile => tile.classList.remove('bloodmoon-hit'));
     }
 
     function queueMoonmeltLunarTimer(callback, delay) {
@@ -1781,6 +1986,51 @@ function init() {
         if (!Array.isArray(env.moonmeltLunarTimers)) env.moonmeltLunarTimers = [];
         env.moonmeltLunarTimers.push(timerId);
         return timerId;
+    }
+
+    function animateMoonmeltVisual(element, durationMs, renderFrame) {
+        const startedAt = performance.now();
+        const frame = now => {
+            if (!element.isConnected) return;
+            const progress = Math.min(1, Math.max(0, (now - startedAt) / durationMs));
+            renderFrame(progress);
+            if (progress < 1) requestAnimationFrame(frame);
+        };
+        requestAnimationFrame(frame);
+    }
+
+    function smoothProgress(progress) {
+        const clamped = Math.max(0, Math.min(1, progress));
+        return clamped * clamped * (3 - 2 * clamped);
+    }
+
+    function animateMoonmeltLunarBeam(beam) {
+        animateMoonmeltVisual(beam, MOONMELT_LUNAR_BEAM_REMOVE_DELAY_MS, progress => {
+            const arrival = smoothProgress(Math.min(1, progress / .72));
+            const fade = progress <= .76 ? 1 : 1 - smoothProgress((progress - .76) / .24);
+            const flash = Math.sin(Math.PI * Math.max(0, Math.min(1, (progress - .62) / .22)));
+            beam.style.setProperty('--lunar-receive-opacity', (Math.min(1, progress / .26) * .96 * fade).toFixed(3));
+            beam.style.setProperty('--lunar-receive-y', `${(-23 + arrival * 25).toFixed(2)}px`);
+            beam.style.setProperty('--lunar-receive-scale-x', (.74 + arrival * .28).toFixed(3));
+            beam.style.setProperty('--lunar-receive-scale-y', (.96 + arrival * .065).toFixed(3));
+            beam.style.setProperty('--lunar-receive-flash-opacity', (flash * .92).toFixed(3));
+            beam.style.setProperty('--lunar-receive-flash-scale', (.22 + flash * 2.8).toFixed(3));
+        });
+    }
+
+    function animateMoonmeltBloodmoonMoon(moon) {
+        animateMoonmeltVisual(moon, MOONMELT_BLOODMOON_BEAM_REMOVE_DELAY_MS, progress => {
+            const settle = smoothProgress(Math.min(1, progress / .5));
+            const burst = smoothProgress(Math.max(0, Math.min(1, (progress - .7) / .1)));
+            const flare = Math.sin(Math.PI * Math.max(0, Math.min(1, (progress - .64) / .16)));
+            const scale = 1.55 - settle * .55;
+            moon.style.setProperty('--bloodmoon-moon-opacity', (settle * (1 - burst)).toFixed(3));
+            moon.style.setProperty('--bloodmoon-moon-y', '0px');
+            moon.style.setProperty('--bloodmoon-moon-scale', scale.toFixed(3));
+            moon.style.setProperty('--bloodmoon-moon-scale-y', (scale * .93).toFixed(3));
+            moon.style.setProperty('--bloodmoon-flash-opacity', (flare * .96).toFixed(3));
+            moon.style.setProperty('--bloodmoon-flash-scale', (.42 + flare * 2.5).toFixed(3));
+        });
     }
 
     function triggerMoonmeltLunarMutation(idx, delay = 0) {
@@ -1794,6 +2044,7 @@ function init() {
             beam.className = 'lunar-mutation-beam';
             tileEl.appendChild(beam);
             tileEl.classList.add('lunar-hit');
+            animateMoonmeltLunarBeam(beam);
 
             queueMoonmeltLunarTimer(() => {
                 const liveTile = tiles[idx];
@@ -1811,19 +2062,73 @@ function init() {
         }, delay);
     }
 
-    function scheduleMoonmeltLunarFinale(lunarTiles) {
+    function replaceTileMutation(idx, fromMutation, toMutation) {
+        const tile = tiles[idx];
+        if (!tile || !MUTATIONS[toMutation]) return false;
+        const mutationIndex = (tile.mutations || []).indexOf(fromMutation);
+        if (mutationIndex < 0 || tile.mutations.includes(toMutation)) return false;
+        tile.mutations[mutationIndex] = toMutation;
+        return true;
+    }
+
+    function triggerMoonmeltBloodmoonMutation(idx, delay = 0) {
+        queueMoonmeltLunarTimer(() => {
+            if (env.currentEvent !== 'night') return;
+            const tile = tiles[idx];
+            const tileEl = document.getElementById(`tile-${idx}`);
+            if (!tileEl || !tile?.mutations.includes('lunar') || tileEl.classList.contains('bloodmoon-hit')) return;
+
+            const beam = document.createElement('span');
+            beam.className = 'bloodmoon-mutation-beam';
+            tileEl.appendChild(beam);
+            tileEl.classList.add('bloodmoon-hit');
+            animateMoonmeltBloodmoonMoon(beam);
+
+            queueMoonmeltLunarTimer(() => {
+                if (!tiles[idx]?.mutations.includes('lunar')) return;
+                if (replaceTileMutation(idx, 'lunar', 'bloodmoon')) {
+                    sfx.play('mut');
+                    syncTileMutationPresentation(idx);
+                }
+            }, MOONMELT_BLOODMOON_BEAM_COMMIT_DELAY_MS);
+
+            queueMoonmeltLunarTimer(() => {
+                tileEl.classList.remove('bloodmoon-hit');
+                beam.remove();
+            }, MOONMELT_BLOODMOON_BEAM_REMOVE_DELAY_MS);
+        }, delay);
+    }
+
+    function scheduleMoonmeltLunarFinale(lunarTiles, bloodmoonTiles = []) {
         if (!lunarTiles.length) return 0;
         clearMoonmeltLunarFinale();
         env.moonmeltLunarFinale = true;
         const gatheringMs = 3600;
-        const sequenceMs = MOONMELT_LUNAR_BEAM_REMOVE_DELAY_MS
+        const lunarSequenceMs = MOONMELT_LUNAR_BEAM_REMOVE_DELAY_MS
             + Math.max(0, lunarTiles.length - 1) * MOONMELT_LUNAR_BEAM_GAP_MS;
-        const totalMs = gatheringMs + sequenceMs + 1100;
+        const bloodmoonPhaseStartMs = gatheringMs + lunarSequenceMs + 360;
+        const bloodmoonStartMs = bloodmoonPhaseStartMs + BLOODMOON_AMBIENCE_ENTER_MS;
+        const bloodmoonSequenceMs = bloodmoonTiles.length
+            ? MOONMELT_BLOODMOON_BEAM_REMOVE_DELAY_MS + Math.max(0, bloodmoonTiles.length - 1) * MOONMELT_BLOODMOON_BEAM_GAP_MS
+            : 0;
+        const totalMs = bloodmoonTiles.length
+            ? bloodmoonStartMs + bloodmoonSequenceMs + 760
+            : gatheringMs + lunarSequenceMs + 1100;
 
         queueMoonmeltLunarTimer(() => {
             if (env.currentEvent !== 'night') return;
             lunarTiles.forEach((idx, order) => triggerMoonmeltLunarMutation(idx, order * MOONMELT_LUNAR_BEAM_GAP_MS));
         }, gatheringMs);
+        if (bloodmoonTiles.length) {
+            queueMoonmeltLunarTimer(() => {
+                if (env.currentEvent !== 'night') return;
+                startBloodmoonAmbience();
+            }, bloodmoonPhaseStartMs);
+            queueMoonmeltLunarTimer(() => {
+                if (env.currentEvent !== 'night') return;
+                bloodmoonTiles.forEach((idx, order) => triggerMoonmeltBloodmoonMutation(idx, order * MOONMELT_BLOODMOON_BEAM_GAP_MS));
+            }, bloodmoonStartMs);
+        }
         queueMoonmeltLunarTimer(() => {
             if (env.currentEvent !== 'night') return;
             env.moonmeltLunarFinale = false;
@@ -1913,6 +2218,7 @@ function init() {
             setTimeout(() => el.classList.remove('ability-grow-pop'), 850);
         }
         updateTileDOM(idx);
+        trackModelBoundMutationGeometry(el, 900);
         return true;
     }
 
@@ -2075,6 +2381,7 @@ function init() {
                     if (!current || !current.active || current.growth < 100) return;
                     current.scale = parseFloat(finalScale.toFixed(3));
                     updateTileDOM(idx);
+                    trackModelBoundMutationGeometry(document.getElementById(`tile-${idx}`), 1050);
                     document.body.classList.add('titanic-growth-darken');
                     setTimeout(() => document.body.classList.remove('titanic-growth-darken'), 180);
                 }, 50);
@@ -2091,7 +2398,16 @@ function init() {
     }
 
     function applyCompanionAbilityEffect(id, tier) {
-        if (id === 'basic') return { ok: false, message: 'У базового слайма пока нет способности' };
+        if (id === 'basic') {
+            const count = tier === 3 ? randomInt(3, 6) : (tier === 2 ? randomInt(2, 3) : 1);
+            const targets = pickTileIdsForMutation('rainbow', count);
+            targets.forEach((idx, order) => triggerBasicRainbowMutation(idx, order * 180));
+            return {
+                ok: targets.length > 0,
+                message: targets.length > 1 ? `Радужный всплеск: ${targets.length} растений` : 'Радужная мутация!',
+                specialDurationMs: Math.max(1100, targets.length * 180 + 920)
+            };
+        }
         if (id === 'dewdrop') {
             const count = tier === 3 ? activePlantTileIds().length : randomInt(tier === 2 ? 3 : 2, tier === 2 ? 5 : 3);
             const mult = tier === 3 ? 3 : (tier === 2 ? 2.5 : 2);
@@ -2142,10 +2458,7 @@ function init() {
         }
         if (id === 'nectar') {
             if (tier === 3) {
-                const picked = pickValuableTileIds(1).filter(idx => {
-                    const t = tiles[idx];
-                    return t && t.active && t.growth >= 100 && t.sizeTier !== 'titanic';
-                });
+                const picked = pickValuableTileIds(1, { readyOnly: true, excludeTitanic: true });
                 picked.forEach(idx => triggerTitanicNectarGrowthOnTile(idx));
                 return { ok: picked.length > 0, message: 'Титанический рост!' };
             }
@@ -2202,27 +2515,34 @@ function init() {
             triggerCompanionEvent('night', 15);
             const count = tier === 1 ? randomInt(1, 3) : (tier === 2 ? randomInt(2, 5) : randomInt(3, 6));
             const lunarTiles = pickTileIdsForMutation('lunar', count);
-            const finaleDurationMs = scheduleMoonmeltLunarFinale(lunarTiles);
-            if (tier === 3 && Math.random() < 0.01) {
-                queueMoonmeltLunarTimer(() => addMutationToRandomTiles('void', 1), Math.max(4600, finaleDurationMs - 900));
-            }
+            // At level 15, the crimson phase upgrades existing Lunar mutations in-place.
+            const bloodmoonTiles = tier === 3 && lunarTiles.length && Math.random() < 0.5
+                ? shuffleList([...lunarTiles]).slice(0, Math.min(randomInt(1, 2), lunarTiles.length))
+                : [];
+            const finaleDurationMs = scheduleMoonmeltLunarFinale(lunarTiles, bloodmoonTiles);
             return {
                 ok: true,
-                message: lunarTiles.length ? 'Лунный свет разлился по грядкам' : 'Ночь пришла',
+                message: bloodmoonTiles.length ? 'Багровая луна взошла' : (lunarTiles.length ? 'Лунный свет разлился по грядкам' : 'Ночь пришла'),
                 specialDurationMs: finaleDurationMs ? finaleDurationMs + 260 : 3200
             };
         }
         if (id === 'phantooze') {
-            const count = tier === 3 ? 2 : 1;
-            const percent = tier === 1 ? 0.3 : (tier === 2 ? 0.6 : 0.9);
-            const picked = pickValuableTileIds(count).filter(idx => {
+            const retainedMutationCount = tier === 1 ? 0 : (tier === 2 ? 1 : 3);
+            const picked = pickGhostAbilityTargets(tier).filter(idx => {
                 const t = tiles[idx];
                 if (!t || !t.active) return false;
-                t.ghostEchoPercent = percent;
+                t.ghostEchoPercent = 0;
+                t.ghostMarked = true;
+                t.ghostCopyMutationCount = retainedMutationCount;
                 updateTileDOM(idx);
+                spawnGhostMarkFX(idx);
                 return true;
             });
-            return { ok: picked.length > 0, message: 'Призрачное эхо' };
+            const message = tier === 3
+                ? 'Призрак отметил самый дорогой урожай'
+                : (tier === 2 ? 'Призраки отметили два растения' : 'Призрак отметил растение');
+            if (picked.length) sfx.play('ghostEcho', 'ghost-cast');
+            return { ok: picked.length > 0, message };
         }
         if (id === 'voidpuddle') {
             if (tier === 1) triggerCompanionEvent('starfall');
@@ -2353,7 +2673,8 @@ function init() {
         if (t.growth >= 100) el.classList.add('ready');
         if (t.beeLock > 0) el.classList.add('bee-arrived'); 
         if (t.active && t.sizeTier) el.classList.add(`crop-${t.sizeTier}`);
-        if (t.ghostValue > 0) el.classList.add('ghost-echo');
+        if (t.ghostEcho || t.ghostValue > 0) el.classList.add('ghost-echo');
+        if (t.ghostMarked) el.classList.add('ghost-marked');
         if (t.mutations.length > 0) {
             t.mutations.forEach(mId => el.classList.add(`mut-${mId}`));
             el.classList.add(`primary-${t.mutations[0]}`);
@@ -2406,7 +2727,14 @@ function init() {
             const honeyDrops = wrapper.querySelectorAll('.honey-drop');
             if (honeyDrops.length !== 3 || honeyDrops[0].dataset.sizeTier !== (t.sizeTier || 'normal')) {
                 honeyDrops.forEach(d => d.remove());
-                const offsets = t.sizeTier === 'huge' ? [-7, 0, 7] : (t.sizeTier === 'big' ? [-9, 0, 9] : [-12, 0, 12]);
+                const honeyDropOffsets = {
+                    small: [-9, 0, 9],
+                    normal: [-12, 0, 12],
+                    big: [-11, 0, 11],
+                    huge: [-13, 0, 13],
+                    titanic: [-15, 0, 15]
+                };
+                const offsets = honeyDropOffsets[t.sizeTier] || honeyDropOffsets.normal;
                 for(let d=0; d<3; d++) {
                     const drop = document.createElement('div'); drop.className='honey-drop';
                     drop.dataset.sizeTier = t.sizeTier || 'normal';
@@ -2417,6 +2745,25 @@ function init() {
             }
         } else {
             wrapper.querySelectorAll('.honey-drop').forEach(d => d.remove());
+        }
+
+        const ghostMarker = el.querySelector(':scope > .ghost-plant-marker');
+        const ghostTileBreath = el.querySelector(':scope > .ghost-tile-breath');
+        if (t.ghostMarked && t.active && t.ghostValue <= 0) {
+            if (!ghostMarker) {
+                el.insertAdjacentHTML('beforeend', '<i class="ghost-plant-marker" aria-hidden="true"><i class="ghost-plant-eyes"></i></i>');
+            }
+            if (!ghostTileBreath) el.insertAdjacentHTML('afterbegin', '<i class="ghost-tile-breath" aria-hidden="true"></i>');
+        } else {
+            ghostMarker?.remove();
+            ghostTileBreath?.remove();
+        }
+
+        const honeyCap = model.querySelector('.honey-cap');
+        if (shouldUseHoneyCap(t.plantId, t.mutations)) {
+            if (!honeyCap) model.insertAdjacentHTML('beforeend', honeyCapHTML(t.plantId, t.mutations));
+        } else {
+            honeyCap?.remove();
         }
 
         if (!unlocked) {
@@ -2436,6 +2783,76 @@ function init() {
         } else {
             model.className = 'model';
         }
+        queueModelBoundMutationGeometry(el, model);
+    }
+
+    function queueModelBoundMutationGeometry(tileEl, model) {
+        requestAnimationFrame(() => updateModelBoundMutationGeometry(tileEl, model));
+    }
+
+    function updateModelBoundMutationGeometry(tileEl, model) {
+        if (!tileEl?.isConnected || !model?.classList.contains('visible')) return;
+        const tileRect = tileEl.getBoundingClientRect();
+        const modelRect = model.getBoundingClientRect();
+        if (!tileRect.width || !modelRect.width || !modelRect.height) return;
+
+        // Detached effects follow the model's layout center, not its animated paint bounds.
+        // offset metrics stay stable while mature crops bounce, shake, or change their sheen.
+        const plantWrapper = model.closest('.plant-wrapper');
+        const layoutCenterX = plantWrapper
+            ? plantWrapper.offsetLeft + model.offsetLeft + model.offsetWidth / 2
+            : tileRect.width / 2;
+        const centerX = Math.round(layoutCenterX);
+        const modelTop = modelRect.top - tileRect.top;
+        const modelBottom = modelRect.bottom - tileRect.top;
+        const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+        const haloWidth = clamp(modelRect.width * .72, 22, 44);
+        const fireWidth = clamp(modelRect.width * 1.16, 25, 74);
+        const fireHeight = clamp(modelRect.height * .7, 22, 62);
+        const puddleWidth = clamp(modelRect.width * 1.08, 52, 108);
+        const puddleHeight = clamp(puddleWidth * .3, 16, 30);
+        // Lunar and Blood Moon pools always stay narrower than Toxic's puddle at every crop size.
+        const lunarWidth = clamp(puddleWidth * .93, 40, 101);
+        const lunarHeight = clamp(modelRect.height * 1.48, 72, 156);
+        const puddleBottom = modelBottom + puddleHeight * .55;
+        const bubbleLayout = [
+            [-.41, -.12], [-.22, -.56], [.06, -.3], [.33, -.64],
+            [.48, -.2], [-.05, -.76], [-.33, -.43]
+        ];
+
+        tileEl.style.setProperty('--model-fx-center-x', `${centerX.toFixed(1)}px`);
+        tileEl.style.setProperty('--model-fx-top', `${modelTop.toFixed(1)}px`);
+        tileEl.style.setProperty('--model-fx-bottom', `${modelBottom.toFixed(1)}px`);
+        tileEl.style.setProperty('--model-fx-halo-width', `${haloWidth.toFixed(1)}px`);
+        tileEl.style.setProperty('--model-fx-halo-height', `${Math.max(11, haloWidth * .48).toFixed(1)}px`);
+        tileEl.style.setProperty('--model-fx-fire-width', `${fireWidth.toFixed(1)}px`);
+        tileEl.style.setProperty('--model-fx-fire-height', `${fireHeight.toFixed(1)}px`);
+        tileEl.style.setProperty('--model-fx-fire-offset', `${(-fireWidth / 2).toFixed(1)}px`);
+        tileEl.style.setProperty('--model-fx-lunar-width', `${lunarWidth.toFixed(1)}px`);
+        tileEl.style.setProperty('--model-fx-lunar-height', `${lunarHeight.toFixed(1)}px`);
+        tileEl.style.setProperty('--model-fx-lunar-offset', `${(-lunarWidth / 2).toFixed(1)}px`);
+        // The lunar pool shares the puddle's baseline while remaining deliberately more compact.
+        tileEl.style.setProperty('--model-fx-lunar-top', `${(puddleBottom - lunarHeight).toFixed(1)}px`);
+        tileEl.style.setProperty('--model-fx-puddle-width', `${puddleWidth.toFixed(1)}px`);
+        tileEl.style.setProperty('--model-fx-puddle-height', `${puddleHeight.toFixed(1)}px`);
+        tileEl.style.setProperty('--model-fx-puddle-offset', `${(-puddleWidth / 2).toFixed(1)}px`);
+        tileEl.style.setProperty('--model-fx-puddle-top', `${(modelBottom - puddleHeight * .45).toFixed(1)}px`);
+        bubbleLayout.forEach(([xRatio, yRatio], index) => {
+            tileEl.style.setProperty(`--model-fx-bubble-${index + 1}-left`, `${(centerX + puddleWidth * xRatio).toFixed(1)}px`);
+            tileEl.style.setProperty(`--model-fx-bubble-${index + 1}-top`, `${(modelBottom + puddleHeight * yRatio).toFixed(1)}px`);
+        });
+    }
+
+    function trackModelBoundMutationGeometry(tileEl, durationMs = 850) {
+        if (!tileEl?.isConnected) return;
+        const startedAt = performance.now();
+        const refresh = now => {
+            if (!tileEl.isConnected) return;
+            const model = tileEl.querySelector('.model.visible');
+            if (model) updateModelBoundMutationGeometry(tileEl, model);
+            if (now - startedAt < durationMs) requestAnimationFrame(refresh);
+        };
+        requestAnimationFrame(refresh);
     }
 
     function syncTileMutationPresentation(idx) {
@@ -2470,6 +2887,7 @@ function init() {
         }
 
         aura.dataset.mutSig = t.mutations.join('|');
+        queueModelBoundMutationGeometry(el, document.getElementById(`model-${idx}`));
     }
 
     function updateUI() {
@@ -2510,6 +2928,7 @@ function init() {
         renderShop();
     }
 
+    // UNUSED: the plot-style storefront is hidden while the shop's room tab is the single decor entry point.
     function selectDecorShopTab(tab) {
         env.decorShopTab = tab === 'room' ? 'room' : 'plots';
         renderShop();
@@ -2566,6 +2985,7 @@ function init() {
         const merchantTab = document.getElementById('shop-tab-merchant');
         if (!modal || !content || !headerTitle || !headerMeter || !seedsTab || !decorTab || !merchantTab) return;
         modal.classList.toggle('merchant-theme', env.shopTab === 'merchant');
+        modal.classList.toggle('room-theme', env.shopTab === 'decor');
         seedsTab.classList.toggle('active', env.shopTab === 'seeds');
         decorTab.classList.toggle('active', env.shopTab === 'decor');
         merchantTab.classList.toggle('active', env.shopTab === 'merchant');
@@ -2609,7 +3029,7 @@ function init() {
         }
 
         if (env.shopTab === 'decor') {
-            headerTitle.textContent = 'Магазин декора';
+            headerTitle.textContent = 'Комната слайма';
             content.innerHTML = renderDecorShop();
             return;
         }
@@ -2653,14 +3073,15 @@ function init() {
     }
 
     function defaultCompanionState() {
-        return { name: 'Лайм', level: 1, xp: 0, slimeLevels: {}, hunger: 82, clean: 88, energy: 92, sleeping: false, skin: 'basic', abilityEnergy: 0, abilityCooldownUntil: 0, lastUpdate: Date.now(), hungerClock: 0, cleanClock: 0, energyClock: 0, cleanGraceUntil: 0 };
+        return { name: 'Слайми', level: 1, xp: 0, slimeLevels: {}, hunger: 82, clean: 88, energy: 92, sleeping: false, skin: 'basic', abilityEnergy: 0, abilityCooldownUntil: 0, lastUpdate: Date.now(), hungerClock: 0, cleanClock: 0, energyClock: 0, cleanGraceUntil: 0 };
     }
 
     function ensureCompanionState() {
         const defaults = defaultCompanionState();
         if (!player.companion || typeof player.companion !== 'object') player.companion = defaults;
         player.companion = { ...defaults, ...player.companion };
-        player.companion.name = String(player.companion.name || 'Лайм').trim().slice(0, 14) || 'Лайм';
+        const savedCompanionName = String(player.companion.name || 'Слайми').trim().slice(0, 14) || 'Слайми';
+        player.companion.name = savedCompanionName === 'Лайм' ? 'Слайми' : savedCompanionName;
         if (!player.companion.slimeLevels || typeof player.companion.slimeLevels !== 'object') player.companion.slimeLevels = {};
         ['basic', ...Object.keys(PET_DEFS)].forEach(id => {
             const prev = player.companion.slimeLevels[id] || {};
@@ -2757,7 +3178,6 @@ function init() {
 
     function chargeCompanionAbility(amount) {
         ensureCompanionState();
-        if ((player.companion.skin || 'basic') === 'basic') return 0;
         const gain = Math.max(0, Number(amount) || 0);
         if (!gain) return 0;
         const before = player.companion.abilityEnergy || 0;
@@ -2788,6 +3208,7 @@ function init() {
     const COMPANION_FACE_CLASSES = ['happy', 'smile', 'cute', 'excited', 'angry', 'surprise', 'goofy', 'sleepy', 'blank', 'proud', 'star', 'mystic', 'sad', 'mischief', 'coin', 'relaxed'];
 
     function companionFaceForMood(def, mood) {
+        if ((def?.id || 'basic') === 'basic' && env.companionAbilitySpecial === 'basic') return 'happy';
         if (env.companionAbilitySpecial === 'dewdrop') return 'happy';
         if (env.companionAbilitySpecial === 'sproutslime') return 'mischief';
         if (env.companionAbilitySpecial === 'coinblob') return 'happy';
@@ -2891,9 +3312,14 @@ function init() {
         const embergooPayload = env.companionAbilitySpecial === 'embergoo' ? (env.companionAbilityPayload?.embergoo || null) : null;
         const embergooFinale = !!embergooPayload?.magmaFinale;
         const embergooSurge = embergooFinale && ['surge', 'mutating', 'cooling'].includes(embergooPayload.phase);
-        ['materialized', 'levitating', 'landing'].forEach(name => stage.classList.toggle(`special-${name}`, env.companionSpecial === name));
+        ['materialized', 'levitating', 'landing'].forEach(name => {
+            const active = name === 'materialized'
+                ? env.companionAbilitySpecial === 'phantooze'
+                : env.companionSpecial === name;
+            stage.classList.toggle(`special-${name}`, active);
+        });
         stage.classList.toggle('special-sun-glow', env.companionAbilitySpecial === 'sunpudding');
-        ['dewdrop', 'sproutslime', 'coinblob', 'moonmelt', 'wavegum', 'nectar', 'sunpudding', 'embergoo', 'stargum'].forEach(name => stage.classList.toggle(`ability-${name}`, env.companionAbilitySpecial === name));
+        ['dewdrop', 'sproutslime', 'coinblob', 'moonmelt', 'wavegum', 'nectar', 'phantooze', 'sunpudding', 'embergoo', 'stargum'].forEach(name => stage.classList.toggle(`ability-${name}`, env.companionAbilitySpecial === name));
         stage.classList.toggle('ability-embergoo-finale', embergooSurge);
         habitat?.classList.toggle('ability-wavegum-cast', env.companionAbilitySpecial === 'wavegum' && !env.companionAbilityPayload?.wavegum?.flood);
         habitat?.classList.toggle('ability-wavegum-flood', env.companionAbilitySpecial === 'wavegum' && !!env.companionAbilityPayload?.wavegum?.flood);
@@ -2916,6 +3342,7 @@ function init() {
 
     function startCompanionAbilitySpecial(type, duration = 3000, payload = {}) {
         if (env.companionAbilitySpecialTimer) clearTimeout(env.companionAbilitySpecialTimer);
+        if (type === 'phantooze') clearCompanionSpecial(false);
         env.companionAbilitySpecial = type;
         env.companionAbilityPayload = payload || null;
         syncCompanionSpecialClasses();
@@ -2967,7 +3394,7 @@ function init() {
         env.companionSpecialTimer = setTimeout(() => {
             env.companionSpecialTimer = null;
             const id = player.companion.skin;
-            const special = id === 'phantooze' ? 'materialized' : (id === 'voidpuddle' ? 'levitating' : '');
+            const special = id === 'voidpuddle' ? 'levitating' : '';
             if (special && !player.companion.sleeping && !env.companionPetting && Math.random() < 0.55) startCompanionSpecial(special);
             else scheduleCompanionSpecial();
         }, player.companion.skin === 'voidpuddle' ? 40000 : (25000 + Math.random() * 10000));
@@ -2987,7 +3414,7 @@ function init() {
     function companionAbilityName() {
         const id = player.companion.skin || 'basic';
         const names = {
-            basic: 'Нет способности',
+            basic: 'Радужный всплеск',
             dewdrop: 'Живой дождик',
             sproutslime: 'Дары природы',
             coinblob: 'Рука Мидаса',
@@ -3007,18 +3434,18 @@ function init() {
     function companionAbilityMeta() {
         const id = player.companion.skin || 'basic';
         const meta = {
-            basic: { symbol: '·', color: '#8fb279', dark: '#52744b' },
+            basic: { symbol: '🌈', color: '#72db68', dark: '#35a84c' },
             dewdrop: { symbol: '💧', color: '#5ed7ff', dark: '#1686c2' },
             sproutslime: { symbol: '🌱', color: '#72df65', dark: '#2a9a43' },
             coinblob: { symbol: '$', color: '#ffd44d', dark: '#b78311' },
-            moonmelt: { symbol: '☾', color: '#9f9bff', dark: '#403a9f' },
+            moonmelt: { symbol: '🌙', color: '#9f9bff', dark: '#403a9f' },
             sparkjelly: { symbol: '⚡', color: '#74d7ff', dark: '#2076cf' },
             wavegum: { symbol: '🌊', color: '#55efc4', dark: '#008f82' },
-            nectar: { symbol: '✚', color: '#ffbf5b', dark: '#c86d13' },
-            phantooze: { symbol: '◌', color: '#dce6ff', dark: '#7887c7' },
+            nectar: { symbol: '🍯', color: '#ffbf5b', dark: '#c86d13' },
+            phantooze: { symbol: '👻', color: '#dce6ff', dark: '#7887c7' },
             sunpudding: { symbol: '☀', color: '#ffe66d', dark: '#d09b00' },
             embergoo: { symbol: '🔥', color: '#ff705c', dark: '#c01f1f' },
-            stargum: { symbol: '★', color: '#b8adff', dark: '#6255d6' },
+            stargum: { symbol: '⭐', color: '#b8adff', dark: '#6255d6' },
             voidpuddle: { symbol: '●', color: '#4b3cff', dark: '#17124f' }
         };
         return meta[id] || meta.basic;
@@ -3048,7 +3475,7 @@ function init() {
         if (!root) return;
         ensureCompanionState();
         const pet = player.companion;
-        const hasAbility = (pet.skin || 'basic') !== 'basic';
+        const hasAbility = true;
         const energy = hasAbility ? Math.round(Math.max(0, Math.min(100, pet.abilityEnergy || 0))) : 0;
         const now = Date.now();
         const cooldownLeft = Math.max(0, Math.ceil(((pet.abilityCooldownUntil || 0) - now) / 1000));
@@ -3068,7 +3495,7 @@ function init() {
         const button = document.getElementById('companion-ability-button');
         if (name) name.textContent = companionAbilityName();
         if (percent) percent.textContent = `${energy}%`;
-        if (cooldown) cooldown.textContent = !hasAbility ? 'Базовый слайм без способности' : (cooldownLeft > 0 ? `КД: ${formatCompanionAbilityCooldown(cooldownLeft)}` : (ready ? 'Готова' : 'КД: нет'));
+        if (cooldown) cooldown.textContent = cooldownLeft > 0 ? `КД: ${formatCompanionAbilityCooldown(cooldownLeft)}` : (ready ? 'Готова' : 'КД: нет');
         if (button) {
             button.disabled = !ready;
             const icon = button.querySelector('span');
@@ -3078,10 +3505,6 @@ function init() {
 
     function useCompanionAbility() {
         ensureCompanionState();
-        if ((player.companion.skin || 'basic') === 'basic') {
-            showToast('У базового слайма пока нет способности', '#8fb279');
-            return;
-        }
         const cooldownLeft = Math.max(0, Math.ceil(((player.companion.abilityCooldownUntil || 0) - Date.now()) / 1000));
         if (cooldownLeft > 0) {
             showToast(`Способность: ${formatCompanionAbilityCooldown(cooldownLeft)}`, '#72db68');
@@ -3237,7 +3660,9 @@ function init() {
         syncCompanionSpecialClasses();
         document.getElementById('companion-level-mini-fill').style.width = `${xpPercent}%`;
         document.getElementById('companion-skin-name').textContent = def ? (def.shortName || def.name) : 'Базовый';
-        document.getElementById('companion-room-name').textContent = ROOM_DECOR_STYLES[player.roomStyle || 'cozy']?.name || 'Уют';
+        // The room name is now shown in the shop; older markup may still provide this optional label.
+        const companionRoomName = document.getElementById('companion-room-name');
+        if (companionRoomName) companionRoomName.textContent = ROOM_DECOR_STYLES[player.roomStyle || 'cozy']?.name || 'Уют';
         document.getElementById('companion-stats').innerHTML = [
             companionStatHTML('satiety', 'Сытость', pet.hunger, '#ef9c39', '●', 'Корм', '🥕', 'toggleCompanionFeed()'),
             companionStatHTML('clean', 'Чистота', pet.clean, '#42bde9', '◆', 'Мыть', '🚿', 'toggleCompanionShower()', 'companion-wash-btn'),
@@ -3274,6 +3699,7 @@ function init() {
             }).join('') : '<div class="companion-empty"><b>Нет готового урожая</b><small>Вырастите растение на грядке</small></div>'}</div>`;
             return;
         }
+        // UNUSED: level details now open as a focused modal card above the game.
         if (env.companionDrawer === 'level') {
             const levelState = syncCurrentCompanionLevel();
             const need = companionXpNeed(levelState.level);
@@ -3336,8 +3762,144 @@ function init() {
     }
 
     function toggleCompanionLevelCard() {
-        env.companionDrawer = env.companionDrawer === 'level' ? '' : 'level';
-        renderCompanion();
+        const modal = document.getElementById('companion-level-modal');
+        if (!modal) return;
+        if (modal.classList.contains('open')) {
+            closeCompanionLevelModal();
+            return;
+        }
+        env.companionDrawer = '';
+        renderCompanionDrawer();
+        renderCompanionLevelModal();
+        modal.classList.add('open');
+        modal.setAttribute('aria-hidden', 'false');
+    }
+
+    function companionAbilityMilestones(id) {
+        const plans = {
+            basic: [
+                { range: '1–7', text: 'Накладывает радужную мутацию на 1 растение.' },
+                { range: '8–14', text: 'Накладывает радужную мутацию на 2–3 растения.' },
+                { range: '15', text: 'Накладывает радужную мутацию на 3–6 растений.' }
+            ],
+            dewdrop: [
+                { range: '1–7', text: 'Поливает 2–3 растения и ускоряет их рост в 2 раза.' },
+                { range: '8–14', text: 'Поливает 3–5 растений и ускоряет рост в 2,5 раза.' },
+                { range: '15', text: 'Поливает все растения и ускоряет их рост в 3 раза.' }
+            ],
+            sproutslime: [
+                { range: '1–7', text: 'Дарит набор семян ранних растений.' },
+                { range: '8–14', text: 'Дарит набор семян растений среднего уровня.' },
+                { range: '15', text: 'Дарит набор семян самых дорогих растений.' }
+            ],
+            coinblob: [
+                { range: '1–7', text: 'Накладывает золотую мутацию на 1 растение.' },
+                { range: '8–14', text: 'Накладывает золотую мутацию на 2–3 растения.' },
+                { range: '15', text: 'Даёт золотые мутации и 1 бриллиантовую.' }
+            ],
+            sparkjelly: [
+                { range: '1–7', text: 'Даёт электрическую мутацию 1 растению.' },
+                { range: '8–14', text: 'Даёт электрическую мутацию 2 растениям.' },
+                { range: '15', text: 'Даёт электрическую мутацию 3 растениям и возвращает 15% заряда.' }
+            ],
+            wavegum: [
+                { range: '1–7', text: 'Волна мгновенно выращивает 1 растение.' },
+                { range: '8–14', text: 'Волна мгновенно выращивает 2 растения.' },
+                { range: '15', text: 'Выращивает 3 растения или с шансом 15% затапливает и выращивает все.' }
+            ],
+            nectar: [
+                { range: '1–7', text: 'Выращивает до 3 растений до большого размера.' },
+                { range: '8–14', text: 'Выращивает до 3 растений до огромного размера.' },
+                { range: '15', text: 'Превращает самое дорогое готовое растение в титаническое.' }
+            ],
+            phantooze: [
+                { range: '1–7', text: 'Отмечает 1 растение. После продажи остаётся его серая копия.' },
+                { range: '8–14', text: 'Отмечает 2 растения. Копии сохраняют по 1 случайной мутации.' },
+                { range: '15', text: 'Отмечает самое дорогое растение. Его копия сохраняет 3 мутации.' }
+            ],
+            sunpudding: [
+                { range: '1–7', text: 'Запускает солнечный ивент с солнечными мутациями.' },
+                { range: '8–14', text: 'Запускает солнечный ивент; с шансом 35% наступает фаза затмения.' },
+                { range: '15', text: 'Запускает солнечный ивент с гарантированной фазой затмения.' }
+            ],
+            embergoo: [
+                { range: '1–7', text: 'Запускает огненный ивент с огненными мутациями.' },
+                { range: '8–14', text: 'С шансом 35% в финале ивента появляется 1 магмовая мутация.' },
+                { range: '15', text: 'В финале ивента гарантированно появляются 1–2 магмовые мутации.' }
+            ],
+            stargum: [
+                { range: '1–7', text: 'Запускает звездопад со звёздными мутациями.' },
+                { range: '8–14', text: 'Запускает звездопад; с шансом 15% в финале прилетает комета.' },
+                { range: '15', text: 'В финале прилетает 1 комета, с шансом 15% — вторая.' }
+            ],
+            moonmelt: [
+                { range: '1–7', text: 'Запускает Ночь и даёт 1–3 лунные мутации.' },
+                { range: '8–14', text: 'Запускает Ночь и даёт 2–5 лунных мутаций.' },
+                { range: '15', text: 'Даёт 3–6 лунных мутаций; с шансом 50% начинается Багровая фаза с 1–2 багровыми.' }
+            ],
+            voidpuddle: [
+                { range: '1–7', text: 'Запускает звёздное событие.' },
+                { range: '8–14', text: 'Запускает инопланетное событие.' },
+                { range: '15', text: 'Запускает редкое космическое событие.' }
+            ]
+        };
+        return plans[id] || plans.basic;
+    }
+
+    function renderCompanionLevelModal() {
+        const card = document.getElementById('companion-level-modal-card');
+        if (!card) return;
+        const id = companionSlimeId();
+        const def = PET_DEFS[id];
+        const state = syncCurrentCompanionLevel();
+        const level = Math.max(1, Math.min(15, state.level || 1));
+        const need = companionXpNeed(level);
+        const progress = level >= 15 ? 100 : Math.min(100, state.xp / need * 100);
+        const meta = companionAbilityMeta();
+        const tier = companionAbilityTier();
+        const rarity = PET_RARITY_STYLE[def?.rarity] || { label: 'Базовый' };
+        const slimeName = (def?.shortName || def?.name || player.companion.name || 'Слайми').toUpperCase();
+        const nextText = level >= 15
+            ? 'Максимальный уровень достигнут'
+            : `${Math.floor(state.xp)} / ${need} XP до уровня ${level + 1}`;
+        const milestones = companionAbilityMilestones(id);
+        card.style.setProperty('--level-card-accent', meta.color);
+        card.style.setProperty('--level-card-dark', meta.dark);
+        card.innerHTML = `
+            <div class="companion-level-modal-head">
+                <span class="companion-level-modal-icon" aria-hidden="true">${meta.symbol}</span>
+                <div>
+                    <small>${rarity.label.toUpperCase()}</small>
+                    <b>${slimeName}</b>
+                </div>
+                <strong>Ур. ${level}</strong>
+            </div>
+            <section class="companion-level-modal-progress" aria-label="Прогресс уровня">
+                <div><span>Текущий уровень</span><b>${nextText}</b></div>
+                <i><em style="width:${progress}%"></em></i>
+            </section>
+            <section class="companion-level-modal-ability">
+                <div class="companion-level-modal-label"><span>Суперспособность</span><b>${companionAbilityName()}</b></div>
+                <div class="companion-level-milestones">
+                    ${milestones.map((milestone, index) => {
+                        const unlocked = tier >= index + 1;
+                        const current = tier === index + 1;
+                        return `<article class="companion-level-milestone ${unlocked ? 'unlocked' : 'locked'} ${current ? 'current' : ''}">
+                            <span>${unlocked ? '✓' : '🔒'}</span>
+                            <div><b>Уровни ${milestone.range}</b><small>${milestone.text}</small></div>
+                        </article>`;
+                    }).join('')}
+                </div>
+            </section>
+            <small class="companion-level-modal-close">Нажмите в любом месте, чтобы закрыть</small>
+        `;
+    }
+
+    function closeCompanionLevelModal() {
+        const modal = document.getElementById('companion-level-modal');
+        if (!modal) return;
+        modal.classList.remove('open');
+        modal.setAttribute('aria-hidden', 'true');
     }
 
     function closeCompanionDrawer() {
@@ -3781,6 +4343,8 @@ function init() {
             </div>`;
         }).join('');
 
+        syncShowcasePreviewVisuals(slots);
+
         rate.textContent = `+${compactNumber(totalShowcaseIncome())}/ч`;
         bank.textContent = compactNumber(player.bank || 0);
     }
@@ -3825,6 +4389,7 @@ function init() {
                 }).join('')}
             </div>
         </div>`;
+        syncShowcasePreviewVisuals(picker);
     }
 
     function closeShowcasePicker() {
@@ -4031,22 +4596,43 @@ function init() {
     function diaryEntries() {
         return [
             ...Object.values(MUTATIONS).map(m => ({ id: m.id, name: m.name, icon: m.icon, mult: `x${m.mult}` })),
-            SIZE_DIARY_ENTRIES.big,
-            SIZE_DIARY_ENTRIES.huge
+            SIZE_DIARY_ENTRIES.huge,
+            SIZE_DIARY_ENTRIES.titanic
         ];
     }
 
     function renderDiary() {
         ensureStats();
         const statsEl = document.getElementById('diary-stats');
+        const progressEl = document.getElementById('diary-progress');
         const mutsEl = document.getElementById('diary-mutations');
-        if (!statsEl || !mutsEl) return;
+        if (!statsEl || !progressEl || !mutsEl) return;
 
         statsEl.innerHTML = `
             <div class="diary-stat tone-coins"><span>$</span><strong>${compactNumber(player.stats.totalEarned)}</strong><small>Всего заработано</small></div>
             <div class="diary-stat tone-weight"><span>⚖</span><strong>${formatWeightLabel(player.stats.maxWeight)}</strong><small>Лучший вес</small></div>
             <div class="diary-stat tone-sale"><span>★</span><strong>${compactNumber(player.stats.bestSale)}$</strong><small>Лучшая продажа</small></div>
             <div class="diary-stat tone-harvest"><span>✓</span><strong>${compactNumber(player.stats.harvested)}</strong><small>Всего растений</small></div>
+        `;
+
+        const mutations = Object.values(MUTATIONS);
+        const unlockedMutations = new Set(player.unlockedMutations || []);
+        const discovered = mutations.filter(m => unlockedMutations.has(m.id) || (player.rares[m.id] || 0) > 0).length;
+        const total = mutations.length;
+        const progress = total ? Math.round((discovered / total) * 100) : 0;
+        const complete = discovered === total;
+        progressEl.innerHTML = `
+            <div class="diary-progress-head">
+                <span>Коллекция мутаций</span>
+                <b>${discovered}/${total}</b>
+            </div>
+            <div class="diary-progress-track" role="progressbar" aria-label="Открытые мутации" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${discovered}">
+                <i style="width:${progress}%"></i>
+            </div>
+            <div class="diary-progress-footer">
+                <small>${progress}% открыто</small>
+                <button class="diary-progress-claim" type="button" ${complete ? '' : 'disabled'}>${complete ? 'Забрать награду' : 'Награда за 100%'}</button>
+            </div>
         `;
 
         mutsEl.innerHTML = diaryEntries().map(entry => {
@@ -4136,24 +4722,13 @@ function init() {
     }
 
     function renderDecorShop() {
-        const plotOwned = Array.isArray(player.ownedDecor) ? player.ownedDecor : ['default'];
         const roomOwned = Array.isArray(player.ownedRoomDecor) ? player.ownedRoomDecor : ['cozy'];
-        const decorTab = env.decorShopTab === 'room' ? 'room' : 'plots';
-        return `<div class="shop-pane decor-pane">
-            <div class="decor-switcher" role="tablist" aria-label="Категории декора">
-                <button type="button" class="decor-switch ${decorTab === 'plots' ? 'active' : ''}" onclick="selectDecorShopTab('plots')">Грядки</button>
-                <button type="button" class="decor-switch ${decorTab === 'room' ? 'active' : ''}" onclick="selectDecorShopTab('room')">Комната</button>
+        return `<div class="shop-pane decor-pane room-shop-pane">
+            <div class="shop-info-banner room-shop-banner">
+                <span>Уютная комната</span>
+                <b>Выберите стиль для слайма</b>
             </div>
-            <div class="decor-switch-panels ${decorTab === 'room' ? 'show-room' : 'show-plots'}">
-                <section class="decor-shop-pane plots-pane">
-                    <div class="shop-info-banner"><span>Стили грядок</span><b>Геометрия сохранена</b></div>
-                    <div class="decor-shop">${renderDecorCards(DECOR_STYLES, plotOwned, player.plotStyle || 'default', 'buyOrSelectDecor')}</div>
-                </section>
-                <section class="decor-shop-pane room-pane">
-                    <div class="shop-info-banner"><span>Комната слайма</span><b>Меняем только отделку и наполнение</b></div>
-                    <div class="decor-shop room-decor-shop">${renderDecorCards(ROOM_DECOR_STYLES, roomOwned, player.roomStyle || 'cozy', 'buyOrSelectRoomDecor')}</div>
-                </section>
-            </div>
+            <div class="decor-shop room-decor-shop">${renderDecorCards(ROOM_DECOR_STYLES, roomOwned, player.roomStyle || 'cozy', 'buyOrSelectRoomDecor')}</div>
         </div>`;
     }
 
@@ -4192,6 +4767,7 @@ function init() {
         }
     }
 
+    // UNUSED in the room shop: kept for old saves and possible restoration of plot-style purchases.
     function buyOrSelectDecor(styleId) {
         const style = DECOR_STYLES[styleId];
         if (!style) return;
@@ -4363,6 +4939,40 @@ function init() {
         return true;
     }
 
+    function applyTestBloodmoonMutationWithAnimation(idx, token) {
+        const tile = tiles[idx];
+        if (!tile?.active) return false;
+
+        // The test follows the real gameplay chain: Lunar exists only until Blood Moon replaces it.
+        tile.mutations = ['lunar'];
+        updateTileDOM(idx);
+
+        setTimeout(() => {
+            if (env.testMutationSweepToken !== token || !tiles[idx]?.mutations.includes('lunar')) return;
+            const tileEl = document.getElementById(`tile-${idx}`);
+            if (!tileEl) return;
+            const beam = document.createElement('span');
+            beam.className = 'bloodmoon-mutation-beam';
+            tileEl.appendChild(beam);
+            tileEl.classList.add('bloodmoon-hit');
+            animateMoonmeltBloodmoonMoon(beam);
+
+            setTimeout(() => {
+                if (env.testMutationSweepToken !== token) return;
+                if (commitTileMutation(idx, 'bloodmoon')) {
+                    sfx.play('mut');
+                    syncTileMutationPresentation(idx);
+                }
+            }, MOONMELT_BLOODMOON_BEAM_COMMIT_DELAY_MS);
+
+            setTimeout(() => {
+                tileEl.classList.remove('bloodmoon-hit');
+                beam.remove();
+            }, MOONMELT_BLOODMOON_BEAM_REMOVE_DELAY_MS);
+        }, 220);
+        return true;
+    }
+
     function applyNextTestMutationToPlanted() {
         const ids = activePlantedTileIds();
         if (!ids.length) {
@@ -4386,7 +4996,8 @@ function init() {
         ids.forEach((idx, order) => {
             setTimeout(() => {
                 if (env.testMutationSweepToken !== token) return;
-                applyTestMutationWithAnimation(idx, mutId, token);
+                if (mutId === 'bloodmoon') applyTestBloodmoonMutationWithAnimation(idx, token);
+                else applyTestMutationWithAnimation(idx, mutId, token);
             }, order * stepMs);
         });
 
@@ -4394,7 +5005,7 @@ function init() {
         setTimeout(() => {
             if (env.testMutationSweepToken !== token) return;
             saveGame();
-        }, Math.max(0, ids.length - 1) * stepMs + hit.commitDelay + 120);
+        }, Math.max(0, ids.length - 1) * stepMs + (mutId === 'bloodmoon' ? 220 + MOONMELT_BLOODMOON_BEAM_COMMIT_DELAY_MS : hit.commitDelay) + 120);
 
         showToast(`Тест: ${mut.name} на ${ids.length} растений`, mut.color);
     }
@@ -4433,11 +5044,11 @@ function init() {
             companionPetting: false, companionHoldTimer: null, companionTapTimer: null,
             companionHeartTimer: null, companionHeartLastSoundAt: 0,
             companionSpecial: '', companionSpecialTimer: null, companionSpecialEndTimer: null,
-            companionAbilitySpecial: '', companionAbilitySpecialTimer: null, companionAbilityPayload: null, companionGiftTimers: [], embergooMagmaTimers: [], stargumCometTimers: [], stargumCometFrames: [], stargumCometFinale: false, moonmeltLunarTimers: [], moonmeltLunarFinale: false, nightDawnTimer: null, nightDawnActive: false, nightPaletteFrame: null, nightPalette: null,
+            companionAbilitySpecial: '', companionAbilitySpecialTimer: null, companionAbilityPayload: null, companionGiftTimers: [], embergooMagmaTimers: [], stargumCometTimers: [], stargumCometFrames: [], stargumCometFinale: false, moonmeltLunarTimers: [], moonmeltLunarFinale: false, nightDawnTimer: null, nightDawnActive: false, nightPaletteFrame: null, nightPalette: null, nightPalettePhase: 'day',
             companionSpecialAnchorX: 0, companionSpecialAnchorY: 0,
             companionCoinBurstAt: 0,
             openMenuSections: { showcase: false, diary: false, decor: false, rewards: false, admin: false },
-            backroomsLampTimer: null, backroomsLampEndTimer: null, shopTab: 'seeds', decorShopTab: 'plots', pendingPlotPurchase: null, abilityFloodTimer: null, sunpuddingEclipseTimer: null, sunpuddingEclipseDarkTimer: null
+            backroomsLampTimer: null, backroomsLampEndTimer: null, shopTab: 'seeds', decorShopTab: 'room', pendingPlotPurchase: null, abilityFloodTimer: null, sunpuddingEclipseTimer: null, sunpuddingEclipseDarkTimer: null
         };
         eventActions = [];
         currentTool = 'water';
@@ -5157,7 +5768,7 @@ function init() {
         player.equippedPets = player.equippedPets.map((uid, i) => i < player.unlockedPetSlots && player.petInventory.some(p => p.uid === uid) ? uid : null);
         if (!player.equippedPets[0] && player.petInventory[0]) player.equippedPets[0] = player.petInventory[0].uid;
         tiles = tiles.map((tile, index) => {
-            const safe = { id: index, active: false, plantId: null, growth: 0, water: 0, slimeWater: 0, slimeWaterMult: 1, hasWeed: false, mutations: [], scale: 1, weight: 5, weightMult: 1, sizeTier: 'normal', beeLock: 0, ghostEchoPercent: 0, ghostValue: 0, ...tile };
+            const safe = { id: index, active: false, plantId: null, growth: 0, water: 0, slimeWater: 0, slimeWaterMult: 1, hasWeed: false, mutations: [], scale: .4, weight: 1, weightMult: 1, sizeTier: 'small', beeLock: 0, ghostEchoPercent: 0, ghostMarked: false, ghostCopyMutationCount: 0, ghostEcho: false, ghostValue: 0, ...tile };
             safe.id = index;
             safe.active = !!safe.active;
             safe.plantId = PLANTS[safe.plantId] ? safe.plantId : null;
@@ -5169,12 +5780,16 @@ function init() {
             safe.mutations = Array.isArray(safe.mutations) ? safe.mutations.filter(mId => MUTATIONS[mId]).slice(0, 3) : [];
             safe.weight = clampTileWeight(safe);
             safe.weightMult = Math.max(0.5, Number(safe.weightMult) || 1);
-            safe.sizeTier = ['normal', 'big', 'huge', 'titanic'].includes(safe.sizeTier)
+            safe.sizeTier = ['small', 'normal', 'big', 'huge', 'titanic'].includes(safe.sizeTier)
                 ? sizeTierFromWeight(safe.weight, safe.sizeTier === 'titanic')
                 : sizeTierFromWeight(safe.weight);
-            safe.scale = Math.max(0.5, Number(safe.scale) || visualScaleForWeight(safe.weight, safe.sizeTier));
+            // Older saves stored the previous oversized scale, so always derive it from the new size table.
+            safe.scale = visualScaleForWeight(safe.weight, safe.sizeTier);
             safe.beeLock = Math.max(0, Math.floor(Number(safe.beeLock) || 0));
             safe.ghostEchoPercent = Math.max(0, Math.min(1, Number(safe.ghostEchoPercent) || 0));
+            safe.ghostMarked = !!safe.ghostMarked;
+            safe.ghostCopyMutationCount = Math.max(0, Math.min(3, Math.floor(Number(safe.ghostCopyMutationCount) || 0)));
+            safe.ghostEcho = !!safe.ghostEcho || safe.ghostValue > 0;
             safe.ghostValue = Math.max(0, Math.floor(Number(safe.ghostValue) || 0));
             return safe;
         });

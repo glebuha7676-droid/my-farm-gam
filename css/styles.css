@@ -1,4 +1,4 @@
-﻿@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap');
 
         :root {
             --primary: #0984e3; --success: #00b894; --warning: #fdcb6e; --danger: #ff7675;
@@ -24,12 +24,18 @@
 .companion-name span { float:right; color:#a06a31; font-size:15px; }
 .companion-level {
     position: relative;
-    width:82px; height:43px; display:flex; align-items:center; justify-content:center; gap:6px; border-radius:8px;
-    background:#65401f; color:#fff4cf; border:2px solid #8c5b2d; box-shadow:inset 0 2px 0 rgba(255,255,255,.12);
+    width:98px; height:43px; display:flex; align-items:center; justify-content:center; gap:4px; border-radius:10px;
+    background:linear-gradient(180deg,#9a6839,#603918); color:#fff8dc; border:2px solid #c99354; box-shadow:inset 0 2px 0 rgba(255,255,255,.26), inset 0 -4px 0 rgba(49,26,10,.28), 0 3px 0 #46240f;
     font-family: inherit;
     padding: 0 8px 8px;
+    cursor:pointer;
+    transition:transform .12s ease, filter .12s ease, box-shadow .12s ease;
 }
-.companion-level small { font-size:12px; line-height:1; font-weight:1000; opacity:.8; }
+.companion-level::after { content:"i"; position:absolute; top:-6px; right:-6px; display:grid; place-items:center; width:16px; height:16px; border:2px solid #fff6d5; border-radius:50%; color:#704017; background:#ffd76a; font-family:Georgia,serif; font-size:12px; font-weight:1000; box-shadow:0 2px 0 rgba(74,37,9,.34); }
+.companion-level:hover { filter:brightness(1.08); }
+.companion-level:active { transform:translateY(3px); box-shadow:inset 0 2px 0 rgba(255,255,255,.18), inset 0 -1px 0 rgba(49,26,10,.28), 0 0 0 #46240f; }
+.companion-level:focus-visible { outline:3px solid #fff1a8; outline-offset:3px; }
+.companion-level small { font-size:8px; line-height:1; font-weight:1000; letter-spacing:.25px; opacity:.92; }
 .companion-level b { font-size:23px; line-height:1; }
 .companion-level-mini-xp {
     position: absolute;
@@ -408,7 +414,8 @@
     opacity: 1;
 }
 .companion-ability-main small { color:var(--ability-dark); font-size:9px; line-height:1; font-weight:1000; }
-.companion-ability-button {
+/* UNUSED (round ability button v1): retained for quick visual rollback. */
+.unused-round-ability-button-v1 .companion-ability-button {
     width: 52px;
     height: 52px;
     display:grid;
@@ -421,7 +428,7 @@
     box-shadow: inset 0 -6px 0 rgba(0,0,0,.18), inset 0 2px 0 rgba(255,255,255,.48), 0 3px 0 rgba(46,79,31,.22);
     transition: transform .12s ease, filter .12s ease, box-shadow .12s ease;
 }
-.companion-ability-button span {
+.unused-round-ability-button-v1 .companion-ability-button span {
     width: 32px;
     height: 32px;
     border-radius: 50%;
@@ -436,14 +443,24 @@
     text-shadow:0 2px 1px rgba(0,0,0,.5), 0 0 5px rgba(255,255,255,.22);
     box-shadow: 0 0 0 2px rgba(255,255,255,.48), inset 0 -2px 0 rgba(0,0,0,.24);
 }
-.companion-ability-button:disabled { opacity:.58; filter:saturate(.75); box-shadow:inset 0 -4px 0 rgba(0,0,0,.12); }
-.companion-ability-button:disabled span { background:radial-gradient(circle,rgba(67,74,64,.82) 0 52%,rgba(235,242,229,.86) 53% 63%,#7b8d72 64% 100%); }
-.companion-ability-button:active:not(:disabled) { transform:translateY(2px); filter:brightness(.9); box-shadow:inset 0 -2px 0 rgba(0,0,0,.16), 0 1px 0 rgba(46,79,31,.18); }
-.companion-ability.is-ready { border-color:#4cae45; background:linear-gradient(180deg,#fbffe8,#c8f0ad); }
-.companion-ability.is-ready .companion-ability-button { animation:companionAbilityReady 1.5s ease-in-out infinite; }
-.companion-ability.is-cooling .companion-ability-button { background:linear-gradient(180deg,#a5c998,#6a9560); }
+.unused-round-ability-button-v1 .companion-ability-button:disabled { opacity:.58; filter:saturate(.75); box-shadow:inset 0 -4px 0 rgba(0,0,0,.12); }
+.unused-round-ability-button-v1 .companion-ability-button:disabled span { background:radial-gradient(circle,rgba(67,74,64,.82) 0 52%,rgba(235,242,229,.86) 53% 63%,#7b8d72 64% 100%); }
+.unused-round-ability-button-v1 .companion-ability-button:active:not(:disabled) { transform:translateY(2px); filter:brightness(.9); box-shadow:inset 0 -2px 0 rgba(0,0,0,.16), 0 1px 0 rgba(46,79,31,.18); }
+.unused-round-ability-button-v1.companion-ability.is-ready { border-color:#4cae45; background:linear-gradient(180deg,#fbffe8,#c8f0ad); }
+.unused-round-ability-button-v1.companion-ability.is-ready .companion-ability-button { animation:companionAbilityReady 1.5s ease-in-out infinite; }
+.unused-round-ability-button-v1.companion-ability.is-cooling .companion-ability-button { background:linear-gradient(180deg,#a5c998,#6a9560); }
 .companion-ability.no-ability { opacity:.78; filter:saturate(.65); }
 @keyframes companionAbilityReady { 50%{ box-shadow:inset 0 -5px 0 rgba(0,0,0,.14),0 3px 0 rgba(46,79,31,.22),0 0 13px rgba(107,224,83,.62); } }
+/* Ability button v2: compact icon tile matching the level-card style. */
+.companion-ability-button { width:54px; height:54px; display:grid; place-items:center; flex:0 0 auto; border:3px solid color-mix(in srgb, var(--ability-dark) 76%, #fff 24%); border-radius:15px; background:linear-gradient(145deg, color-mix(in srgb, var(--ability-color) 38%, #fff 62%), color-mix(in srgb, var(--ability-color) 78%, #fff 22%)); box-shadow:inset 0 2px 0 rgba(255,255,255,.64), inset 0 -5px 0 color-mix(in srgb, var(--ability-dark) 24%, transparent), 0 3px 0 color-mix(in srgb, var(--ability-dark) 64%, #3c2414); cursor:pointer; transition:transform .14s ease, filter .14s ease, box-shadow .2s ease, background .2s ease; }
+.companion-ability-button span { display:flex; align-items:center; justify-content:center; box-sizing:border-box; width:38px; height:38px; padding-bottom:2px; color:#fff; font-family:"Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif; font-size:25px; line-height:1; text-align:center; text-shadow:0 2px 1px rgba(39,31,24,.34), 0 0 6px rgba(255,255,255,.46); filter:drop-shadow(0 2px 0 rgba(67,37,15,.16)); }
+.companion-ability-button:disabled { border-color:#9da79b; background:linear-gradient(145deg,#edf1ec,#c7d0c5); box-shadow:inset 0 2px 0 rgba(255,255,255,.68), inset 0 -5px 0 rgba(76,91,72,.16), 0 3px 0 #7e897b; cursor:default; }
+.companion-ability-button:disabled span { opacity:.54; filter:grayscale(.72) drop-shadow(0 1px 0 rgba(255,255,255,.5)); }
+.companion-ability-button:active:not(:disabled) { transform:translateY(3px); filter:brightness(.94); box-shadow:inset 0 2px 0 rgba(255,255,255,.42), inset 0 -1px 0 color-mix(in srgb, var(--ability-dark) 30%, transparent), 0 0 0 transparent; }
+.companion-ability.is-ready { border-color:#4cae45; background:linear-gradient(180deg,#fbffe8,#c8f0ad); }
+.companion-ability.is-ready .companion-ability-button { animation:companionAbilityTileReady 1.45s ease-in-out infinite; }
+.companion-ability.is-cooling .companion-ability-button { filter:saturate(.74) brightness(.9); }
+@keyframes companionAbilityTileReady { 0%,100% { box-shadow:inset 0 2px 0 rgba(255,255,255,.64), inset 0 -5px 0 color-mix(in srgb, var(--ability-dark) 24%, transparent), 0 3px 0 color-mix(in srgb, var(--ability-dark) 64%, #3c2414), 0 0 0 rgba(255,255,255,0); } 50% { transform:translateY(-1px) scale(1.035); box-shadow:inset 0 2px 0 rgba(255,255,255,.72), inset 0 -5px 0 color-mix(in srgb, var(--ability-dark) 22%, transparent), 0 4px 0 color-mix(in srgb, var(--ability-dark) 64%, #3c2414), 0 0 15px color-mix(in srgb, var(--ability-color) 72%, transparent); } }
 .companion-buff-row { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:7px; }
 .companion-buff-row>div,.companion-buff-row>button { min-width:0; min-height:50px; padding:7px 9px; border:2px solid #b98b50; border-radius:8px; background:linear-gradient(180deg,#fff9e8,#f2dfb8); color:#533018; text-align:left; font-family:inherit; box-shadow:inset 0 -3px 0 rgba(108,63,24,.08); }
 .companion-buff-row small { display:block; margin-bottom:2px; color:#9b7049; font-size:8px; font-weight:1000; }
@@ -452,11 +469,105 @@
 .companion-buff-row>button>span { position:absolute; left:8px; top:50%; width:20px; height:24px; transform:translateY(-50%); display:grid; place-items:center; border-radius:6px; background:#5c8e48; color:#fff; font-size:13px; }
 .companion-drawer { display:none; }
 .companion-drawer.open { display:block; margin-top:8px; padding:9px; border:2px solid #b68347; border-radius:8px; background:#fff9e9; animation:menuFoldIn .2s ease-out; }
+/* UNUSED: level details now use the focused companion-level modal. */
 .companion-level-card { display:flex; flex-direction:column; gap:8px; padding:8px 4px 2px; }
 .companion-level-card strong { color:#56351d; font-size:15px; }
 .companion-level-card i { display:block; height:14px; padding:2px; overflow:hidden; border-radius:99px; border:2px solid #704521; background:#7e5b3b; box-shadow:inset 0 2px 3px rgba(45,22,7,.35),0 1px 0 rgba(255,255,255,.65); }
 .companion-level-card i em { display:block; height:100%; border-radius:inherit; background:linear-gradient(90deg,#66d15f,#c9ee5c); box-shadow:0 0 5px rgba(190,238,89,.7); transition:width .25s; }
 .companion-level-card small { color:#7a5436; font-size:11px; font-weight:900; }
+.companion-level-modal {
+    position:fixed;
+    inset:0;
+    z-index:9800;
+    display:grid;
+    place-items:center;
+    padding:18px;
+    opacity:0;
+    pointer-events:none;
+    background:rgba(34,22,14,.48);
+    backdrop-filter:blur(5px);
+    transition:opacity .22s ease;
+}
+.companion-level-modal.open { opacity:1; pointer-events:auto; }
+.companion-level-modal-card {
+    width:min(440px, calc(100vw - 36px));
+    max-height:min(78dvh, 670px);
+    overflow:auto;
+    padding:14px;
+    border:3px solid var(--level-card-dark, #6b4a30);
+    border-radius:18px;
+    color:#4d2e1c;
+    background:
+        radial-gradient(circle at 88% 9%, color-mix(in srgb, var(--level-card-accent, #f5d268) 34%, transparent) 0 12%, transparent 31%),
+        linear-gradient(155deg, #fffdf4, #f1dbb5);
+    box-shadow:0 18px 46px rgba(27,13,5,.42), inset 0 2px 0 rgba(255,255,255,.88), inset 0 -6px 0 rgba(108,64,27,.12);
+    transform:translateY(18px) scale(.94);
+    transition:transform .3s cubic-bezier(.16,1,.3,1);
+}
+.companion-level-modal.open .companion-level-modal-card { transform:translateY(0) scale(1); }
+.companion-level-modal-head { display:grid; grid-template-columns:48px minmax(0,1fr) auto; align-items:center; gap:10px; }
+.companion-level-modal-icon { display:grid; place-items:center; width:46px; height:46px; border-radius:15px; color:#fff; background:linear-gradient(145deg, color-mix(in srgb, var(--level-card-accent) 72%, #fff), var(--level-card-dark)); font-size:23px; font-weight:1000; box-shadow:inset 0 2px 0 rgba(255,255,255,.48), 0 3px 0 color-mix(in srgb, var(--level-card-dark) 60%, #3c2414); }
+.companion-level-modal-head div { min-width:0; display:flex; flex-direction:column; gap:2px; }
+.companion-level-modal-head small { overflow:hidden; color:#8a6748; font-size:8px; font-weight:1000; letter-spacing:.45px; white-space:nowrap; text-overflow:ellipsis; }
+.companion-level-modal-head b { overflow:hidden; color:#4d2e1c; font-size:18px; line-height:1.05; white-space:nowrap; text-overflow:ellipsis; }
+.companion-level-modal-head strong { align-self:start; padding:6px 8px; border-radius:10px; color:#fffdf4; background:var(--level-card-dark); font-size:11px; box-shadow:inset 0 1px 0 rgba(255,255,255,.2); }
+.companion-level-modal-progress { margin-top:13px; padding:10px; border:1px solid rgba(91,53,24,.2); border-radius:12px; background:rgba(255,255,255,.54); }
+.companion-level-modal-progress div { display:flex; align-items:baseline; justify-content:space-between; gap:8px; }
+.companion-level-modal-progress span { color:#8d6847; font-size:10px; font-weight:1000; }
+.companion-level-modal-progress b { color:#5b351e; font-size:11px; text-align:right; }
+.companion-level-modal-progress i { display:block; height:10px; margin-top:8px; padding:2px; overflow:hidden; border:1px solid rgba(72,41,19,.3); border-radius:999px; background:rgba(88,53,25,.22); box-shadow:inset 0 1px 2px rgba(50,28,12,.18); }
+.companion-level-modal-progress em { display:block; height:100%; border-radius:inherit; background:linear-gradient(90deg, var(--level-card-dark), var(--level-card-accent)); box-shadow:0 0 8px color-mix(in srgb, var(--level-card-accent) 68%, transparent); transition:width .32s ease; }
+.companion-level-modal-ability { margin-top:13px; }
+.companion-level-modal-label { display:flex; align-items:center; justify-content:space-between; gap:8px; margin:0 2px 7px; }
+.companion-level-modal-label span { color:#5a341d; font-size:13px; font-weight:1000; }
+.companion-level-modal-label b { min-width:0; max-width:62%; padding:4px 8px; overflow:hidden; border-radius:9px; color:#fffdf2; background:var(--level-card-dark); box-shadow:inset 0 1px 0 rgba(255,255,255,.2), 0 2px 0 color-mix(in srgb, var(--level-card-dark) 58%, #392013); font-size:12px; white-space:nowrap; text-align:right; text-overflow:ellipsis; }
+.companion-level-milestones { display:grid; gap:7px; }
+.companion-level-milestone { display:grid; grid-template-columns:27px minmax(0,1fr); gap:8px; align-items:start; padding:8px; border:1px solid rgba(97,57,25,.17); border-radius:11px; background:rgba(255,255,255,.5); }
+.companion-level-milestone > span { display:grid; place-items:center; width:25px; height:25px; border-radius:9px; color:#87654a; background:#d9d1c5; font-size:11px; }
+.companion-level-milestone div { min-width:0; display:flex; flex-direction:column; gap:2px; }
+.companion-level-milestone b { color:#624027; font-size:11px; }
+.companion-level-milestone small { color:#816248; font-size:10px; line-height:1.2; font-weight:800; }
+.companion-level-milestone.unlocked > span { color:#fff; background:linear-gradient(145deg, var(--level-card-accent), var(--level-card-dark)); box-shadow:0 2px 0 color-mix(in srgb, var(--level-card-dark) 54%, #4b2d1a); }
+.companion-level-milestone.current { border-color:color-mix(in srgb, var(--level-card-accent) 75%, #8b582f); background:linear-gradient(135deg, color-mix(in srgb, var(--level-card-accent) 19%, #fff), rgba(255,255,255,.68)); box-shadow:inset 3px 0 0 var(--level-card-accent); }
+.companion-level-milestone.locked { opacity:.6; filter:saturate(.55); }
+.companion-level-modal-close { display:block; margin-top:11px; color:#947354; font-size:9px; font-weight:900; text-align:center; }
+/* UNUSED (rainbow mutation ring v1): retained for visual rollback. */
+.unused-rainbow-mutation-ring-v1 .basic-rainbow-mutation-flare { position:absolute; z-index:76; left:50%; top:50%; width:18px; height:18px; border-radius:50%; pointer-events:none; background:conic-gradient(#ff4d78,#ffb34d,#fff36d,#5df2a1,#55b8ff,#a884ff,#ff6fc2,#ff4d78); box-shadow:0 0 0 3px rgba(255,255,255,.82), 0 0 15px 5px rgba(174,117,255,.62); transform:translate(-50%,-50%) scale(.15); animation:basicRainbowMutationBurst .9s cubic-bezier(.16,.86,.24,1) forwards; }
+.unused-rainbow-mutation-ring-v1 .basic-rainbow-mutation-flare::after { content:""; position:absolute; inset:4px; border-radius:inherit; background:rgba(255,255,255,.96); box-shadow:0 0 14px 7px rgba(255,255,255,.72); }
+.unused-rainbow-mutation-ring-v1 .tile.basic-rainbow-hit { box-shadow:inset 0 0 0 2px rgba(255,255,255,.72), inset 0 0 22px rgba(162,112,255,.48), 0 0 15px rgba(109,213,255,.54); }
+@keyframes basicRainbowMutationBurst { 0% { opacity:0; transform:translate(-50%,-50%) scale(.15) rotate(-35deg); } 22% { opacity:1; } 62% { opacity:1; transform:translate(-50%,-50%) scale(4.2) rotate(110deg); } 100% { opacity:0; transform:translate(-50%,-50%) scale(5.7) rotate(170deg); } }
+/* UNUSED (rainbow aurora streams v2): retained for visual rollback. */
+.unused-rainbow-aurora-v2 .basic-rainbow-mutation-aurora { position:absolute; z-index:76; left:50%; top:50%; width:84%; height:118%; overflow:hidden; border-radius:44%; pointer-events:none; opacity:0; isolation:isolate; transform:translate(-50%,-50%) scale(.72); animation:basicRainbowAurora .92s cubic-bezier(.2,.8,.24,1) forwards; }
+.unused-rainbow-aurora-v2 .basic-rainbow-mutation-aurora::before,
+.unused-rainbow-aurora-v2 .basic-rainbow-mutation-aurora::after { content:""; position:absolute; top:-28%; width:34%; height:156%; border-radius:999px; background:linear-gradient(180deg,#ff557f 0%,#ffb64e 18%,#fff171 34%,#5cf0a6 51%,#58c2ff 69%,#a187ff 85%,#ff74bf 100%); filter:blur(5px) saturate(1.18); mix-blend-mode:screen; }
+.unused-rainbow-aurora-v2 .basic-rainbow-mutation-aurora::before { left:27%; transform:rotate(26deg) scaleY(.28); transform-origin:center; animation:basicRainbowAuroraStream .92s cubic-bezier(.18,.8,.25,1) forwards; }
+.unused-rainbow-aurora-v2 .basic-rainbow-mutation-aurora::after { left:43%; opacity:.76; transform:rotate(-20deg) scaleY(.18); transform-origin:center; animation:basicRainbowAuroraStreamAlt .92s cubic-bezier(.18,.8,.25,1) .05s forwards; }
+.unused-rainbow-aurora-v2 .tile.basic-rainbow-hit { box-shadow:inset 0 0 0 2px rgba(255,255,255,.56), inset 0 0 20px rgba(119,202,255,.27), 0 0 13px rgba(135,119,255,.36); }
+@keyframes basicRainbowAurora { 0% { opacity:0; transform:translate(-50%,-50%) scale(.72); } 20% { opacity:1; } 68% { opacity:.88; transform:translate(-50%,-50%) scale(1.08); } 100% { opacity:0; transform:translate(-50%,-50%) scale(1.18); } }
+@keyframes basicRainbowAuroraStream { 0% { transform:rotate(26deg) scaleY(.28); } 46% { transform:rotate(26deg) scaleY(1.08); } 100% { transform:rotate(26deg) scaleY(1.28); } }
+@keyframes basicRainbowAuroraStreamAlt { 0% { transform:rotate(-20deg) scaleY(.18); } 52% { transform:rotate(-20deg) scaleY(.92); } 100% { transform:rotate(-20deg) scaleY(1.18); } }
+/* UNUSED (subtle rainbow tile flash v3): retained for visual rollback. */
+.unused-rainbow-tile-flash-v3 .basic-rainbow-mutation-flash { position:absolute; z-index:76; inset:6px; overflow:hidden; border-radius:10px; pointer-events:none; opacity:0; background:linear-gradient(118deg,#ff5d83 0%,#ffb64d 18%,#fff06b 34%,#59efa1 50%,#55c4ff 67%,#a287ff 84%,#ff70bb 100%); background-size:180% 100%; mix-blend-mode:screen; box-shadow:inset 0 0 16px rgba(255,255,255,.56), 0 0 15px rgba(150,120,255,.44); animation:basicRainbowTileFlash .86s cubic-bezier(.2,.78,.26,1) forwards; }
+.unused-rainbow-tile-flash-v3 .basic-rainbow-mutation-flash::after { content:""; position:absolute; inset:0; background:linear-gradient(105deg,transparent 12%,rgba(255,255,255,.86) 48%,transparent 84%); transform:translateX(-110%); animation:basicRainbowTileGlint .66s cubic-bezier(.2,.78,.25,1) .06s forwards; }
+.unused-rainbow-tile-flash-v3 .tile.basic-rainbow-hit { box-shadow:inset 0 0 0 2px rgba(255,255,255,.66), inset 0 0 22px rgba(115,200,255,.3), 0 0 13px rgba(135,119,255,.32); }
+@keyframes basicRainbowTileFlash { 0% { opacity:0; background-position:0 50%; } 18% { opacity:.9; } 58% { opacity:.76; background-position:100% 50%; } 100% { opacity:0; background-position:150% 50%; } }
+@keyframes basicRainbowTileGlint { from { transform:translateX(-110%); } to { transform:translateX(110%); } }
+/* UNUSED (dopamine rainbow tile flash v4): retained for visual rollback. */
+.unused-rainbow-tile-flash-v4 .basic-rainbow-mutation-flash { position:absolute; z-index:76; inset:3px; overflow:hidden; border-radius:11px; pointer-events:none; opacity:0; background:linear-gradient(112deg,#ff356a 0%,#ff8038 15%,#ffe934 29%,#3df29e 45%,#2fc7ff 61%,#7f79ff 77%,#ff4db8 92%,#ff356a 100%); background-size:250% 100%; mix-blend-mode:screen; filter:saturate(1.34) brightness(1.14); box-shadow:inset 0 0 20px rgba(255,255,255,.7), 0 0 11px rgba(255,81,133,.36), 0 0 17px rgba(67,207,255,.38), 0 0 24px rgba(158,108,255,.36); animation:basicRainbowTileFlashV4 .98s cubic-bezier(.18,.78,.24,1) forwards; }
+.unused-rainbow-tile-flash-v4 .basic-rainbow-mutation-flash::before { content:""; position:absolute; inset:-14%; background:radial-gradient(circle at 15% 72%,rgba(255,73,126,.84) 0 5%,transparent 27%), radial-gradient(circle at 32% 20%,rgba(255,236,63,.88) 0 4%,transparent 25%), radial-gradient(circle at 69% 78%,rgba(56,237,166,.82) 0 5%,transparent 28%), radial-gradient(circle at 86% 30%,rgba(99,190,255,.9) 0 5%,transparent 27%), radial-gradient(circle at 53% 48%,rgba(255,255,255,.8) 0 3%,transparent 23%); filter:blur(5px); opacity:.94; transform:scale(.7); animation:basicRainbowTileGlowV4 .98s cubic-bezier(.18,.78,.24,1) forwards; }
+.unused-rainbow-tile-flash-v4 .basic-rainbow-mutation-flash::after { content:""; position:absolute; inset:0; background:linear-gradient(105deg,transparent 4%,rgba(255,255,255,.94) 46%,transparent 92%); transform:translateX(-118%) skewX(-10deg); animation:basicRainbowTileGlintV4 .72s cubic-bezier(.18,.78,.25,1) .06s forwards; }
+.unused-rainbow-tile-flash-v4 .tile.basic-rainbow-hit { box-shadow:inset 0 0 0 2px rgba(255,255,255,.82), inset 0 0 24px rgba(96,211,255,.38), 0 0 10px rgba(255,93,145,.32), 0 0 16px rgba(82,210,255,.38), 0 0 24px rgba(157,112,255,.36); }
+@keyframes basicRainbowTileFlashV4 { 0% { opacity:0; background-position:0 50%; } 16% { opacity:1; } 60% { opacity:.92; background-position:118% 50%; } 100% { opacity:0; background-position:190% 50%; } }
+@keyframes basicRainbowTileGlowV4 { 0% { opacity:0; transform:scale(.62) rotate(-8deg); } 26% { opacity:1; } 70% { opacity:.9; transform:scale(1.15) rotate(5deg); } 100% { opacity:0; transform:scale(1.35) rotate(9deg); } }
+@keyframes basicRainbowTileGlintV4 { from { transform:translateX(-118%) skewX(-10deg); } to { transform:translateX(118%) skewX(-10deg); } }
+/* Rainbow mutation v5: a clean prismatic flash with a soft glow that blooms past the soil cell. */
+.basic-rainbow-mutation-flash { position:absolute; z-index:76; inset:5px; overflow:visible; border-radius:10px; pointer-events:none; opacity:0; background:linear-gradient(108deg,#ff4b75 0%,#ff9a45 17%,#fff05a 32%,#4ceaa0 48%,#4abfff 65%,#8b7dff 81%,#ff68b7 100%); background-size:190% 100%; mix-blend-mode:screen; box-shadow:inset 0 0 14px rgba(255,255,255,.72); animation:basicRainbowTileFlashV5 .82s cubic-bezier(.2,.78,.26,1) forwards; }
+.basic-rainbow-mutation-flash::before { content:""; position:absolute; inset:-13px; z-index:-1; border-radius:16px; background:linear-gradient(108deg,#ff4b75,#ff9a45,#fff05a,#4ceaa0,#4abfff,#8b7dff,#ff68b7); filter:blur(10px) saturate(1.22); opacity:0; transform:scale(.82); animation:basicRainbowTileBloomV5 .82s cubic-bezier(.2,.78,.26,1) forwards; }
+.basic-rainbow-mutation-flash::after { content:""; position:absolute; inset:0; border-radius:inherit; background:linear-gradient(105deg,transparent 8%,rgba(255,255,255,.92) 48%,transparent 88%); transform:translateX(-115%); animation:basicRainbowTileGlintV5 .58s cubic-bezier(.18,.78,.25,1) .05s forwards; }
+.tile.basic-rainbow-hit { box-shadow:inset 0 0 0 2px rgba(255,255,255,.76), inset 0 0 20px rgba(104,199,255,.28), 0 0 18px rgba(128,121,255,.42); }
+@keyframes basicRainbowTileFlashV5 { 0% { opacity:0; transform:scale(.86); background-position:0 50%; } 18% { opacity:.96; } 58% { opacity:.82; transform:scale(1); background-position:95% 50%; } 100% { opacity:0; transform:scale(1.04); background-position:135% 50%; } }
+@keyframes basicRainbowTileBloomV5 { 0% { opacity:0; transform:scale(.82); } 22% { opacity:.72; } 60% { opacity:.52; transform:scale(1.08); } 100% { opacity:0; transform:scale(1.18); } }
+@keyframes basicRainbowTileGlintV5 { from { transform:translateX(-115%); } to { transform:translateX(115%); } }
 .companion-drawer-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; color:#543018; }
 .companion-drawer-head span { display:flex; flex-direction:column; }
 .companion-drawer-head b { font-size:13px; }
@@ -1140,10 +1251,11 @@ body.event-hell.embergoo-magma-finale .hell-bg-fire { height:62%; opacity:.86; f
 
         .floating-text { position: absolute; font-weight: 900; font-size: 24px; pointer-events: none; z-index: 2000; animation: floatUp 1.2s forwards; text-shadow: 0 2px 5px rgba(0,0,0,0.8); text-align: center; line-height: 1.1;}
 .harvest-size-burst { position: fixed; transform: translate(-50%, -50%); z-index: 9600; pointer-events: none; color: #fff; font-weight: 900; text-align: center; text-shadow: 0 4px 0 rgba(0,0,0,0.35), 0 0 18px rgba(255,255,255,0.9); animation: harvestBurst 0.85s ease-out forwards; }
+/* UNUSED (big harvest badge v1): only Huge and Titanic crops show a sale banner. */
 .harvest-size-burst.big { font-size: clamp(28px, 9vw, 50px); color: #ffd166; }
-.harvest-size-burst.huge { font-size: clamp(36px, 13vw, 72px); color: #fff56d; animation-name: hugeHarvestBurst; }
-.harvest-size-burst.titanic { font-size: clamp(42px, 15vw, 94px); color: #fff2a8; letter-spacing: 2px; text-shadow: 0 4px 0 rgba(0,0,0,.36), 0 0 22px rgba(255,248,182,.95), 0 0 42px rgba(255,192,72,.42); animation: titanicHarvestBurst 1.8s cubic-bezier(.18,.78,.18,1) forwards; white-space: nowrap; }
-.harvest-size-burst.titanic span { display:inline-block; animation: titanicGlyphBurst 1.45s cubic-bezier(.18,.78,.18,1) forwards; animation-delay: calc(var(--glyph-index) * 0.028s); }
+.harvest-size-burst.huge { font-size:clamp(36px, 13vw, 72px); color:transparent; background:linear-gradient(180deg, #ffffff 0%, #fff8a7 26%, #ffe600 56%, #ffab00 100%); -webkit-background-clip:text; background-clip:text; -webkit-text-stroke:.65px rgba(255,126,0,.82); text-shadow:0 4px 0 rgba(117,54,0,.5), 0 0 13px rgba(255,238,31,.98), 0 0 28px rgba(255,139,0,.72); animation-name:hugeHarvestBurst; }
+.harvest-size-burst.titanic { font-size:clamp(42px, 15vw, 94px); color:#fff; letter-spacing:2px; text-shadow:0 4px 0 rgba(0,0,0,.56), 0 0 12px rgba(255,255,255,.98), 0 0 28px rgba(255,255,255,.72); animation:titanicHarvestBurst 1.8s cubic-bezier(.18,.78,.18,1) forwards; white-space:nowrap; }
+.harvest-size-burst.titanic span { display:inline-block; color:transparent; background:linear-gradient(100deg, #ff176f 0%, #ff8a00 16%, #fff500 31%, #12ff9d 47%, #21beff 63%, #7655ff 78%, #ed27ff 90%, #ff176f 100%); background-size:300% 100%; -webkit-background-clip:text; background-clip:text; -webkit-text-stroke:.7px rgba(255,255,255,.82); filter:drop-shadow(0 0 5px rgba(255,255,255,.94)) drop-shadow(0 0 13px rgba(120,78,255,.9)); animation:titanicGlyphBurst 1.45s cubic-bezier(.18,.78,.18,1) forwards, titanicRainbowSweep .68s linear infinite; animation-delay:calc(var(--glyph-index) * .028s), 0s; }
         .plant-inspect-card {
             position: fixed;
             left: 50%;
@@ -1378,8 +1490,8 @@ body.titanic-growth-darken::after { content:''; position:fixed; inset:0; z-index
         #shop-tab-seeds {
             background: linear-gradient(180deg, #49ad55, #277d3b);
         }
-        #shop-tab-decor {
-            background: linear-gradient(180deg, #f0a94a, #c8741d);
+#shop-tab-decor {
+            background: linear-gradient(180deg, #d9a96b, #9a603d);
         }
         #shop-tab-merchant {
             background: linear-gradient(180deg, #8f61c8, #653b9d);
@@ -1497,6 +1609,27 @@ body.titanic-growth-darken::after { content:''; position:fixed; inset:0; z-index
             background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(238,225,255,0.9));
             border-color: rgba(96,58,148,0.16);
             color: #4c2974;
+        }
+        .shop-modal.room-theme .shop-main {
+            background:
+                linear-gradient(90deg, rgba(119, 76, 45, 0.13) 0 8px, transparent 8px),
+                radial-gradient(circle at 16px 16px, rgba(184, 135, 86, 0.14) 0 2px, transparent 3px),
+                linear-gradient(180deg, #fff5e5, #ead0aa 58%, #c99b6d);
+            background-size: auto, 28px 28px, auto;
+        }
+        .shop-modal.room-theme .shop-header {
+            background:
+                linear-gradient(90deg, rgba(255,255,255,0.16), transparent 35%),
+                linear-gradient(180deg, #bd8254, #825037);
+            border-bottom-color: #57311f;
+        }
+        .shop-modal.room-theme .shop-header span {
+            color: #fff7e8;
+            text-shadow: 0 2px 0 rgba(74, 41, 23, 0.44);
+        }
+        .shop-modal.room-theme .shop-close {
+            background: rgba(87, 49, 31, 0.28);
+            color: #fff7e8;
         }
         .shop-modal.merchant-theme .shop-seed-card {
             border-color: #6d45a6;
@@ -2584,6 +2717,87 @@ body.titanic-growth-darken::after { content:''; position:fixed; inset:0; z-index
         .diary-stat.tone-weight span { background: linear-gradient(180deg, #c18b54, #946239); }
         .diary-stat.tone-sale span { background: linear-gradient(180deg, #f08da0, #cb5878); }
         .diary-stat.tone-harvest span { background: linear-gradient(180deg, #7dcf67, #3fa44a); }
+
+        .diary-progress {
+            margin: 0 0 14px;
+            padding: 9px 10px;
+            border: 2px solid rgba(115,72,29,0.24);
+            border-radius: 12px;
+            background: linear-gradient(180deg, rgba(255,252,237,0.9), rgba(238,214,167,0.86));
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.72), 0 2px 0 rgba(86,48,17,0.1);
+        }
+
+        .diary-progress-head,
+        .diary-progress-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .diary-progress-head span {
+            color: #5b3010;
+            font-size: 11px;
+            font-weight: 1000;
+        }
+
+        .diary-progress-head b {
+            min-width: 38px;
+            padding: 3px 6px;
+            border-radius: 999px;
+            background: rgba(103,61,24,0.1);
+            color: #754018;
+            font-size: 11px;
+            font-weight: 1000;
+            text-align: center;
+        }
+
+        .diary-progress-track {
+            height: 10px;
+            margin: 8px 0;
+            overflow: hidden;
+            border: 1px solid rgba(88,52,21,0.26);
+            border-radius: 999px;
+            background: rgba(103,66,35,0.18);
+            box-shadow: inset 0 1px 2px rgba(72,39,12,0.18);
+        }
+
+        .diary-progress-track i {
+            display: block;
+            width: 0;
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, #e49b2f, #ffd65c 52%, #fff0a9);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.5), 0 0 5px rgba(246,182,52,0.42);
+            transition: width .45s cubic-bezier(.2,.8,.25,1);
+        }
+
+        .diary-progress-footer small {
+            color: rgba(91,48,16,0.78);
+            font-size: 10px;
+            font-weight: 900;
+        }
+
+        .diary-progress-claim {
+            min-height: 27px;
+            padding: 5px 9px;
+            border: 0;
+            border-radius: 8px;
+            background: linear-gradient(180deg, #f6c351, #d78d1c);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.54), 0 2px 0 rgba(113,63,13,0.28);
+            color: #55300a;
+            font: inherit;
+            font-size: 10px;
+            font-weight: 1000;
+        }
+
+        .diary-progress-claim:disabled {
+            background: linear-gradient(180deg, #d6d1c8, #aaa39a);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.52), 0 2px 0 rgba(73,65,57,0.2);
+            color: rgba(70,63,56,0.68);
+            cursor: not-allowed;
+            filter: grayscale(.2);
+        }
 
         .diary-mutations {
             display: grid;
@@ -4288,6 +4502,7 @@ body.titanic-growth-darken::after { content:''; position:fixed; inset:0; z-index
             animation: none;
         }
 
+        /* Fire visual: a soft, compact flame stays in the mutation layer. */
         .fx-hell {
             left: 50%;
             bottom: 7px;
@@ -5230,14 +5445,14 @@ body.titanic-growth-darken::after { content:''; position:fixed; inset:0; z-index
             }
 
             .companion-ability-button {
-                width: 46px;
-                height: 46px;
+                width: 48px;
+                height: 48px;
                 border-width: 3px;
             }
 
             .companion-ability-button span {
-                width: 22px;
-                height: 22px;
+                width: 34px;
+                height: 34px;
             }
 
             .companion-buff-row {
@@ -11400,17 +11615,18 @@ body.titanic-growth-darken::after { content:''; position:fixed; inset:0; z-index
             transform-origin: top center !important;
         }
 
-        .tile.crop-big .honey-drop,
-        .tile.crop-huge .honey-drop,
-        .tile.crop-titanic .honey-drop {
+/* UNUSED (honey drop mini-scale v1): large crops no longer shrink their honey droplets. */
+.tile.unused-honey-drop-v1.crop-big .honey-drop,
+.tile.unused-honey-drop-v1.crop-huge .honey-drop,
+.tile.unused-honey-drop-v1.crop-titanic .honey-drop {
             width: 4px !important;
             height: 4px !important;
             transform: translateX(-50%) scale(0.58) !important;
             transform-origin: center top !important;
         }
 
-        .tile.crop-huge .honey-drop,
-        .tile.crop-titanic .honey-drop {
+.tile.unused-honey-drop-v1.crop-huge .honey-drop,
+.tile.unused-honey-drop-v1.crop-titanic .honey-drop {
             width: 3px !important;
             height: 3px !important;
             transform: translateX(-50%) scale(0.5) !important;
@@ -11906,10 +12122,48 @@ body.event-bee .companion-window-scene { background:linear-gradient(180deg,#f8da
 body.event-bee .companion-window-scene::before { inset:-3px; width:auto; height:auto; border-radius:0; background:linear-gradient(180deg,#ffd65e 0 18%,#ffde78 19% 44%,#f6c94b 45% 68%,#84b462 69%); box-shadow:none; opacity:.96; animation:windowHoney 5.6s ease-in-out infinite; }
 body.event-bee .companion-window-scene::after { content:"🐝"; display:block; left:-10px; top:17px; width:12px; height:12px; white-space:nowrap; color:#2b1a08; background:none; font-size:8px; line-height:1; animation:windowBees 8.2s ease-in-out infinite alternate; }
 
-body.event-candy .companion-window-scene { background:linear-gradient(180deg,#c9845a 0 64%,#a85b48 65%); }
-body.event-candy .companion-window-scene::before,body.event-candy .companion-window-scene::after { display:block; width:90px; height:12px; white-space:nowrap; background:none; box-shadow:none; font-size:7px; line-height:1; opacity:.9; }
-body.event-candy .companion-window-scene::before { content:"🍬        🍩"; left:2px; top:-14px; font-size:8px; opacity:.95; animation:windowCandyA 4.9s linear infinite; }
-body.event-candy .companion-window-scene::after { content:"   🍭          🍩"; left:14px; top:-17px; font-size:6px; opacity:.72; animation:windowCandyB 6.7s 1.6s linear infinite; }
+body.event-candy .companion-window-scene {
+    background:
+        radial-gradient(circle at 13% 70%, #ffe58c 0 1px, transparent 1.7px),
+        radial-gradient(circle at 29% 76%, #65d7d5 0 1px, transparent 1.7px),
+        radial-gradient(circle at 45% 68%, #ff7faa 0 1px, transparent 1.7px),
+        radial-gradient(circle at 61% 82%, #fff0b1 0 1px, transparent 1.7px),
+        radial-gradient(circle at 77% 72%, #7bd7d2 0 1px, transparent 1.7px),
+        linear-gradient(180deg, #ffc0da 0 54%, #f58ab7 55% 63%, #81503c 64% 67%, #4b2925 68% 100%);
+}
+body.event-candy .companion-window-scene::before,
+body.event-candy .companion-window-scene::after {
+    content:"";
+    display:block;
+    width:92px;
+    height:92px;
+    border-radius:0;
+    box-shadow:none;
+    opacity:1;
+    pointer-events:none;
+}
+body.event-candy .companion-window-scene::before {
+    left:-14px;
+    top:-88px;
+    background:
+        radial-gradient(ellipse at 12px 10px, #fff4b8 0 1px, #f05a91 1.6px 3px, transparent 3.6px),
+        radial-gradient(ellipse at 45px 27px, #fff5cf 0 1px, #6bd8d2 1.6px 3px, transparent 3.6px),
+        radial-gradient(ellipse at 76px 15px, #fff0a4 0 1px, #ff8b43 1.6px 3px, transparent 3.6px),
+        radial-gradient(ellipse at 26px 57px, #ffe9fb 0 1px, #b76be9 1.6px 3px, transparent 3.6px),
+        radial-gradient(ellipse at 67px 70px, #fff4b8 0 1px, #f05a91 1.6px 3px, transparent 3.6px);
+    animation:windowCandyA 3.8s linear infinite;
+}
+body.event-candy .companion-window-scene::after {
+    left:-3px;
+    top:-95px;
+    background:
+        radial-gradient(ellipse at 17px 20px, #fff3bd 0 1px, #ff9a47 1.6px 3px, transparent 3.6px),
+        radial-gradient(ellipse at 58px 8px, #fff0fd 0 1px, #bf72ed 1.6px 3px, transparent 3.6px),
+        radial-gradient(ellipse at 82px 41px, #fff6cf 0 1px, #65d7d5 1.6px 3px, transparent 3.6px),
+        radial-gradient(ellipse at 38px 61px, #fff4b8 0 1px, #f05a91 1.6px 3px, transparent 3.6px),
+        radial-gradient(ellipse at 11px 78px, #fff0a4 0 1px, #ff9a47 1.6px 3px, transparent 3.6px);
+    animation:windowCandyB 5.1s -1.7s linear infinite;
+}
 
 body.event-holy .companion-window-scene { background:linear-gradient(180deg,#ffe99a 0 64%,#9fc46d 65%); }
 body.event-holy .companion-window-scene::before { left:50%; top:14%; width:20px; height:20px; border-radius:50%; background:#fff8b9; box-shadow:0 0 8px 4px rgba(255,244,125,.85); transform:translateX(-50%); animation:windowSun 2.3s ease-in-out infinite; }
@@ -11934,8 +12188,8 @@ body.sunpudding-eclipse-dark .companion-window { filter:brightness(.35) saturate
 @keyframes windowBeam { 0%,100% { opacity:.35; } 50% { opacity:.78; } }
 @keyframes windowHoney { 0%,100% { filter:saturate(1) brightness(1); } 50% { filter:saturate(1.08) brightness(1.04); } }
 @keyframes windowBees { 0%,16% { transform:translate(0,4px) scaleX(1); opacity:0; } 24% { opacity:.95; } 45% { transform:translate(34px,-5px) scaleX(1); opacity:.95; } 55% { transform:translate(50px,6px) scaleX(-1); opacity:.9; } 76% { transform:translate(17px,14px) scaleX(-1); opacity:.88; } 100% { transform:translate(-2px,3px) scaleX(-1); opacity:0; } }
-@keyframes windowCandyA { 0% { transform:translate3d(0,0,0) rotate(-8deg) scale(1.02); opacity:0; } 16% { opacity:.92; } 100% { transform:translate3d(7px,97px,0) rotate(126deg) scale(1.14); opacity:0; } }
-@keyframes windowCandyB { 0% { transform:translate3d(0,0,0) rotate(6deg) scale(.88); opacity:0; } 20% { opacity:.8; } 100% { transform:translate3d(-6px,78px,0) rotate(-118deg) scale(.74); opacity:0; } }
+@keyframes windowCandyA { 0% { transform:translate3d(0,0,0) rotate(-7deg); } 100% { transform:translate3d(9px,108px,0) rotate(22deg); } }
+@keyframes windowCandyB { 0% { transform:translate3d(0,0,0) rotate(8deg); } 100% { transform:translate3d(-11px,116px,0) rotate(-19deg); } }
 @keyframes windowSun { 0%,100% { box-shadow:0 0 7px 3px rgba(255,244,125,.72); transform:translateX(-50%) scale(.94); } 50% { box-shadow:0 0 13px 7px rgba(255,244,125,.96); transform:translateX(-50%) scale(1.08); } }
 
 .companion-dirt-cloud {
@@ -11974,6 +12228,7 @@ body.sunpudding-eclipse-dark .companion-window { filter:brightness(.35) saturate
 .decor-pane {
     gap: 10px;
 }
+/* UNUSED: plot-style switcher. Plot styles remain saved and renderable, but are hidden from the shop. */
 .decor-switcher {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -12017,6 +12272,31 @@ body.sunpudding-eclipse-dark .companion-window { filter:brightness(.35) saturate
 .room-decor-shop .decor-card {
     min-height: 156px;
 }
+.room-shop-pane {
+    gap: 12px;
+}
+.room-shop-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 12px;
+    color: #5a3422;
+    background: linear-gradient(135deg, rgba(255,252,244,.96), rgba(240,211,170,.92));
+    border-color: rgba(118, 73, 42, .24);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.8), 0 3px 0 rgba(114, 70, 37, .12);
+}
+.room-shop-banner span,
+.room-shop-banner b {
+    display: block;
+    line-height: 1.1;
+}
+.room-shop-banner b {
+    color: #95623e;
+    font-size: 10px;
+    text-align: right;
+}
+
 
 .decor-card.style-cozy .decor-preview {
     background: linear-gradient(180deg, #f7e6c8, #cfa477);
@@ -13571,8 +13851,8 @@ body.event-alien .companion-panel.room-style-backroom .companion-window::after {
     }
 
     .companion-window { padding:0; }
-    .companion-level { width: 78px; min-height: 54px; padding: 0 8px 9px; }
-    .companion-level small { font-size: 11px; }
+    .companion-level { width: 92px; min-height: 54px; padding: 0 8px 9px; }
+    .companion-level small { font-size: 8px; }
     .companion-level b { font-size: 21px; }
     .companion-level-mini-xp { left: 7px; right: 7px; bottom: 5px; height: 4px; }
     .companion-buff-row > .companion-room-trigger { min-height: 54px; padding-left: 48px; }
@@ -14979,6 +15259,7 @@ body.event-alien .companion-panel.room-style-backroom .companion-window::after {
 .tile.occupied.ready .model.ready {
     animation:breathe 3s ease-in-out infinite !important;
 }
+/* UNUSED (large ready motion v1): superseded by the weight-based motions below. */
 .tile.crop-huge.occupied.ready .model.ready {
     animation:hugeCropPulse 1.8s ease-in-out infinite !important;
 }
@@ -15079,57 +15360,57 @@ body.event-alien .companion-panel.room-style-backroom .companion-window::after {
 .tile.primary-phantom { --crop-main:#c9d1d8; --crop-light:#f6f8fb; --crop-detail:#7d8893; --crop-line:rgba(125,136,147,.3); --crop-leaf:#7d8893; --crop-leaf-light:#dce3e9; --crop-stem:#626d78; --crop-stem-light:#f6f8fb; --crop-seed:#7d8893; --crop-spot:#7d8893; --mut-shadow:rgba(62,72,83,.2); }
 .tile.primary-eclipse { --crop-main:#2f161b; --crop-light:#6e2832; --crop-detail:#120509; --crop-line:rgba(255,68,40,.28); --crop-leaf:#120509; --crop-leaf-light:#6e2832; --crop-stem:#120509; --crop-stem-light:#6e2832; --crop-seed:#e54b30; --crop-spot:#e54b30; --mut-shadow:rgba(17,2,6,.46); }
 
-.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-void,.primary-phantom,.primary-eclipse) .model-cucumber {
+.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-bloodmoon,.primary-void,.primary-phantom,.primary-eclipse) .model-cucumber {
     background:
         radial-gradient(var(--crop-spot) 18%, transparent 24%) 1px 2px/7px 7px repeat,
         linear-gradient(135deg, var(--crop-light), var(--crop-main)) !important;
 }
-.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-void,.primary-phantom,.primary-eclipse) :is(.model-pepper,.model-eggplant) {
+.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-bloodmoon,.primary-void,.primary-phantom,.primary-eclipse) :is(.model-pepper,.model-eggplant) {
     background:radial-gradient(circle at 30% 26%, var(--crop-light), var(--crop-main) 72%) !important;
 }
-.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-void,.primary-phantom,.primary-eclipse) .model-strawberry {
+.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-bloodmoon,.primary-void,.primary-phantom,.primary-eclipse) .model-strawberry {
     background:
         radial-gradient(var(--crop-seed) 15%, transparent 20%) 0 0/8px 8px repeat,
         radial-gradient(circle at 30% 30%, var(--crop-light), var(--crop-main) 72%) !important;
 }
-.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-void,.primary-phantom,.primary-eclipse) .model-pumpkin {
+.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-bloodmoon,.primary-void,.primary-phantom,.primary-eclipse) .model-pumpkin {
     background:
         radial-gradient(ellipse at center, transparent 40%, var(--crop-line) 41%) 0 0/15px 100%,
         radial-gradient(circle at 30% 25%, var(--crop-light), var(--crop-main) 74%) !important;
 }
-.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-void,.primary-phantom,.primary-eclipse) .model-corn {
+.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-bloodmoon,.primary-void,.primary-phantom,.primary-eclipse) .model-corn {
     background:
         radial-gradient(var(--crop-detail) 20%, transparent 23%) 0 0/6px 6px repeat,
         linear-gradient(135deg, var(--crop-light), var(--crop-main)) !important;
 }
-.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-void,.primary-phantom,.primary-eclipse) .model-mushroom {
+.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-bloodmoon,.primary-void,.primary-phantom,.primary-eclipse) .model-mushroom {
     background:linear-gradient(135deg, var(--crop-stem-light), var(--crop-main)) !important;
 }
-.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-void,.primary-phantom,.primary-eclipse) .model-mushroom::before {
+.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-bloodmoon,.primary-void,.primary-phantom,.primary-eclipse) .model-mushroom::before {
     background:
         radial-gradient(var(--crop-detail) 15%, transparent 20%) 0 0/10px 10px repeat,
         radial-gradient(circle at 30% 24%, var(--crop-light), var(--crop-main) 72%) !important;
 }
-.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-void,.primary-phantom,.primary-eclipse) .model-watermelon {
+.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-bloodmoon,.primary-void,.primary-phantom,.primary-eclipse) .model-watermelon {
     background:repeating-linear-gradient(90deg, var(--crop-light), var(--crop-light) 8px, var(--crop-main) 8px, var(--crop-main) 16px) !important;
 }
-.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-void,.primary-phantom,.primary-eclipse) .model-melon {
+.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-bloodmoon,.primary-void,.primary-phantom,.primary-eclipse) .model-melon {
     background:
         repeating-linear-gradient(45deg, transparent, transparent 5px, var(--crop-line) 5px, var(--crop-line) 6px),
         repeating-linear-gradient(-45deg, transparent, transparent 5px, var(--crop-line) 5px, var(--crop-line) 6px),
         radial-gradient(circle at 32% 28%, var(--crop-light), var(--crop-main) 74%) !important;
 }
-.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-void,.primary-phantom,.primary-eclipse) .model-pineapple {
+.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-bloodmoon,.primary-void,.primary-phantom,.primary-eclipse) .model-pineapple {
     background:
         repeating-linear-gradient(45deg, transparent, transparent 5px, var(--crop-line) 5px, var(--crop-line) 7px),
         repeating-linear-gradient(-45deg, transparent, transparent 5px, var(--crop-line) 5px, var(--crop-line) 7px),
         radial-gradient(circle at 32% 26%, var(--crop-light), var(--crop-main) 74%) !important;
 }
-.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-void,.primary-phantom,.primary-eclipse) .model-starfruit {
+.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-bloodmoon,.primary-void,.primary-phantom,.primary-eclipse) .model-starfruit {
     background:linear-gradient(135deg, var(--crop-light), var(--crop-main)) !important;
 }
 
-.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-void,.primary-phantom,.primary-eclipse) .model-carrot::before {
+.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-bloodmoon,.primary-void,.primary-phantom,.primary-eclipse) .model-carrot::before {
     content:'' !important;
     position:absolute !important;
     top:-10px !important;
@@ -15147,8 +15428,8 @@ body.event-alien .companion-panel.room-style-backroom .companion-window::after {
     z-index:auto !important;
 }
 
-.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-void,.primary-phantom,.primary-eclipse) .model-cucumber::before,
-.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-void,.primary-phantom,.primary-eclipse) .model-fig::before {
+.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-bloodmoon,.primary-void,.primary-phantom,.primary-eclipse) .model-cucumber::before,
+.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-bloodmoon,.primary-void,.primary-phantom,.primary-eclipse) .model-fig::before {
     content:'' !important;
     position:absolute !important;
     top:-6px !important;
@@ -15158,18 +15439,18 @@ body.event-alien .companion-panel.room-style-backroom .companion-window::after {
     background:var(--crop-stem) !important;
     border:0 !important;
     border-radius:2px !important;
-    transform:none !important;
+    transform:none;
     box-shadow:none !important;
     z-index:auto !important;
 }
 
-.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-void,.primary-phantom,.primary-eclipse) .model-cucumber::before {
+.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-bloodmoon,.primary-void,.primary-phantom,.primary-eclipse) .model-cucumber::before {
     top:-4px !important;
     left:5px !important;
     height:6px !important;
 }
 
-.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-void,.primary-phantom,.primary-eclipse) .model-tomato::before {
+.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-bloodmoon,.primary-void,.primary-phantom,.primary-eclipse) .model-tomato::before {
     content:'' !important;
     position:absolute !important;
     top:-6px !important;
@@ -15180,12 +15461,12 @@ body.event-alien .companion-panel.room-style-backroom .companion-window::after {
     border:0 !important;
     border-radius:0 !important;
     clip-path:polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%) !important;
-    transform:none !important;
+    transform:none;
     box-shadow:none !important;
     z-index:auto !important;
 }
 
-.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-void,.primary-phantom,.primary-eclipse) .model-pepper::before {
+.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-bloodmoon,.primary-void,.primary-phantom,.primary-eclipse) .model-pepper::before {
     content:'' !important;
     position:absolute !important;
     top:-8px !important;
@@ -15200,7 +15481,7 @@ body.event-alien .companion-panel.room-style-backroom .companion-window::after {
     z-index:auto !important;
 }
 
-.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-void,.primary-phantom,.primary-eclipse) .model-pepper::after {
+.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-bloodmoon,.primary-void,.primary-phantom,.primary-eclipse) .model-pepper::after {
     content:'' !important;
     position:absolute !important;
     top:0 !important;
@@ -15220,7 +15501,7 @@ body.event-alien .companion-panel.room-style-backroom .companion-window::after {
     z-index:auto !important;
 }
 
-.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-void,.primary-phantom,.primary-eclipse) .model-strawberry::before {
+.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-bloodmoon,.primary-void,.primary-phantom,.primary-eclipse) .model-strawberry::before {
     content:'' !important;
     position:absolute !important;
     top:-6px !important;
@@ -15236,7 +15517,7 @@ body.event-alien .companion-panel.room-style-backroom .companion-window::after {
     z-index:auto !important;
 }
 
-.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-void,.primary-phantom,.primary-eclipse) .model-eggplant::before {
+.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-bloodmoon,.primary-void,.primary-phantom,.primary-eclipse) .model-eggplant::before {
     content:'' !important;
     position:absolute !important;
     top:-4px !important;
@@ -15251,7 +15532,7 @@ body.event-alien .companion-panel.room-style-backroom .companion-window::after {
     z-index:auto !important;
 }
 
-.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-void,.primary-phantom,.primary-eclipse) .model-pumpkin::before {
+.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-bloodmoon,.primary-void,.primary-phantom,.primary-eclipse) .model-pumpkin::before {
     content:'' !important;
     position:absolute !important;
     top:-10px !important;
@@ -15266,8 +15547,8 @@ body.event-alien .companion-panel.room-style-backroom .companion-window::after {
     z-index:auto !important;
 }
 
-.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-void,.primary-phantom,.primary-eclipse) .model-corn::before,
-.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-void,.primary-phantom,.primary-eclipse) .model-corn::after {
+.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-bloodmoon,.primary-void,.primary-phantom,.primary-eclipse) .model-corn::before,
+.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-bloodmoon,.primary-void,.primary-phantom,.primary-eclipse) .model-corn::after {
     content:'' !important;
     position:absolute !important;
     top:auto !important;
@@ -15280,14 +15561,14 @@ body.event-alien .companion-panel.room-style-backroom .companion-window::after {
     z-index:auto !important;
 }
 
-.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-void,.primary-phantom,.primary-eclipse) .model-corn::before {
+.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-bloodmoon,.primary-void,.primary-phantom,.primary-eclipse) .model-corn::before {
     left:-6px !important;
     right:auto !important;
     border-radius:0 100% 0 100% !important;
     transform:rotate(-15deg) !important;
 }
 
-.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-void,.primary-phantom,.primary-eclipse) .model-corn::after {
+.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-bloodmoon,.primary-void,.primary-phantom,.primary-eclipse) .model-corn::after {
     left:auto !important;
     right:-6px !important;
     background:var(--crop-leaf) !important;
@@ -15295,7 +15576,7 @@ body.event-alien .companion-panel.room-style-backroom .companion-window::after {
     transform:rotate(15deg) !important;
 }
 
-.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-void,.primary-phantom,.primary-eclipse) .model-mushroom::before {
+.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-bloodmoon,.primary-void,.primary-phantom,.primary-eclipse) .model-mushroom::before {
     content:'' !important;
     position:absolute !important;
     top:-14px !important;
@@ -15309,7 +15590,7 @@ body.event-alien .companion-panel.room-style-backroom .companion-window::after {
     z-index:auto !important;
 }
 
-.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-void,.primary-phantom,.primary-eclipse) .model-watermelon::before {
+.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-bloodmoon,.primary-void,.primary-phantom,.primary-eclipse) .model-watermelon::before {
     content:'' !important;
     position:absolute !important;
     top:-8px !important;
@@ -15326,7 +15607,7 @@ body.event-alien .companion-panel.room-style-backroom .companion-window::after {
     z-index:auto !important;
 }
 
-.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-void,.primary-phantom,.primary-eclipse) .model-melon::before {
+.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-bloodmoon,.primary-void,.primary-phantom,.primary-eclipse) .model-melon::before {
     content:'' !important;
     position:absolute !important;
     top:-8px !important;
@@ -15341,7 +15622,7 @@ body.event-alien .companion-panel.room-style-backroom .companion-window::after {
     z-index:auto !important;
 }
 
-.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-void,.primary-phantom,.primary-eclipse) .model-pineapple::before {
+.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-bloodmoon,.primary-void,.primary-phantom,.primary-eclipse) .model-pineapple::before {
     content:'' !important;
     position:absolute !important;
     top:-18px !important;
@@ -15357,7 +15638,7 @@ body.event-alien .companion-panel.room-style-backroom .companion-window::after {
     z-index:auto !important;
 }
 
-.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-void,.primary-phantom,.primary-eclipse) .model-pomegranate::before {
+.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-bloodmoon,.primary-void,.primary-phantom,.primary-eclipse) .model-pomegranate::before {
     content:'' !important;
     position:absolute !important;
     top:-6px !important;
@@ -15373,7 +15654,7 @@ body.event-alien .companion-panel.room-style-backroom .companion-window::after {
     z-index:auto !important;
 }
 
-.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-void,.primary-phantom,.primary-eclipse) .model-dragonfruit::before {
+.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-bloodmoon,.primary-void,.primary-phantom,.primary-eclipse) .model-dragonfruit::before {
     content:'' !important;
     position:absolute !important;
     top:5px !important;
@@ -15389,7 +15670,7 @@ body.event-alien .companion-panel.room-style-backroom .companion-window::after {
     z-index:auto !important;
 }
 
-.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-void,.primary-phantom,.primary-eclipse) .model-starfruit::before {
+.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-bloodmoon,.primary-void,.primary-phantom,.primary-eclipse) .model-starfruit::before {
     content:'' !important;
     position:absolute !important;
     top:0 !important;
@@ -15405,14 +15686,14 @@ body.event-alien .companion-panel.room-style-backroom .companion-window::after {
     z-index:auto !important;
 }
 
-.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-void,.primary-phantom,.primary-eclipse) .model {
+.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-bloodmoon,.primary-void,.primary-phantom,.primary-eclipse) .model {
     box-shadow:inset -4px -4px 8px var(--mut-shadow) !important;
     filter:none !important;
     opacity:1 !important;
 }
 
-.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-void,.primary-phantom,.primary-eclipse,.primary-gold,.primary-diamond,.primary-rainbow) .model::before,
-.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-void,.primary-phantom,.primary-eclipse,.primary-gold,.primary-diamond,.primary-rainbow) .model::after {
+.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-bloodmoon,.primary-void,.primary-phantom,.primary-eclipse,.primary-gold,.primary-diamond,.primary-rainbow) .model::before,
+.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-bloodmoon,.primary-void,.primary-phantom,.primary-eclipse,.primary-gold,.primary-diamond,.primary-rainbow) .model::after {
     filter:none !important;
     opacity:1 !important;
 }
@@ -15477,11 +15758,8 @@ body.event-alien .companion-panel.room-style-backroom .companion-window::after {
     opacity:1 !important;
 }
 
-.tile.mut-electric.occupied.ready .model.ready,
-.tile.primary-electric.occupied.ready .model.ready,
-.tile.crop-big.mut-electric.occupied.ready .model.ready,
-.tile.crop-huge.mut-electric.occupied.ready .model.ready,
-.tile.crop-titanic.mut-electric.occupied.ready .model.ready {
+/* UNUSED (electric priority v1): declared before the final weight rules and could be overridden. */
+.unused-electric-priority-v1 .tile:is(.crop-small,.crop-normal,.crop-big,.crop-huge,.crop-titanic):is(.mut-electric,.primary-electric).occupied.ready .model.ready {
     animation:electricPlantHum .42s ease-in-out infinite !important;
 }
 
@@ -16054,6 +16332,7 @@ body.event-cosmic {
     animation:breathe 3s ease-in-out infinite, materialDiamondPalette 3.5s ease-in-out infinite !important;
 }
 
+/* UNUSED (large material motion v1): superseded by the weight-based material motions below. */
 .tile.crop-huge:is(.mut-gold,.primary-gold).occupied.ready .model.ready {
     animation:hugeCropPulse 1.8s ease-in-out infinite, materialGoldPalette 3.2s ease-in-out infinite !important;
 }
@@ -16240,7 +16519,7 @@ body.event-cosmic {
     --crop-light:#ff4ec1;
     --crop-detail:#ff4ec1;
     --crop-line:rgba(255,78,193,.52);
-    --crop-leaf:#ff4ec1;
+    --crop-leaf:#612682;
     --crop-leaf-light:#263aaf;
     --crop-stem:#263aaf;
     --crop-stem-light:#ff4ec1;
@@ -16519,7 +16798,7 @@ body.event-cosmic {
     opacity:.74 !important;
 }
 
-/* Large-crop mutation visibility: keep the three compact effects readable above oversized models. */
+/* UNUSED (large-crop mutation position v1): replaced by measured model bounds below. */
 .tile.crop-big .fx-holy {
     top:-48px !important;
     width:38px !important;
@@ -17001,13 +17280,13 @@ body.event-cosmic {
 }
 
 /* Dragonfruit's secondary leaves stay in the mutation palette, but no longer wash out. */
-.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-void,.primary-phantom,.primary-eclipse) .model-dragonfruit::before {
+.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-bloodmoon,.primary-void,.primary-phantom,.primary-eclipse) .model-dragonfruit::before {
     box-shadow:15px 5px 0 var(--crop-leaf), 8px 15px 0 var(--crop-leaf) !important;
     box-shadow:15px 5px 0 color-mix(in srgb, var(--crop-leaf-light) 58%, var(--crop-leaf)), 8px 15px 0 color-mix(in srgb, var(--crop-leaf-light) 58%, var(--crop-leaf)) !important;
 }
 
 /* Dragonfruit leaf consistency: all three leaves use the same secondary mutation color. */
-.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-void,.primary-phantom,.primary-eclipse) .model-dragonfruit::before {
+.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-bloodmoon,.primary-void,.primary-phantom,.primary-eclipse) .model-dragonfruit::before {
     box-shadow:15px 5px 0 var(--crop-leaf), 8px 15px 0 var(--crop-leaf) !important;
 }
 
@@ -17953,7 +18232,6 @@ body.event-night.night-fading .top-bar,
 body.event-night.night-fading .shop-launchbar,
 body.event-night.night-fading .bottom-ui,
 body.event-night.night-fading .plant-inspect-card,
-body.event-night.night-fading .side-menu,
 body.event-night.night-fading .shop-modal {
     transition-duration:var(--night-ambience-enter);
 }
@@ -17963,8 +18241,14 @@ body.event-night.night-fading .bottom-ui,
 body.event-night.night-fading .plant-inspect-card {
     filter:brightness(.5) saturate(.58) hue-rotate(8deg);
 }
-body.event-night.night-fading .side-menu,
 body.event-night.night-fading .shop-modal {
+    filter:brightness(.58) saturate(.62) hue-rotate(8deg);
+}
+body.event-night.night-fading .side-menu {
+    filter:none;
+}
+body.event-night.night-fading .side-menu > .menu-header,
+body.event-night.night-fading .side-menu > .menu-content > :not(.companion-panel) {
     filter:brightness(.58) saturate(.62) hue-rotate(8deg);
 }
 /* The night recolors the real garden and tile borders in JavaScript; no visual layer is added. */
@@ -18032,9 +18316,13 @@ body.event-night.night-fading .shop-modal {
 .fx-lunar .speck-one { left:31%; top:25%; animation-delay:-.4s; }
 .fx-lunar .speck-two { left:61%; top:42%; width:2px; height:2px; animation-delay:-1.5s; }
 .fx-lunar .speck-three { left:46%; top:61%; width:2px; height:2px; animation-delay:-2.35s; }
-.tile.crop-big .fx-lunar { width:136px !important; height:160px !important; margin-left:-68px !important; bottom:-8% !important; }
-.tile.crop-huge .fx-lunar,
-.tile.crop-titanic .fx-lunar { width:180px !important; height:210px !important; margin-left:-90px !important; bottom:-18% !important; }
+/* Large lunar pools need extra white light so their wider surface does not read as grey. */
+.tile.crop-big .fx-lunar .lunar-pool,
+.tile.crop-huge .fx-lunar .lunar-pool,
+.tile.crop-titanic .fx-lunar .lunar-pool {
+    background:radial-gradient(ellipse, rgba(255,255,255,1) 0%, rgba(246,248,255,.94) 40%, rgba(207,212,255,.58) 68%, transparent 80%) !important;
+    box-shadow:0 0 15px rgba(255,255,255,.66) !important;
+}
 .showcase-plant-preview .fx-lunar,
 .showcase-plant-preview.crop-big .fx-lunar,
 .showcase-plant-preview.crop-huge .fx-lunar,
@@ -18073,6 +18361,7 @@ body.event-night.night-fading .shop-modal {
     background:radial-gradient(ellipse at 37% 27%, #efff8a 0 7%, transparent 15%), linear-gradient(180deg, #c9f23c 0%, #8dd326 48%, #4f9a1d 100%) !important;
     box-shadow:0 0 6px rgba(196,255,45,.58), inset 0 2px 3px rgba(255,255,164,.58), inset 0 -3px 4px rgba(37,106,17,.64), 0 2px 3px rgba(29,78,13,.3) !important;
     filter:saturate(1.08) !important;
+    transform-origin:50% 50% !important;
     animation:toxicAcidPuddleSway 5.2s cubic-bezier(.45,0,.55,1) infinite !important;
 }
 .tile.mut-toxic .toxic-cloud::before {
@@ -18086,7 +18375,7 @@ body.event-night.night-fading .shop-modal {
 .tile.mut-toxic .acid-bubble {
     position:absolute;
     z-index:40;
-    bottom:18%;
+    bottom:auto;
     display:block;
     width:7px;
     height:7px;
@@ -18096,23 +18385,13 @@ body.event-night.night-fading .shop-modal {
     box-shadow:inset -1px -1px 1px rgba(33,101,15,.58), 0 1px 2px rgba(41,101,17,.46);
     animation:toxicAcidBubbleRise var(--acid-bubble-duration) cubic-bezier(.3,.02,.4,1) var(--acid-bubble-delay) infinite;
 }
-.tile.mut-toxic .acid-bubble-one { left:12%; --acid-bubble-duration:4.4s; --acid-bubble-delay:-.4s; --acid-bubble-rise:-8px; }
-.tile.mut-toxic .acid-bubble-two { left:34%; width:5px; height:5px; --acid-bubble-duration:5.1s; --acid-bubble-delay:-2.3s; --acid-bubble-rise:-10px; }
-.tile.mut-toxic .acid-bubble-three { right:19%; width:8px; height:8px; --acid-bubble-duration:4.8s; --acid-bubble-delay:-1.2s; --acid-bubble-rise:-9px; }
-.tile.mut-toxic .acid-bubble-four { right:5%; width:5px; height:5px; --acid-bubble-duration:5.5s; --acid-bubble-delay:-3.7s; --acid-bubble-rise:-7px; }
-.tile.crop-big.mut-toxic .toxic-cloud {
-    width:104px !important;
-    height:32px !important;
-    margin-left:-52px !important;
-    bottom:-2% !important;
-}
-.tile.crop-huge.mut-toxic .toxic-cloud,
-.tile.crop-titanic.mut-toxic .toxic-cloud {
-    width:142px !important;
-    height:43px !important;
-    margin-left:-71px !important;
-    bottom:-6% !important;
-}
+.tile.mut-toxic .acid-bubble-one { left:var(--model-fx-bubble-1-left); top:var(--model-fx-bubble-1-top); --acid-bubble-duration:3.15s; --acid-bubble-delay:-.2s; --acid-bubble-rise:-9px; --acid-bubble-drift:-2px; }
+.tile.mut-toxic .acid-bubble-two { left:var(--model-fx-bubble-2-left); top:var(--model-fx-bubble-2-top); width:5px; height:5px; --acid-bubble-duration:4.25s; --acid-bubble-delay:-1.65s; --acid-bubble-rise:-11px; --acid-bubble-drift:2px; }
+.tile.mut-toxic .acid-bubble-three { left:var(--model-fx-bubble-3-left); top:var(--model-fx-bubble-3-top); width:8px; height:8px; --acid-bubble-duration:3.7s; --acid-bubble-delay:-2.85s; --acid-bubble-rise:-10px; --acid-bubble-drift:-1px; }
+.tile.mut-toxic .acid-bubble-four { left:var(--model-fx-bubble-4-left); top:var(--model-fx-bubble-4-top); width:5px; height:5px; --acid-bubble-duration:5.1s; --acid-bubble-delay:-.9s; --acid-bubble-rise:-8px; --acid-bubble-drift:3px; }
+.tile.mut-toxic .acid-bubble-five { left:var(--model-fx-bubble-5-left); top:var(--model-fx-bubble-5-top); width:6px; height:6px; --acid-bubble-duration:4.6s; --acid-bubble-delay:-3.25s; --acid-bubble-rise:-12px; --acid-bubble-drift:1px; }
+.tile.mut-toxic .acid-bubble-six { left:var(--model-fx-bubble-6-left); top:var(--model-fx-bubble-6-top); width:4px; height:4px; --acid-bubble-duration:3.35s; --acid-bubble-delay:-1.15s; --acid-bubble-rise:-7px; --acid-bubble-drift:-3px; }
+.tile.mut-toxic .acid-bubble-seven { left:var(--model-fx-bubble-7-left); top:var(--model-fx-bubble-7-top); width:7px; height:7px; --acid-bubble-duration:5.5s; --acid-bubble-delay:-4.65s; --acid-bubble-rise:-10px; --acid-bubble-drift:2px; }
 .showcase-plant-preview.mut-toxic .toxic-cloud,
 .showcase-plant-preview.crop-big.mut-toxic .toxic-cloud,
 .showcase-plant-preview.crop-huge.mut-toxic .toxic-cloud,
@@ -18125,14 +18404,14 @@ body.event-night.night-fading .shop-modal {
     box-shadow:0 0 3px rgba(192,255,38,.48), inset 0 0 0 1px rgba(90,170,18,.68) !important;
 }
 @keyframes toxicAcidPuddleSway {
-    0%,100% { transform:translateX(-1px) scaleX(.975) scaleY(.96); filter:saturate(1.06) brightness(.98); }
-    50% { transform:translateX(1px) scaleX(1.02) scaleY(1.035); filter:saturate(1.18) brightness(1.07); }
+    0%,100% { transform:scaleX(.975) scaleY(.96); filter:saturate(1.06) brightness(.98); }
+    50% { transform:scaleX(1.02) scaleY(1.035); filter:saturate(1.18) brightness(1.07); }
 }
 @keyframes toxicAcidBubbleRise {
-    0%,35% { opacity:0; transform:translateY(2px) scale(.45); }
-    48% { opacity:.92; transform:translateY(0) scale(1); }
-    68% { opacity:.78; transform:translateY(var(--acid-bubble-rise)) scale(1.08); }
-    100% { opacity:0; transform:translateY(calc(var(--acid-bubble-rise) - 1px)) scale(.62); }
+    0%,27% { opacity:0; transform:translate(0, 2px) scale(.4); }
+    39% { opacity:.9; transform:translate(0, 0) scale(.96); }
+    63% { opacity:.78; transform:translate(var(--acid-bubble-drift), var(--acid-bubble-rise)) scale(1.08); }
+    100% { opacity:0; transform:translate(var(--acid-bubble-drift), calc(var(--acid-bubble-rise) - 2px)) scale(.58); }
 }
 
 /* UNUSED (toxic gas-mask v10): retained in markup for a possible rollback. */
@@ -18285,7 +18564,7 @@ body.event-toxic .tile:not(.mut-toxic) .toxic-cloud {
     100% { opacity:0; transform:translateX(-50%) scale(1.75); }
 }
 
-/* Lunar receiving v3: the beam grows, flashes, then leaves the new mutation behind. */
+/* Lunar receiving v4: moonlight softly descends, then resolves into a single clear flash. */
 .lunar-mutation-beam {
     display:block !important;
     position:absolute !important;
@@ -18300,7 +18579,8 @@ body.event-toxic .tile:not(.mut-toxic) .toxic-cloud {
     overflow:visible !important;
     background:none !important;
     filter:none !important;
-    animation:lunarReceiveBeam 2.12s cubic-bezier(.2,.72,.24,1) both !important;
+    will-change:transform, opacity, clip-path;
+    animation:lunarReceiveBeam 2.9s cubic-bezier(.26,.68,.24,1) both !important;
 }
 .lunar-mutation-beam::before {
     content:"" !important;
@@ -18311,9 +18591,9 @@ body.event-toxic .tile:not(.mut-toxic) .toxic-cloud {
     height:100% !important;
     transform:translateX(-50%) !important;
     clip-path:polygon(35% 0, 65% 0, 100% 100%, 0 100%) !important;
-    background:linear-gradient(180deg, rgba(255,255,255,.82) 0%, rgba(241,245,255,.64) 28%, rgba(207,216,255,.38) 68%, rgba(186,194,249,.12) 100%) !important;
-    box-shadow:0 0 18px rgba(255,255,255,.4), inset 0 0 18px rgba(255,255,255,.28) !important;
-    filter:blur(.45px) !important;
+    background:linear-gradient(180deg, rgba(255,255,255,.72) 0%, rgba(246,249,255,.68) 27%, rgba(218,226,255,.44) 66%, rgba(181,192,250,.15) 100%) !important;
+    box-shadow:0 0 19px rgba(255,255,255,.42), inset 0 0 20px rgba(255,255,255,.3) !important;
+    filter:blur(.62px) !important;
     -webkit-mask-image:linear-gradient(180deg, transparent 0%, #000 14%, #000 76%, transparent 100%);
     mask-image:linear-gradient(180deg, transparent 0%, #000 14%, #000 76%, transparent 100%);
 }
@@ -18329,26 +18609,1121 @@ body.event-toxic .tile:not(.mut-toxic) .toxic-cloud {
     opacity:0;
     background:radial-gradient(circle, #fff 0 18%, rgba(248,250,255,.96) 20% 38%, rgba(210,220,255,.62) 48%, transparent 76%) !important;
     box-shadow:0 0 15px 5px rgba(255,255,255,.82), 0 0 30px 11px rgba(197,209,255,.46) !important;
-    animation:lunarReceiveFlash 2.12s ease-out both !important;
+    animation:lunarReceiveFlash 2.9s cubic-bezier(.24,.7,.24,1) both !important;
 }
 .tile.lunar-hit .model {
-    animation:lunarReceivingModelFlash 2.12s ease-in-out both !important;
+    animation:lunarReceivingModelFlash 2.9s ease-in-out both !important;
 }
 @keyframes lunarReceiveBeam {
-    0% { opacity:0; transform:translateX(-50%) scaleX(.36) scaleY(.88); }
-    24% { opacity:.55; transform:translateX(-50%) scaleX(.62) scaleY(.96); }
-    58% { opacity:.86; transform:translateX(-50%) scaleX(.94) scaleY(1); }
-    70% { opacity:1; transform:translateX(-50%) scaleX(1.06) scaleY(1.02); }
-    84% { opacity:.34; transform:translateX(-50%) scaleX(1.17) scaleY(1.04); }
-    100% { opacity:0; transform:translateX(-50%) scaleX(1.22) scaleY(1.06); }
+    0% { opacity:0; clip-path:inset(0 0 100% 0); transform:translateX(-50%) scaleX(.38) scaleY(.94); }
+    15% { opacity:.1; clip-path:inset(0 0 93% 0); transform:translateX(-50%) scaleX(.48) scaleY(.96); }
+    39% { opacity:.4; clip-path:inset(0 0 54% 0); transform:translateX(-50%) scaleX(.66) scaleY(.99); }
+    61% { opacity:.72; clip-path:inset(0 0 15% 0); transform:translateX(-50%) scaleX(.86) scaleY(1); }
+    72% { opacity:.94; clip-path:inset(0 0 0 0); transform:translateX(-50%) scaleX(1) scaleY(1.015); }
+    82% { opacity:.68; clip-path:inset(0 0 0 0); transform:translateX(-50%) scaleX(1.08) scaleY(1.03); }
+    100% { opacity:0; clip-path:inset(0 0 0 0); transform:translateX(-50%) scaleX(1.16) scaleY(1.05); }
 }
 @keyframes lunarReceiveFlash {
-    0%,62% { opacity:0; transform:scale(.3); }
-    70% { opacity:1; transform:scale(1.2); }
-    84% { opacity:.28; transform:scale(2.65); }
-    100% { opacity:0; transform:scale(3.2); }
+    0%,65% { opacity:0; transform:scale(.2); }
+    73% { opacity:.9; transform:scale(1.04); }
+    86% { opacity:.2; transform:scale(2.25); }
+    100% { opacity:0; transform:scale(2.9); }
 }
 @keyframes lunarReceivingModelFlash {
-    0%,62%,100% { filter:brightness(1) saturate(1); }
-    72% { filter:brightness(1.5) saturate(1.06) drop-shadow(0 0 9px rgba(248,251,255,.96)); }
+    0%,64%,100% { filter:brightness(1) saturate(1); }
+    73% { filter:brightness(1.34) saturate(1.04) drop-shadow(0 0 10px rgba(248,251,255,.9)); }
+}
+
+/* Model-bound mutation effects use the actual rendered body, not a size-tier guess. */
+.tile.mut-holy .fx-holy {
+    left:50% !important;
+    top:calc(var(--model-fx-top, 0px) - 12px) !important;
+    width:var(--model-fx-halo-width, 25px) !important;
+    height:var(--model-fx-halo-height, 13px) !important;
+    z-index:82 !important;
+}
+/* Crops and detached mutation effects use the same fixed tile axis. */
+.tile .plant-wrapper {
+    left:0 !important;
+    right:0 !important;
+    justify-content:center !important;
+}
+.tile .plant-wrapper > .model {
+    margin-left:auto;
+    margin-right:auto;
+}
+/* UNUSED (model-bound fire v1): restored the original aura-layer fire. */
+.tile.unused-fire-model-bound-v1 .fx-hell {
+    left:50% !important;
+    top:auto !important;
+    bottom:-2px !important;
+    width:var(--model-fx-fire-width, 42px) !important;
+    height:var(--model-fx-fire-height, 40px) !important;
+    margin-left:var(--model-fx-fire-offset, -21px) !important;
+    transform:none;
+    transform-origin:50% 100% !important;
+}
+/* Fire visual: compact lower flame in front with an anchored vertical flicker. */
+.tile.unused-fire-model-bound-v1.mut-hell .fx-hell {
+    z-index:3 !important;
+    overflow:visible !important;
+    border-radius:50% 50% 34% 34% !important;
+    clip-path:none !important;
+    background:
+        radial-gradient(ellipse at 50% 100%, rgba(255,246,164,.94) 0 13%, rgba(255,207,67,.82) 24%, transparent 47%),
+        radial-gradient(ellipse at 34% 100%, rgba(255,90,28,.76) 0 27%, rgba(255,111,24,.3) 48%, transparent 67%),
+        radial-gradient(ellipse at 66% 100%, rgba(255,132,22,.74) 0 25%, rgba(255,101,21,.28) 48%, transparent 66%) !important;
+    -webkit-mask-image:none;
+    mask-image:none;
+    filter:blur(.18px) drop-shadow(0 -2px 6px rgba(255,91,28,.56)) !important;
+    opacity:.78;
+    animation:hellBaseFlicker 1.9s cubic-bezier(.45,0,.55,1) infinite alternate !important;
+}
+.tile.unused-fire-model-bound-v1.mut-hell .fx-hell::before,
+.tile.unused-fire-model-bound-v1.mut-hell .fx-hell::after {
+    content:none !important;
+    display:none !important;
+    animation:none !important;
+}
+@keyframes hellBaseFlicker {
+    0% { opacity:.52; transform:scaleX(.95) scaleY(.72); }
+    100% { opacity:.96; transform:scaleX(1.03) scaleY(1.14); }
+}
+.tile.unused-fire-model-bound-v1.mut-hell .plant-wrapper > .model {
+    z-index:2;
+}
+.tile.unused-fire-model-bound-v1 .plant-wrapper > .fx-hell .hell-spark {
+    position:absolute;
+    bottom:16%;
+    width:3px;
+    height:5px;
+    border-radius:50% 50% 44% 44%;
+    background:rgba(255,207,91,.72);
+    box-shadow:0 0 3px rgba(255,124,31,.42);
+    opacity:0;
+    pointer-events:none;
+    z-index:3;
+    animation:hellSparkRise 2.8s cubic-bezier(.32,.1,.45,1) infinite;
+}
+.tile.unused-fire-model-bound-v1 .plant-wrapper > .fx-hell .spark-one { left:13%; --spark-start-x:1px; --spark-mid-x:-4px; --spark-end-x:-7px; --spark-mid-y:-11px; --spark-end-y:-18px; animation-delay:-.05s; }
+.tile.unused-fire-model-bound-v1 .plant-wrapper > .fx-hell .spark-two { left:31%; width:2px; height:4px; --spark-start-x:-1px; --spark-mid-x:2px; --spark-end-x:3px; --spark-mid-y:-14px; --spark-end-y:-23px; animation-delay:-.16s; }
+.tile.unused-fire-model-bound-v1 .plant-wrapper > .fx-hell .spark-three { left:69%; --spark-start-x:-1px; --spark-mid-x:5px; --spark-end-x:8px; --spark-mid-y:-10px; --spark-end-y:-17px; animation-delay:-.3s; }
+.tile.unused-fire-model-bound-v1 .plant-wrapper > .fx-hell .spark-four { left:87%; width:2px; height:3px; --spark-start-x:1px; --spark-mid-x:-2px; --spark-end-x:-3px; --spark-mid-y:-13px; --spark-end-y:-21px; animation-delay:-.42s; }
+@keyframes hellSparkRise {
+    0%,20% { opacity:0; transform:translate(0, 2px) scale(.42); }
+    34% { opacity:.58; transform:translate(var(--spark-start-x), -4px) scale(.86); }
+    54% { opacity:.34; transform:translate(var(--spark-mid-x), var(--spark-mid-y)) scale(.64); }
+    72%,100% { opacity:0; transform:translate(var(--spark-end-x), var(--spark-end-y)) scale(.28); }
+}
+/* UNUSED (fire pseudo-elements v1): the mutation uses only the silhouette behind the model. */
+.tile.unused-fire-model-bound-v1.mut-hell .plant-wrapper::after {
+    content:none !important;
+    display:none !important;
+    animation:none !important;
+    background:none !important;
+    filter:none !important;
+}
+.tile .fx-lunar {
+    left:50% !important;
+    top:var(--model-fx-lunar-top, auto) !important;
+    bottom:auto !important;
+    width:var(--model-fx-lunar-width, 80px) !important;
+    height:var(--model-fx-lunar-height, 98px) !important;
+    margin-left:var(--model-fx-lunar-offset, -40px) !important;
+}
+.tile.mut-toxic .toxic-cloud {
+    left:50% !important;
+    top:var(--model-fx-puddle-top, auto) !important;
+    bottom:auto !important;
+    width:var(--model-fx-puddle-width, 64px) !important;
+    height:var(--model-fx-puddle-height, 20px) !important;
+    margin-left:var(--model-fx-puddle-offset, -32px) !important;
+}
+/* Smoke is created at the mutation impact and remains visible under the fading lava. */
+.tile.lava-hit .fx-lava {
+    visibility:visible !important;
+}
+/* Lava smoke stays in front of every crop size. */
+.tile.mut-lava .mutation-aura {
+    z-index:58 !important;
+}
+
+/* Mature crops move according to their weight: light crops spring, heavy crops settle. */
+.tile.crop-small.occupied.ready .model.ready {
+    --crop-ready-motion:cropReadySmallHop;
+    --crop-ready-duration:1.05s;
+}
+.tile.crop-normal.occupied.ready .model.ready {
+    --crop-ready-motion:cropReadyNormalBounce;
+    --crop-ready-duration:1.8s;
+}
+.tile.crop-big.occupied.ready .model.ready {
+    --crop-ready-motion:cropReadyBigSway;
+    --crop-ready-duration:2.65s;
+}
+.tile.crop-huge.occupied.ready .model.ready {
+    --crop-ready-motion:cropReadyHugeSway;
+    --crop-ready-duration:3.65s;
+}
+.tile.crop-titanic.occupied.ready .model.ready {
+    --crop-ready-motion:cropReadyTitanicSway;
+    --crop-ready-duration:5.2s;
+}
+.tile.crop-small.occupied.ready .model.ready,
+.tile.crop-normal.occupied.ready .model.ready,
+.tile.crop-big.occupied.ready .model.ready,
+.tile.crop-huge.occupied.ready .model.ready,
+.tile.crop-titanic.occupied.ready .model.ready {
+    animation:var(--crop-ready-motion, breathe) var(--crop-ready-duration, 3s) cubic-bezier(.42,0,.58,1) infinite !important;
+}
+.tile:is(.crop-small,.crop-normal,.crop-big,.crop-huge,.crop-titanic):is(.mut-gold,.primary-gold).occupied.ready .model.ready {
+    animation:var(--crop-ready-motion, breathe) var(--crop-ready-duration, 3s) cubic-bezier(.42,0,.58,1) infinite, materialGoldPalette 3.2s ease-in-out infinite !important;
+}
+.tile:is(.crop-small,.crop-normal,.crop-big,.crop-huge,.crop-titanic):is(.mut-rainbow,.primary-rainbow).occupied.ready .model.ready {
+    animation:var(--crop-ready-motion, breathe) var(--crop-ready-duration, 3s) cubic-bezier(.42,0,.58,1) infinite, materialRainbowPalette 4.8s linear infinite !important;
+}
+.tile:is(.crop-small,.crop-normal,.crop-big,.crop-huge,.crop-titanic):is(.mut-diamond,.primary-diamond).occupied.ready .model.ready {
+    animation:var(--crop-ready-motion, breathe) var(--crop-ready-duration, 3s) cubic-bezier(.42,0,.58,1) infinite, materialDiamondPalette 3.5s ease-in-out infinite !important;
+}
+
+/* Electric motion always wins over size motion, while material palettes keep their own color cycle. */
+.tile:is(.crop-small,.crop-normal,.crop-big,.crop-huge,.crop-titanic):is(.mut-electric,.primary-electric).occupied.ready .model.ready {
+    animation:electricPlantHum .42s ease-in-out infinite !important;
+}
+.tile:is(.crop-small,.crop-normal,.crop-big,.crop-huge,.crop-titanic):is(.mut-electric,.primary-electric):is(.mut-rainbow,.primary-rainbow).occupied.ready .model.ready {
+    animation:electricPlantHum .42s ease-in-out infinite, materialRainbowPalette 4.8s linear infinite !important;
+}
+.tile:is(.crop-small,.crop-normal,.crop-big,.crop-huge,.crop-titanic):is(.mut-electric,.primary-electric):is(.mut-gold,.primary-gold).occupied.ready .model.ready {
+    animation:electricPlantHum .42s ease-in-out infinite, materialGoldPalette 3.2s ease-in-out infinite !important;
+}
+.tile:is(.crop-small,.crop-normal,.crop-big,.crop-huge,.crop-titanic):is(.mut-electric,.primary-electric):is(.mut-diamond,.primary-diamond).occupied.ready .model.ready {
+    animation:electricPlantHum .42s ease-in-out infinite, materialDiamondPalette 3.5s ease-in-out infinite !important;
+}
+@keyframes cropReadySmallHop {
+    0%,100% { transform:translateY(0) scaleX(1) scaleY(1); }
+    18% { transform:translateY(1px) scaleX(1.07) scaleY(.89); }
+    43% { transform:translateY(-7px) scaleX(.94) scaleY(1.1); }
+    63% { transform:translateY(0) scaleX(1.05) scaleY(.93); }
+    78% { transform:translateY(-3px) scaleX(.98) scaleY(1.03); }
+}
+@keyframes cropReadyNormalBounce {
+    0%,100% { transform:translateY(0) scale(1); }
+    45% { transform:translateY(-2px) scale(1.07); }
+}
+@keyframes cropReadyBigSway {
+    0%,100% { transform:translateY(0) scale(1); }
+    48% { transform:translateY(-1px) scale(1.028); }
+}
+@keyframes cropReadyHugeSway {
+    0%,100% { transform:translateY(0) scale(1); }
+    50% { transform:translateY(-1px) scale(1.016); }
+}
+@keyframes cropReadyTitanicSway {
+    0%,100% { transform:translateY(0) scale(1); }
+    50% { transform:translateY(-1px) scale(1.008); }
+}
+
+/* Magma fig: the short stem carries the same hot red accent as the fruit's cracks. */
+.tile:is(.mut-lava,.primary-lava) .model-fig::before {
+    background:#d33f22 !important;
+}
+
+/* Pepper ribs are one clipped, symmetric inner pattern instead of two loose borders. */
+.model-pepper::after,
+.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-bloodmoon,.primary-void,.primary-phantom,.primary-eclipse) .model-pepper::after {
+    inset:0 !important;
+    width:auto !important;
+    height:auto !important;
+    background:linear-gradient(90deg, transparent 0 33%, var(--crop-line, rgba(0,0,0,.15)) 33% 39%, transparent 39% 61%, var(--crop-line, rgba(0,0,0,.15)) 61% 67%, transparent 67%) !important;
+    border:0 !important;
+    border-radius:inherit !important;
+}
+
+/* Honey previously reused the pepper's stripe layer on larger crops. Keep ribs full-size. */
+.tile.crop-big.primary-honey .model-pepper::after,
+.tile.crop-huge.primary-honey .model-pepper::after,
+.tile.crop-titanic.primary-honey .model-pepper::after {
+    inset:0 !important;
+    width:auto !important;
+    height:auto !important;
+    transform:none !important;
+    transform-origin:center !important;
+    z-index:2 !important;
+}
+
+/* Showcase visual parity v1. UNUSED (compact showcase visual v1) rules above are overridden here. */
+.showcase-plant-preview.tile {
+    overflow:visible !important;
+}
+.showcase-plant-preview .plant-wrapper,
+.showcase-plant-preview.crop-big .plant-wrapper,
+.showcase-plant-preview.crop-huge .plant-wrapper,
+.showcase-plant-preview.crop-titanic .plant-wrapper {
+    bottom:12px !important;
+    left:0 !important;
+    width:100% !important;
+    height:54px !important;
+    z-index:5 !important;
+    filter:none !important;
+}
+.showcase-plant-preview:not(.mut-lava) .mutation-aura {
+    inset:8px 12px 3px !important;
+    z-index:4 !important;
+    overflow:visible !important;
+    opacity:1 !important;
+    mix-blend-mode:normal !important;
+}
+
+/* Use the garden's own candy particles instead of the old miniature substitutes. */
+.showcase-plant-preview .fx-candy {
+    width:auto !important;
+    height:auto !important;
+    animation:none !important;
+}
+.showcase-plant-preview .fx-candy::before,
+.showcase-plant-preview .fx-candy::after {
+    content:none !important;
+    display:none !important;
+    animation:none !important;
+}
+
+/* Model-bound effects receive the same measured geometry as garden tiles. */
+.showcase-plant-preview .fx-lunar {
+    left:50% !important;
+    top:var(--model-fx-lunar-top, 6px) !important;
+    bottom:auto !important;
+    width:var(--model-fx-lunar-width, 48px) !important;
+    height:var(--model-fx-lunar-height, 58px) !important;
+    margin-left:calc(var(--model-fx-lunar-width, 48px) / -2) !important;
+}
+.showcase-plant-preview.mut-toxic .toxic-cloud {
+    left:50% !important;
+    top:var(--model-fx-puddle-top, 46px) !important;
+    bottom:auto !important;
+    width:var(--model-fx-puddle-width, 30px) !important;
+    height:var(--model-fx-puddle-height, 10px) !important;
+    margin-left:calc(var(--model-fx-puddle-width, 30px) / -2) !important;
+}
+.showcase-plant-preview.mut-toxic .acid-bubble {
+    z-index:7 !important;
+}
+.showcase-plant-preview:not(.mut-toxic) .toxic-cloud,
+.showcase-plant-preview:not(.mut-toxic) .acid-bubble {
+    display:none !important;
+}
+
+/* The old honey overlay was specific to previews and did not exist on the garden model. */
+.showcase-plant-preview.mut-honey:not(.primary-honey) .model::after,
+.showcase-plant-preview.mut-honey .plant-wrapper::after {
+    content:none !important;
+    animation:none !important;
+}
+
+/* Holy and candy are accessory layers: they stay in front of every crop size. */
+.tile.mut-holy .mutation-aura,
+.tile.mut-candy .mutation-aura {
+    z-index:80 !important;
+    overflow:visible !important;
+}
+.tile.mut-holy .fx-holy {
+    left:calc(var(--model-fx-center-x, 50%) + 2px) !important;
+    top:calc(var(--model-fx-top, 0px) - 16px) !important;
+    z-index:82 !important;
+}
+.tile.mut-candy .fx-candy,
+.tile.mut-candy .fx-candy .candy-float {
+    z-index:82 !important;
+}
+.tile.mut-candy .fx-candy {
+    left:var(--model-fx-center-x, 50%) !important;
+}
+
+/* A drop's left coordinate is its center, so it never drifts to the right. */
+.tile .honey-drop {
+    translate:-50% 0;
+}
+
+/* Effects rendered in the tile layer share the same measured crop center. */
+.tile .fx-lunar {
+    left:var(--model-fx-center-x, 50%) !important;
+}
+.tile.mut-toxic .toxic-cloud {
+    left:var(--model-fx-center-x, 50%) !important;
+}
+
+/* Honey cap v2: a real model child only where the model's own ::after is occupied. */
+.tile .model .honey-cap {
+    position:absolute;
+    top:-2px;
+    left:8%;
+    width:84%;
+    height:38%;
+    border-radius:55% 55% 45% 45%;
+    background:
+        radial-gradient(circle at 28% 100%, #ffc400 0 11%, transparent 12%),
+        radial-gradient(circle at 68% 100%, #ffc400 0 9%, transparent 10%),
+        linear-gradient(to bottom, rgba(255,196,0,.86), rgba(255,196,0,.18));
+    z-index:12;
+    pointer-events:none;
+}
+
+/* Honey droplets follow the crop scale instead of becoming smaller on large crops. */
+.tile.crop-big .honey-drop {
+    width:4px !important;
+    height:5px !important;
+}
+.tile.crop-huge .honey-drop {
+    width:4px !important;
+    height:5px !important;
+}
+.tile.crop-titanic .honey-drop {
+    width:5px !important;
+    height:6px !important;
+}
+
+/* Mutation detail consistency: secondary leaves always use the darker palette color. */
+.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-bloodmoon,.primary-void,.primary-phantom,.primary-eclipse,.primary-gold,.primary-rainbow,.primary-diamond) .model-strawberry::before {
+    background:var(--crop-leaf) !important;
+}
+.tile:is(.primary-toxic,.primary-electric,.primary-stellar,.primary-holy,.primary-hell,.primary-candy,.primary-honey,.primary-alien,.primary-lava,.primary-meteor,.primary-lunar,.primary-bloodmoon,.primary-void,.primary-phantom,.primary-eclipse,.primary-gold,.primary-rainbow,.primary-diamond) .model-dragonfruit::before {
+    background:var(--crop-leaf) !important;
+    box-shadow:15px 5px 0 var(--crop-leaf), 8px 15px 0 var(--crop-leaf) !important;
+}
+
+/* Stellar fig: its short stem uses the same yellow accent as the other star details. */
+.tile.primary-stellar .model-fig::before {
+    background:var(--crop-detail) !important;
+}
+
+/* Crimson moon: an in-place Lunar upgrade with its own restrained red moonlight. */
+.tile.primary-bloodmoon {
+    --crop-main:#7a183c;
+    --crop-light:#ff9cad;
+    --crop-detail:#ef4f69;
+    --crop-line:rgba(239,79,105,.42);
+    --crop-leaf:#52112c;
+    --crop-leaf-light:#b52a52;
+    --crop-stem:#3c0c20;
+    --crop-stem-light:#ff9cad;
+    --crop-seed:#ef4f69;
+    --crop-spot:#ef4f69;
+    --mut-shadow:rgba(43,4,20,.44);
+}
+.tile.primary-bloodmoon .model {
+    box-shadow:inset -4px -4px 8px var(--mut-shadow), inset 2px 2px 4px rgba(255,126,150,.27) !important;
+    filter:none !important;
+}
+.tile.primary-bloodmoon .model-strawberry::before {
+    background:var(--crop-leaf) !important;
+}
+.tile.primary-bloodmoon .model-dragonfruit::before {
+    background:var(--crop-leaf) !important;
+    box-shadow:15px 5px 0 var(--crop-leaf), 8px 15px 0 var(--crop-leaf) !important;
+}
+
+.tile.mut-bloodmoon .mutation-aura {
+    z-index:4 !important;
+    overflow:visible !important;
+}
+.fx-bloodmoon {
+    display:block !important;
+    position:absolute !important;
+    left:50% !important;
+    bottom:5% !important;
+    width:80px !important;
+    height:98px !important;
+    margin-left:-40px !important;
+    overflow:visible !important;
+    border-radius:0 !important;
+    background:none !important;
+    opacity:1 !important;
+    filter:none !important;
+    animation:bloodmoonLightBreathe 5.8s cubic-bezier(.45,0,.55,1) infinite !important;
+}
+.fx-bloodmoon::before,
+.fx-bloodmoon::after {
+    content:none !important;
+    display:none !important;
+}
+.fx-bloodmoon .lunar-beam {
+    position:absolute;
+    left:50%;
+    top:0;
+    width:100%;
+    height:88%;
+    transform:translateX(-50%);
+    clip-path:polygon(31% 0, 69% 0, 94% 100%, 6% 100%);
+    background:linear-gradient(180deg, rgba(255,226,232,.96) 0%, rgba(255,153,173,.78) 28%, rgba(235,73,104,.52) 68%, rgba(120,20,53,.2) 100%);
+    box-shadow:0 0 15px rgba(255,104,137,.48), inset 0 0 14px rgba(255,232,238,.3);
+    filter:blur(.35px);
+    -webkit-mask-image:linear-gradient(180deg, transparent 0%, rgba(0,0,0,.58) 10%, #000 23%, #000 74%, rgba(0,0,0,.52) 91%, transparent 100%);
+    mask-image:linear-gradient(180deg, transparent 0%, rgba(0,0,0,.58) 10%, #000 23%, #000 74%, rgba(0,0,0,.52) 91%, transparent 100%);
+}
+.fx-bloodmoon .lunar-pool {
+    position:absolute;
+    left:50%;
+    bottom:0;
+    width:88%;
+    height:18%;
+    transform:translateX(-50%);
+    border-radius:50%;
+    background:radial-gradient(ellipse, rgba(255,238,244,.98) 0%, rgba(255,167,190,.86) 38%, rgba(238,76,122,.52) 67%, transparent 78%);
+    box-shadow:0 0 11px rgba(255,123,157,.58);
+}
+.fx-bloodmoon .lunar-speck {
+    position:absolute;
+    z-index:1;
+    width:3px;
+    height:3px;
+    border-radius:50%;
+    background:#fff4f6;
+    box-shadow:0 0 5px 1px rgba(255,178,197,.94);
+    animation:lunarSpeckDrift 5.8s cubic-bezier(.45,0,.55,1) infinite;
+}
+.fx-bloodmoon .speck-one { left:31%; top:25%; animation-delay:-.4s; }
+.fx-bloodmoon .speck-two { left:61%; top:42%; width:2px; height:2px; animation-delay:-1.5s; }
+.fx-bloodmoon .speck-three { left:46%; top:61%; width:2px; height:2px; animation-delay:-2.35s; }
+.tile .fx-bloodmoon {
+    left:var(--model-fx-center-x, 50%) !important;
+    top:var(--model-fx-lunar-top, auto) !important;
+    bottom:auto !important;
+    width:var(--model-fx-lunar-width, 80px) !important;
+    height:var(--model-fx-lunar-height, 98px) !important;
+    margin-left:var(--model-fx-lunar-offset, -40px) !important;
+}
+.showcase-plant-preview .fx-bloodmoon {
+    left:50% !important;
+    top:var(--model-fx-lunar-top, 6px) !important;
+    bottom:auto !important;
+    width:var(--model-fx-lunar-width, 48px) !important;
+    height:var(--model-fx-lunar-height, 58px) !important;
+    margin-left:calc(var(--model-fx-lunar-width, 48px) / -2) !important;
+}
+@keyframes bloodmoonLightBreathe {
+    0%,100% { opacity:.84; transform:translateY(1px) scale(.98); }
+    50% { opacity:1; transform:translateY(-1px) scale(1.02); }
+}
+
+/* The upgrade beam reaches the plant first; the mutation changes at the bright impact. */
+.bloodmoon-mutation-beam {
+    display:block !important;
+    position:absolute !important;
+    z-index:74 !important;
+    pointer-events:none !important;
+    left:50% !important;
+    top:-28% !important;
+    width:94% !important;
+    height:142% !important;
+    transform:translateX(-50%) !important;
+    opacity:0;
+    overflow:visible !important;
+    background:none !important;
+    filter:none !important;
+    will-change:transform, opacity, clip-path;
+    animation:bloodmoonReceiveBeam 2.1s cubic-bezier(.2,.7,.24,1) both !important;
+}
+.bloodmoon-mutation-beam::before {
+    content:"" !important;
+    position:absolute !important;
+    left:50% !important;
+    top:0 !important;
+    width:100% !important;
+    height:100% !important;
+    transform:translateX(-50%) !important;
+    clip-path:polygon(35% 0, 65% 0, 100% 100%, 0 100%) !important;
+    background:linear-gradient(180deg, rgba(255,238,242,.95) 0%, rgba(255,105,133,.82) 29%, rgba(217,38,79,.56) 68%, rgba(101,10,39,.18) 100%) !important;
+    box-shadow:0 0 19px rgba(255,78,117,.56), inset 0 0 18px rgba(255,223,231,.34) !important;
+    filter:blur(.45px) !important;
+    -webkit-mask-image:linear-gradient(180deg, transparent 0%, #000 14%, #000 76%, transparent 100%);
+    mask-image:linear-gradient(180deg, transparent 0%, #000 14%, #000 76%, transparent 100%);
+}
+.bloodmoon-mutation-beam::after {
+    content:"" !important;
+    position:absolute !important;
+    left:50% !important;
+    top:70% !important;
+    width:20px !important;
+    height:20px !important;
+    margin:-10px 0 0 -10px !important;
+    border-radius:50% !important;
+    opacity:0;
+    background:radial-gradient(circle, #fff8fa 0 16%, rgba(255,180,196,.98) 21% 39%, rgba(255,67,108,.68) 49%, transparent 77%) !important;
+    box-shadow:0 0 16px 5px rgba(255,136,163,.86), 0 0 33px 12px rgba(222,35,78,.52) !important;
+    animation:bloodmoonReceiveFlash 2.1s cubic-bezier(.2,.72,.22,1) both !important;
+}
+.tile.bloodmoon-hit .model {
+    animation:bloodmoonReceivingModelFlash 2.1s ease-in-out both !important;
+}
+@keyframes bloodmoonReceiveBeam {
+    0% { opacity:0; clip-path:inset(0 0 100% 0); transform:translateX(-50%) scaleX(.4) scaleY(.96); }
+    14% { opacity:.26; clip-path:inset(0 0 82% 0); transform:translateX(-50%) scaleX(.52) scaleY(.98); }
+    43% { opacity:.7; clip-path:inset(0 0 38% 0); transform:translateX(-50%) scaleX(.8) scaleY(1); }
+    68% { opacity:1; clip-path:inset(0 0 0 0); transform:translateX(-50%) scaleX(1.06) scaleY(1.02); }
+    84% { opacity:.42; clip-path:inset(0 0 0 0); transform:translateX(-50%) scaleX(1.15) scaleY(1.04); }
+    100% { opacity:0; clip-path:inset(0 0 0 0); transform:translateX(-50%) scaleX(1.22) scaleY(1.06); }
+}
+@keyframes bloodmoonReceiveFlash {
+    0%,59% { opacity:0; transform:scale(.24); }
+    68% { opacity:1; transform:scale(1.28); }
+    84% { opacity:.28; transform:scale(2.7); }
+    100% { opacity:0; transform:scale(3.3); }
+}
+@keyframes bloodmoonReceivingModelFlash {
+    0%,59%,100% { filter:brightness(1) saturate(1); }
+    68% { filter:brightness(1.26) saturate(1.28) drop-shadow(0 0 11px rgba(255,72,110,.96)); }
+}
+
+/* Blood Moon palette v2: deep crimson body with a clean near-white rose light. */
+.tile.primary-bloodmoon {
+    --crop-main:#8d1238;
+    --crop-light:#fff0f4;
+    --crop-detail:#ff4f71;
+    --crop-line:rgba(255,79,113,.54);
+    --crop-leaf:#590a2a;
+    --crop-leaf-light:#c42653;
+    --crop-stem:#43061f;
+    --crop-stem-light:#ffd6df;
+    --crop-seed:#ff4f71;
+    --crop-spot:#ff4f71;
+    --mut-shadow:rgba(49,2,21,.48);
+}
+.tile.primary-bloodmoon .model {
+    box-shadow:inset -4px -4px 8px var(--mut-shadow), inset 2px 2px 4px rgba(255,205,217,.2) !important;
+}
+.fx-bloodmoon .lunar-beam {
+    background:linear-gradient(180deg, rgba(255,250,252,.98) 0%, rgba(255,214,224,.94) 20%, rgba(255,120,145,.77) 47%, rgba(255,69,104,.48) 72%, rgba(132,8,47,.14) 100%) !important;
+    box-shadow:0 0 7px rgba(255,250,252,.94), 0 0 17px rgba(255,81,117,.72), inset 0 0 16px rgba(255,245,248,.5) !important;
+    filter:blur(.25px) !important;
+}
+.fx-bloodmoon .lunar-pool {
+    background:radial-gradient(ellipse, rgba(255,252,253,1) 0%, rgba(255,220,229,.96) 32%, rgba(255,120,148,.7) 62%, rgba(226,44,82,.22) 78%, transparent 82%) !important;
+    box-shadow:0 0 12px rgba(255,116,147,.76) !important;
+}
+.fx-bloodmoon .lunar-speck {
+    background:#fff8fa !important;
+    box-shadow:0 0 6px 1px rgba(255,170,190,.98) !important;
+}
+.bloodmoon-mutation-beam::before {
+    background:linear-gradient(180deg, rgba(255,251,252,.98) 0%, rgba(255,206,218,.94) 25%, rgba(255,99,130,.78) 56%, rgba(228,30,76,.5) 76%, rgba(111,3,37,.14) 100%) !important;
+    box-shadow:0 0 9px rgba(255,247,249,.9), 0 0 21px rgba(255,68,108,.82), inset 0 0 18px rgba(255,235,241,.56) !important;
+    filter:blur(.3px) !important;
+}
+.bloodmoon-mutation-beam::after {
+    background:radial-gradient(circle, #fff 0 15%, rgba(255,230,236,.99) 20% 38%, rgba(255,103,135,.76) 50%, transparent 78%) !important;
+    box-shadow:0 0 17px 6px rgba(255,193,208,.92), 0 0 35px 13px rgba(240,37,86,.6) !important;
+}
+
+/* Blood Moon receiving v2: a large clean disc settles in place, then bursts into red light. */
+.bloodmoon-mutation-beam {
+    top:13% !important;
+    width:64px !important;
+    height:64px !important;
+    margin-left:0 !important;
+    background:radial-gradient(circle at 32% 28%, #ffdce3 0 5%, #ff8ca4 13%, #f0325b 46%, #a80039 76%, #680021 100%) !important;
+    box-shadow:0 0 13px rgba(255,55,92,.68), inset -7px -8px 11px rgba(82,2,29,.38) !important;
+    transform:translateX(-50%) translateY(var(--bloodmoon-moon-y, 0px)) scale(var(--bloodmoon-moon-scale, 1), var(--bloodmoon-moon-scale-y, .93)) !important;
+    transform-origin:50% 50% !important;
+}
+.bloodmoon-mutation-beam::before {
+    content:none !important;
+    display:none !important;
+}
+.bloodmoon-mutation-beam::after {
+    left:50% !important;
+    top:50% !important;
+    width:34px !important;
+    height:34px !important;
+    margin:-17px 0 0 -17px !important;
+    border-radius:50% !important;
+    background:radial-gradient(circle, rgba(255,235,240,.96) 0%, rgba(255,82,116,.94) 28%, rgba(239,18,66,.72) 54%, transparent 78%) !important;
+    box-shadow:0 0 19px 8px rgba(255,62,101,.88), 0 0 37px 17px rgba(210,0,55,.56) !important;
+    opacity:var(--bloodmoon-flash-opacity, 0) !important;
+    transform:scale(var(--bloodmoon-flash-scale, .42)) !important;
+    animation:none !important;
+}
+
+/* Lunar receiving v5: one continuous soft descent, with no hard clipped beam edges. */
+.lunar-mutation-beam {
+    top:-34% !important;
+    height:164% !important;
+    clip-path:none !important;
+    will-change:transform, opacity !important;
+}
+.lunar-mutation-beam::before {
+    clip-path:polygon(34% 0, 66% 0, 100% 100%, 0 100%) !important;
+    filter:blur(1.15px) !important;
+    -webkit-mask-image:linear-gradient(180deg, transparent 0%, rgba(0,0,0,.22) 10%, rgba(0,0,0,.84) 23%, #000 48%, rgba(0,0,0,.78) 74%, rgba(0,0,0,.2) 91%, transparent 100%) !important;
+    mask-image:linear-gradient(180deg, transparent 0%, rgba(0,0,0,.22) 10%, rgba(0,0,0,.84) 23%, #000 48%, rgba(0,0,0,.78) 74%, rgba(0,0,0,.2) 91%, transparent 100%) !important;
+}
+@keyframes lunarReceiveBeam {
+    0% { opacity:0; transform:translateX(-50%) translateY(-18px) scaleX(.74) scaleY(.96); }
+    18% { opacity:.16; transform:translateX(-50%) translateY(-13px) scaleX(.79) scaleY(.98); }
+    43% { opacity:.5; transform:translateX(-50%) translateY(-7px) scaleX(.88) scaleY(1); }
+    65% { opacity:.8; transform:translateX(-50%) translateY(-2px) scaleX(.96) scaleY(1.015); }
+    73% { opacity:.96; transform:translateX(-50%) translateY(0) scaleX(1) scaleY(1.025); }
+    84% { opacity:.56; transform:translateX(-50%) translateY(2px) scaleX(1.06) scaleY(1.04); }
+    100% { opacity:0; transform:translateX(-50%) translateY(5px) scaleX(1.12) scaleY(1.06); }
+}
+
+/* Blood Moon turns the existing night red instead of introducing a separate screen layer. */
+.night-sky-layer::after {
+    content:"";
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+    opacity:0;
+    background:
+        radial-gradient(circle at 50% 16%, rgba(255,102,116,.26) 0 8%, transparent 29%),
+        radial-gradient(ellipse at 50% 88%, rgba(172,24,49,.38), transparent 62%),
+        linear-gradient(180deg, rgba(86,5,24,.76), rgba(44,3,19,.68));
+    transition:opacity 1.65s cubic-bezier(.25,.7,.25,1);
+}
+body.event-night.bloodmoon-phase .night-sky-layer::after { opacity:1; }
+body.event-night.bloodmoon-phase .top-bar,
+body.event-night.bloodmoon-phase .shop-launchbar,
+body.event-night.bloodmoon-phase .bottom-ui,
+body.event-night.bloodmoon-phase .plant-inspect-card {
+    filter:brightness(.52) saturate(.9) sepia(.2) hue-rotate(305deg) !important;
+}
+body.event-night.bloodmoon-phase .shop-modal {
+    filter:brightness(.58) saturate(.96) sepia(.18) hue-rotate(305deg) !important;
+}
+body.event-night.bloodmoon-phase .side-menu {
+    filter:none !important;
+}
+body.event-night.bloodmoon-phase .side-menu > .menu-header,
+body.event-night.bloodmoon-phase .side-menu > .menu-content > :not(.companion-panel) {
+    filter:brightness(.58) saturate(.96) sepia(.18) hue-rotate(305deg) !important;
+}
+
+/* UNUSED (blood moon dawn v1): replaced by direct palette interpolation in JavaScript. */
+.garden.unused-bloodmoon-dawn-v1::after {
+    content:"" !important;
+    position:absolute !important;
+    inset:0 !important;
+    z-index:0 !important;
+    pointer-events:none !important;
+    border-radius:inherit !important;
+    background:linear-gradient(180deg, rgb(218, 140, 146), rgb(192, 73, 89)) !important;
+    opacity:1;
+    animation:bloodmoonGardenDawn 2.3s cubic-bezier(.25,.7,.25,1) both !important;
+}
+@keyframes bloodmoonGardenDawn {
+    from { opacity:1; }
+    to { opacity:0; }
+}
+
+/* Crimson switches back to the saved daytime color codes without blending through yellow-green. */
+.garden.bloodmoon-dawn {
+    transition:none !important;
+}
+
+/* Blood Moon receiving: a red moon condenses above the crop, then turns the lunar light crimson. */
+.bloodmoon-mutation-beam {
+    left:var(--model-fx-center-x, 50%) !important;
+    top:11% !important;
+    width:58px !important;
+    height:58px !important;
+    margin-left:0 !important;
+    border-radius:50% !important;
+    clip-path:none !important;
+    background:radial-gradient(circle at 35% 30%, rgba(255,226,231,.92) 0 5%, rgba(255,95,121,.94) 21%, rgba(193,25,60,.98) 58%, rgba(75,4,27,.96) 100%) !important;
+    box-shadow:0 0 11px rgba(255,102,127,.75), 0 0 26px rgba(188,22,55,.52), inset -8px -9px 12px rgba(62,2,22,.56) !important;
+    filter:none !important;
+    will-change:transform, opacity !important;
+    animation:bloodmoonMoonRise 2.5s cubic-bezier(.2,.72,.24,1) both !important;
+}
+.bloodmoon-mutation-beam::before {
+    left:0 !important;
+    top:0 !important;
+    width:100% !important;
+    height:100% !important;
+    transform:none !important;
+    border-radius:50% !important;
+    clip-path:none !important;
+    background:
+        radial-gradient(circle at 68% 37%, rgba(86,5,29,.45) 0 8%, transparent 9%),
+        radial-gradient(circle at 38% 67%, rgba(92,5,31,.38) 0 11%, transparent 12%),
+        radial-gradient(circle at 25% 52%, rgba(255,178,190,.26) 0 5%, transparent 6%) !important;
+    box-shadow:none !important;
+    filter:blur(.25px) !important;
+    -webkit-mask-image:none !important;
+    mask-image:none !important;
+}
+.bloodmoon-mutation-beam::after {
+    left:50% !important;
+    top:50% !important;
+    width:22px !important;
+    height:22px !important;
+    margin:-11px 0 0 -11px !important;
+    background:radial-gradient(circle, #fff9fa 0 15%, rgba(255,192,203,.98) 20% 37%, rgba(255,62,102,.72) 48%, transparent 77%) !important;
+    box-shadow:0 0 17px 6px rgba(255,148,169,.92), 0 0 35px 13px rgba(226,31,76,.58) !important;
+    animation:bloodmoonMoonFlash 2.5s cubic-bezier(.2,.72,.22,1) both !important;
+}
+.tile.bloodmoon-hit .fx-lunar {
+    animation:bloodmoonLunarTransition 2.5s ease-in-out both !important;
+}
+.tile.bloodmoon-hit .model {
+    animation:bloodmoonReceivingModelFlash 2.5s ease-in-out both !important;
+}
+@keyframes bloodmoonMoonRise {
+    0% { opacity:0; transform:translateX(-50%) translateY(9px) scale(.16); }
+    28% { opacity:.72; transform:translateX(-50%) translateY(4px) scale(.62); }
+    57% { opacity:1; transform:translateX(-50%) translateY(0) scale(1); }
+    70% { opacity:1; transform:translateX(-50%) translateY(-1px) scale(1.08); }
+    85% { opacity:.3; transform:translateX(-50%) translateY(-2px) scale(1.24); }
+    100% { opacity:0; transform:translateX(-50%) translateY(-3px) scale(1.34); }
+}
+@keyframes bloodmoonMoonFlash {
+    0%,62% { opacity:0; transform:scale(.16); }
+    71% { opacity:1; transform:scale(1.3); }
+    85% { opacity:.22; transform:scale(3); }
+    100% { opacity:0; transform:scale(3.5); }
+}
+@keyframes bloodmoonLunarTransition {
+    0%,56% { filter:none; opacity:1; }
+    70% { filter:sepia(1) saturate(2.5) hue-rotate(292deg); opacity:1; }
+    100% { filter:sepia(1) saturate(2.8) hue-rotate(292deg); opacity:.55; }
+}
+@keyframes bloodmoonReceivingModelFlash {
+    0%,61%,100% { filter:brightness(1) saturate(1); }
+    71% { filter:brightness(1.32) saturate(1.35) drop-shadow(0 0 12px rgba(255,75,112,.98)); }
+}
+
+/* The two receiving effects are driven by requestAnimationFrame from real elapsed time. */
+.lunar-mutation-beam {
+    opacity:var(--lunar-receive-opacity, 0) !important;
+    transform:translateX(-50%) translateY(var(--lunar-receive-y, -23px)) scaleX(var(--lunar-receive-scale-x, .74)) scaleY(var(--lunar-receive-scale-y, .96)) !important;
+    animation:none !important;
+}
+
+/* The Lunar beam is removed before the crimson impact, so only one light can be visible. */
+.tile.bloodmoon-hit .fx-lunar {
+    display:none !important;
+}
+
+/* Blood Moon consistency: every crop uses the same clean palette and never inherits an older mutation filter. */
+.tile.primary-bloodmoon .model,
+.tile.primary-bloodmoon .model::before,
+.tile.primary-bloodmoon .model::after {
+    filter:none !important;
+    opacity:1 !important;
+}
+.tile.primary-bloodmoon {
+    --crop-light:#ffb2c3;
+    --crop-stem-light:#ffd6df;
+}
+/* UNUSED (bloodmoon carrot exception v1): superseded by shared palette rules. */
+.tile.unused-bloodmoon-carrot-fix .model-carrot {
+    background:radial-gradient(ellipse at 33% 24%, #ffd6df 0%, var(--crop-light) 24%, var(--crop-main) 74%) !important;
+    box-shadow:inset -4px -4px 6px var(--mut-shadow), inset 2px 2px 3px rgba(255,210,221,.18) !important;
+}
+.tile.unused-bloodmoon-carrot-fix .model-carrot::before {
+    border-top-color:var(--crop-leaf-light) !important;
+    border-left-color:var(--crop-leaf) !important;
+}
+.tile.mut-bloodmoon .fx-bloodmoon {
+    opacity:1 !important;
+    filter:none !important;
+}
+.fx-bloodmoon .lunar-beam {
+    opacity:1 !important;
+    mix-blend-mode:normal !important;
+}
+@keyframes bloodmoonLightBreathe {
+    0%,100% { opacity:.96; transform:translateY(1px) scale(.99); }
+    50% { opacity:1; transform:translateY(-1px) scale(1.02); }
+}
+.lunar-mutation-beam::after {
+    opacity:var(--lunar-receive-flash-opacity, 0) !important;
+    transform:scale(var(--lunar-receive-flash-scale, .22)) !important;
+    animation:none !important;
+}
+.bloodmoon-mutation-beam {
+    opacity:var(--bloodmoon-moon-opacity, 0) !important;
+    transform:translateX(-50%) translateY(var(--bloodmoon-moon-y, -24px)) scale(var(--bloodmoon-moon-scale, .16)) !important;
+    animation:none !important;
+}
+.bloodmoon-mutation-beam::after {
+    opacity:var(--bloodmoon-flash-opacity, 0) !important;
+    transform:scale(var(--bloodmoon-flash-scale, .2)) !important;
+    animation:none !important;
+}
+
+/* Ghost slime ability: a small spirit marks the crop, then leaves a muted one-time echo behind. */
+.ghost-plant-marker,
+.ghost-departure-fx {
+    position:absolute;
+    display:block;
+    width:22px;
+    height:24px;
+    border-radius:50% 50% 42% 42% / 45% 45% 55% 55%;
+    background:radial-gradient(circle at 34% 22%, #ffffff 0 9%, #fbfcff 20%, #dce2ff 48%, #9aa9e5 100%);
+    border:1px solid rgba(255,255,255,.82);
+    box-shadow:0 0 7px rgba(255,255,255,.98), 0 0 16px rgba(184,163,255,.9), inset -3px -4px 5px rgba(62,73,135,.3);
+    pointer-events:none;
+}
+.ghost-plant-marker {
+    z-index:120;
+    left:50%;
+    top:50%;
+    bottom:auto;
+    width:32px;
+    height:34px;
+    margin-left:-16px;
+    margin-top:-17px;
+    transform-origin:50% 70%;
+    animation:ghostPlantHover 2.45s cubic-bezier(.42,0,.58,1) infinite;
+}
+.ghost-tile-breath {
+    position:absolute;
+    display:block;
+    z-index:36;
+    inset:4px;
+    border-radius:13px;
+    pointer-events:none;
+    background:radial-gradient(ellipse at 50% 52%, rgba(248,250,255,.56) 0%, rgba(190,198,220,.42) 48%, rgba(93,100,121,.18) 76%, transparent 100%);
+    box-shadow:inset 0 0 0 1px rgba(237,241,255,.44), inset 0 0 18px rgba(88,96,122,.38), 0 0 8px rgba(196,205,235,.3);
+    animation:ghostTileBreathe 2.45s cubic-bezier(.42,0,.58,1) infinite;
+}
+.ghost-plant-marker::after,
+.ghost-departure-fx::after {
+    content:"";
+    position:absolute;
+    left:3px;
+    right:3px;
+    bottom:-1px;
+    height:6px;
+    background:inherit;
+    clip-path:polygon(0 0, 25% 58%, 50% 8%, 75% 58%, 100% 0, 100% 100%, 0 100%);
+    border-radius:0 0 36% 36%;
+}
+.ghost-plant-marker::after { display:none; }
+.ghost-plant-eyes,
+.ghost-departure-eyes {
+    position:absolute;
+    z-index:1;
+    left:5px;
+    top:8px;
+    width:12px;
+    height:5px;
+    background:radial-gradient(ellipse at 22% 50%, #343652 0 24%, transparent 28%), radial-gradient(ellipse at 78% 50%, #343652 0 24%, transparent 28%);
+}
+.ghost-plant-eyes {
+    left:7px;
+    top:12px;
+    width:18px;
+    height:7px;
+    background:radial-gradient(circle at 17% 50%, #343652 0 20%, transparent 24%), radial-gradient(circle at 83% 50%, #343652 0 20%, transparent 24%);
+}
+@keyframes ghostPlantHover {
+    0%,100% { transform:translate(-1px, 2px) rotate(-3deg) scale(.94); opacity:.9; }
+    50% { transform:translate(1px, -4px) rotate(3deg) scale(1.05); opacity:1; }
+}
+@keyframes ghostTileBreathe {
+    0%,100% { opacity:.1; transform:scale(.98); }
+    50% { opacity:.82; transform:scale(1); }
+}
+.ghost-departure-fx {
+    z-index:140;
+    left:50%;
+    bottom:22%;
+    width:32px;
+    height:34px;
+    margin-left:-16px;
+    transform-origin:50% 100%;
+    animation:ghostDeparture .78s cubic-bezier(.2,.72,.2,1) both;
+}
+.ghost-departure-eyes {
+    left:7px;
+    top:12px;
+    width:18px;
+    height:7px;
+    background:radial-gradient(circle at 17% 50%, #343652 0 20%, transparent 24%), radial-gradient(circle at 83% 50%, #343652 0 20%, transparent 24%);
+}
+.ghost-departure-pop {
+    position:absolute;
+    z-index:-1;
+    left:50%;
+    bottom:-6px;
+    width:10px;
+    height:7px;
+    margin-left:-5px;
+    border-radius:50%;
+    background:radial-gradient(ellipse, rgba(249,251,255,.96), rgba(170,185,239,.48) 48%, transparent 70%);
+    animation:ghostDeparturePop .42s ease-out both;
+}
+@keyframes ghostDeparture {
+    0% { opacity:0; transform:translate(-50%, 8px) scale(.62); }
+    16% { opacity:1; transform:translate(-50%, 0) scale(1.06); }
+    100% { opacity:0; transform:translate(-50%, -78px) scale(.74); }
+}
+@keyframes ghostDeparturePop {
+    0% { opacity:0; transform:scale(.2); }
+    38% { opacity:.9; transform:scale(2.15); }
+    100% { opacity:0; transform:scale(3.1); }
+}
+.tile.ghost-echo {
+    filter:grayscale(1) saturate(.06) brightness(.94) contrast(.9);
+}
+.tile.ghost-echo .model {
+    opacity:.72;
+    filter:brightness(1.16) drop-shadow(0 0 6px rgba(225,231,244,.8)) !important;
+}
+.tile.ghost-echo .plant-wrapper { opacity:.9; }
+.tile.ghost-echo .mutations-container,
+.tile.ghost-echo .mutation-aura { filter:grayscale(1) saturate(0); }
+.ghost-mark-impact {
+    position:absolute;
+    z-index:88;
+    left:50%;
+    top:50%;
+    width:58px;
+    height:58px;
+    margin:-29px 0 0 -29px;
+    border-radius:50%;
+    pointer-events:none;
+    background:radial-gradient(circle, rgba(255,255,255,.92) 0 7%, rgba(218,226,255,.68) 19%, rgba(162,143,255,.3) 43%, transparent 70%);
+    animation:ghostMarkFlash .98s cubic-bezier(.18,.72,.25,1) both;
+}
+.ghost-impact-ring {
+    position:absolute;
+    inset:5px;
+    border:2px solid rgba(245,248,255,.94);
+    border-radius:50%;
+    box-shadow:0 0 9px rgba(178,153,255,.88), inset 0 0 8px rgba(220,224,255,.62);
+    animation:ghostMarkRing .9s cubic-bezier(.15,.72,.22,1) both;
+}
+.ghost-impact-wisp {
+    position:absolute;
+    display:block;
+    width:7px;
+    height:12px;
+    border-radius:50% 50% 45% 45%;
+    background:linear-gradient(180deg, #ffffff, #c9d1ff 52%, rgba(152,131,246,0));
+    box-shadow:0 0 6px rgba(225,223,255,.9);
+    animation:ghostMarkWisp .82s ease-out both;
+}
+.ghost-impact-wisp.wisp-left { left:5px; top:27px; transform:rotate(-46deg); }
+.ghost-impact-wisp.wisp-right { right:5px; top:27px; transform:rotate(46deg); animation-delay:.05s; }
+.ghost-impact-wisp.wisp-top { left:26px; top:2px; transform:rotate(0deg); animation-delay:.1s; }
+@keyframes ghostMarkFlash {
+    0% { opacity:0; transform:scale(.34); }
+    20% { opacity:1; transform:scale(.86); }
+    100% { opacity:0; transform:scale(1.3); }
+}
+@keyframes ghostMarkRing {
+    0% { opacity:.1; transform:scale(.34); }
+    35% { opacity:1; transform:scale(.9); }
+    100% { opacity:0; transform:scale(1.28); }
+}
+@keyframes ghostMarkWisp {
+    0% { opacity:0; }
+    26% { opacity:1; }
+    100% { opacity:0; transform:translateY(-16px) scale(.58); }
+}
+@keyframes titanicRainbowSweep {
+    from { background-position:0% 50%; }
+    to { background-position:300% 50%; }
+}
+
+/* Fine alignment: keep the toxic puddle and sun halo balanced against the shared crop axis. */
+.tile.mut-toxic .toxic-cloud {
+    left:var(--model-fx-center-x, 50%) !important;
+}
+.tile.mut-holy .fx-holy {
+    left:var(--model-fx-center-x, 50%) !important;
+    top:calc(var(--model-fx-top, 0px) - 18px) !important;
+}
+
+/* Lunar visuals are environmental light: they stay behind the crop at every size. */
+.tile.mut-lunar .mutation-aura,
+.tile.mut-bloodmoon .mutation-aura {
+    z-index:2 !important;
+}
+.tile .lunar-mutation-beam,
+.tile .bloodmoon-mutation-beam {
+    z-index:2 !important;
+}
+
+/* The active companion room is deliberately exempt from the night UI dimmer. */
+body.event-night .companion-panel {
+    filter:none !important;
+}
+
+/* Moon slime: the room stays lit; the event lives only beyond the window. */
+body.event-night .companion-panel:not(.is-sleeping) .companion-habitat,
+body.event-night .companion-panel:not(.is-sleeping) .companion-room-light {
+    filter:none !important;
+    opacity:1 !important;
+}
+body.event-night .companion-window-scene {
+    background:
+        linear-gradient(180deg, #b8c9ee 0 61%, #8d9bbd 62% 64%, #303a54 65% 100%) !important;
+    transition:background 2.3s cubic-bezier(.22,.7,.2,1);
+}
+body.event-night .companion-window-scene::before {
+    content:"";
+    display:block;
+    inset:0;
+    width:auto;
+    height:auto;
+    border-radius:0;
+    background:
+        radial-gradient(circle at 16% 22%, rgba(255,255,255,.9) 0 1px, transparent 1.7px),
+        radial-gradient(circle at 39% 15%, rgba(239,246,255,.8) 0 1px, transparent 1.6px),
+        radial-gradient(circle at 58% 38%, rgba(255,255,255,.72) 0 1px, transparent 1.5px),
+        radial-gradient(circle at 83% 23%, rgba(241,247,255,.84) 0 1px, transparent 1.6px),
+        linear-gradient(180deg, rgba(226,236,255,.18), transparent 62%);
+    box-shadow:none;
+    animation:none;
+}
+body.event-night .companion-window-scene::after {
+    content:"";
+    display:block;
+    left:auto;
+    right:8px;
+    top:8px;
+    width:18px;
+    height:18px;
+    border-radius:50%;
+    background:#fffdf0;
+    box-shadow:0 0 8px 2px rgba(245,249,255,.9), 0 0 15px rgba(187,207,255,.65);
+    -webkit-mask:radial-gradient(circle at 37% 34%, transparent 0 38%, #000 42%);
+    mask:radial-gradient(circle at 37% 34%, transparent 0 38%, #000 42%);
+    animation:windowMoonGlow 3.8s ease-in-out infinite;
+}
+@keyframes windowMoonGlow {
+    0%,100% { opacity:.82; transform:scale(.94); }
+    50% { opacity:1; transform:scale(1.04); }
+}
+
+/* The Blood Moon replaces the crescent with a bright crimson moon. */
+body.event-night.bloodmoon-phase .companion-window-scene {
+    background:
+        linear-gradient(180deg, #a63e55 0 61%, #792d46 62% 64%, #3b1d35 65% 100%) !important;
+}
+body.event-night.bloodmoon-phase .companion-window-scene::before {
+    background:
+        radial-gradient(circle at 16% 22%, rgba(255,222,231,.88) 0 1px, transparent 1.7px),
+        radial-gradient(circle at 39% 15%, rgba(255,184,204,.82) 0 1px, transparent 1.6px),
+        radial-gradient(circle at 58% 38%, rgba(255,220,231,.72) 0 1px, transparent 1.5px),
+        radial-gradient(circle at 83% 23%, rgba(255,200,217,.86) 0 1px, transparent 1.6px),
+        linear-gradient(180deg, rgba(255,160,184,.17), transparent 62%);
+}
+body.event-night.bloodmoon-phase .companion-window-scene::after {
+    right:7px;
+    top:7px;
+    width:20px;
+    height:20px;
+    border:1.5px solid #ffb2ce;
+    background:radial-gradient(circle at 34% 29%, #ff8ba9 0 10%, #f23e64 34%, #bd193d 72%, #861331 100%);
+    box-shadow:0 0 7px 2px rgba(255,108,157,.95), 0 0 17px rgba(235,40,88,.72), inset -3px -2px 0 rgba(108,11,37,.35);
+    -webkit-mask:none;
+    mask:none;
+    animation:windowBloodMoonGlow 2.8s ease-in-out infinite;
+}
+@keyframes windowBloodMoonGlow {
+    0%,100% { opacity:.9; transform:scale(.94); }
+    50% { opacity:1; transform:scale(1.06); }
 }

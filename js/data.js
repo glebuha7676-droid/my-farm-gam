@@ -18,11 +18,11 @@ const PLANTS = {
 };
 
 const MUTATIONS = {
-    gold:     { id: 'gold',     name: 'Золотое',      mult: 2,   color: '#f1c40f', icon: '✨', chance: 0.06,  aura: 'shine' },
+    gold:     { id: 'gold',     name: 'Золотое',      mult: 2,   color: '#f1c40f', icon: '✨', chance: 0.10,  aura: 'shine' },
     toxic:    { id: 'toxic',    name: 'Токсичное',    mult: 3,   color: '#2ecc71', icon: '☣️', chance: 0.03,  aura: 'mist' },
     electric: { id: 'electric', name: 'Грозовое',     mult: 4,   color: '#74b9ff', icon: '⚡', chance: 0.025, aura: 'spark' },
     stellar:  { id: 'stellar',  name: 'Звездное',     mult: 4,   color: '#feca57', icon: '⭐', chance: 0.018, aura: 'stars' },
-    rainbow:  { id: 'rainbow',  name: 'Радужное',     mult: 6,   color: '#a29bfe', icon: '🌈', chance: 0.003, aura: 'rainbow' },
+    rainbow:  { id: 'rainbow',  name: 'Радужное',     mult: 6,   color: '#a29bfe', icon: '🌈', chance: 0.02,  aura: 'rainbow' },
     holy:     { id: 'holy',     name: 'Солнечное',    mult: 4.5, color: '#f5f6fa', icon: '🔆', chance: 0.012, aura: 'halo' },
     hell:     { id: 'hell',     name: 'Огненное',     mult: 4.5, color: '#e84118', icon: '🔥', chance: 0.012, aura: 'ember' },
     candy:    { id: 'candy',    name: 'Сладкое',      mult: 3.5, color: '#ff9ff3', icon: '🍬', chance: 0.015, aura: 'candy' },
@@ -32,7 +32,8 @@ const MUTATIONS = {
     eclipse:  { id: 'eclipse',  name: 'Затмение',      mult: 7.5, color: '#b3172f', icon: '🌘',  chance: 0,     aura: 'eclipse' },
     lava:     { id: 'lava',     name: 'Магма',         mult: 7.5, color: '#d94b24', icon: '🌋', chance: 0,     aura: 'lava' },
     meteor:   { id: 'meteor',   name: 'Комета',        mult: 7.5, color: '#b9a7ff', icon: '🌠', chance: 0,     aura: 'meteor' },
-    lunar:    { id: 'lunar',    name: 'Лунное',        mult: 5.5, color: '#aebfff', icon: '☾',  chance: 0,     aura: 'lunar' },
+    lunar:    { id: 'lunar',    name: 'Лунное',        mult: 5.5, color: '#aebfff', icon: '🌙', chance: 0,     aura: 'lunar' },
+    bloodmoon:{ id: 'bloodmoon',name: 'Багровое',      mult: 8,   color: '#ff4f71', icon: '🔴', chance: 0,     aura: 'bloodmoon' },
     void:     { id: 'void',     name: 'Пустота',       mult: 9,   color: '#7b4dff', icon: '●',  chance: 0,     aura: 'void' },
     phantom:  { id: 'phantom',  name: 'Призрачное',    mult: 1,   color: '#cfd6df', icon: '◌',  chance: 0,     aura: 'phantom' }
 };
@@ -83,6 +84,7 @@ const QUEST_TEMPLATES = [
     { id: 'harvest_rare', desc: 'Собери арбуз или лучше',     target: 1,    reward: 500 }
 ];
 
+// UNUSED in the room shop: retained for existing saves, garden rendering, and rewards.
 const DECOR_STYLES = {
     default:   { id: 'default',   name: 'Стандарт',    cost: 0,     lvl: 1,  icon: '🌱', desc: 'Классическая грядка' },
     neon:      { id: 'neon',      name: 'Неон',        cost: 2500,  lvl: 3,  icon: '💡', desc: 'Яркие бортики' },

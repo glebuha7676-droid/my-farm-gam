@@ -28,6 +28,7 @@
             }
             
             if (type === 'pop') { osc.type = 'sine'; osc.frequency.setValueAtTime(400, now); osc.frequency.exponentialRampToValueAtTime(600, now+0.1); gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.01, now+0.1); osc.start(now); osc.stop(now+0.1); }
+            else if (type === 'ghostEcho') { osc.type = 'sine'; osc.frequency.setValueAtTime(430, now); osc.frequency.exponentialRampToValueAtTime(690, now + .16); gain.gain.setValueAtTime(.045, now); gain.gain.exponentialRampToValueAtTime(.004, now + .28); osc.start(now); osc.stop(now + .3); }
             else if (type === 'coin') { osc.type = 'sine'; osc.frequency.setValueAtTime(1200, now); osc.frequency.setValueAtTime(1600, now+0.05); gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.01, now+0.2); osc.start(now); osc.stop(now+0.2); }
             else if (type === 'coinSoft') { osc.type = 'sine'; osc.frequency.setValueAtTime(1050, now); osc.frequency.exponentialRampToValueAtTime(1550, now+0.06); gain.gain.setValueAtTime(0.035, now); gain.gain.exponentialRampToValueAtTime(0.005, now+0.16); osc.start(now); osc.stop(now+0.17); }
             else if (type === 'mut') { osc.type = 'square'; osc.frequency.setValueAtTime(400, now); osc.frequency.linearRampToValueAtTime(1200, now+0.4); gain.gain.setValueAtTime(0.15, now); gain.gain.exponentialRampToValueAtTime(0.01, now+0.4); osc.start(now); osc.stop(now+0.4); }
