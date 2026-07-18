@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Grow a Farm: Mobile Edition</title>
-    <link rel="stylesheet" href="css/styles.css?v=20260718y">
+    <link rel="stylesheet" href="css/styles.css?v=20260718aq">
 </head>
 <body>
     <div class="holy-bg-rays"></div>
@@ -47,9 +47,11 @@
     <div class="bottom-ui">
         <div class="actions-row">
             <div class="action-btn active" data-tool="water" onclick="selectAction('water')">💧</div>
-            <div class="action-btn" data-tool="harvest" onclick="selectAction('harvest')">🖐🏻</div>
             <div class="action-btn" data-tool="shovel" onclick="selectAction('shovel')">⛏️</div>
             <div class="action-btn" data-tool="inspect" onclick="selectAction('inspect')">🔎</div>
+            <button class="action-btn companion-quick-ability" id="companion-quick-ability" type="button" onclick="useCompanionAbility()" disabled aria-label="Суперспособность слайма">
+                <span aria-hidden="true"></span>
+            </button>
         </div>
         <div class="seeds-carousel">
             <button class="nav-arrow disabled" id="btn-left" onclick="scrollSeeds(-1)">&#10094;</button>
@@ -207,6 +209,7 @@
             </div>
             <div class="shop-tabs">
                 <button id="shop-tab-seeds" class="shop-tab active" type="button" onclick="selectShopTab('seeds')"><span class="shop-tab-icon" aria-hidden="true">🌱</span><span>Семена</span></button>
+                <button id="shop-tab-slimes" class="shop-tab" type="button" onclick="selectShopTab('slimes')"><span class="shop-tab-icon shop-tab-slime-icon" aria-hidden="true"><i></i></span><span>Слайм</span></button>
                 <button id="shop-tab-decor" class="shop-tab" type="button" onclick="selectShopTab('decor')"><span class="shop-tab-icon" aria-hidden="true">🏠</span><span>Комната</span></button>
                 <button id="shop-tab-merchant" class="shop-tab" type="button" onclick="selectShopTab('merchant')"><span class="shop-tab-icon" aria-hidden="true">🔮</span><span>Торговец</span></button>
             </div>
@@ -244,9 +247,9 @@
     <div class="companion-level-modal" id="companion-level-modal" onclick="closeCompanionLevelModal()" aria-hidden="true">
         <article class="companion-level-modal-card" id="companion-level-modal-card" role="dialog" aria-modal="true" aria-label="Уровень и способность слайма"></article>
     </div>
-    <script src="js/yandex-sdk.js?v=20260708a" defer></script>
-    <script src="js/data.js?v=20260718a" defer></script>
+    <script src="js/yandex-sdk.js?v=20260718b" defer></script>
+    <script src="js/data.js?v=20260718b" defer></script>
     <script src="js/audio.js?v=20260717a" defer></script>
-    <script src="js/game.js?v=20260718u" defer></script>
+    <script src="js/game.js?v=20260718an" defer></script>
 </body>
 </html>

@@ -33,9 +33,7 @@ const MUTATIONS = {
     lava:     { id: 'lava',     name: 'Магма',         mult: 7.5, color: '#d94b24', icon: '🌋', chance: 0,     aura: 'lava' },
     meteor:   { id: 'meteor',   name: 'Комета',        mult: 7.5, color: '#b9a7ff', icon: '🌠', chance: 0,     aura: 'meteor' },
     lunar:    { id: 'lunar',    name: 'Лунное',        mult: 5.5, color: '#aebfff', icon: '🌙', chance: 0,     aura: 'lunar' },
-    bloodmoon:{ id: 'bloodmoon',name: 'Багровое',      mult: 8,   color: '#ff4f71', icon: '🔴', chance: 0,     aura: 'bloodmoon' },
-    void:     { id: 'void',     name: 'Пустота',       mult: 9,   color: '#7b4dff', icon: '●',  chance: 0,     aura: 'void' },
-    phantom:  { id: 'phantom',  name: 'Призрачное',    mult: 1,   color: '#cfd6df', icon: '◌',  chance: 0,     aura: 'phantom' }
+    bloodmoon:{ id: 'bloodmoon',name: 'Багровое',      mult: 8,   color: '#ff4f71', icon: '🔴', chance: 0,     aura: 'bloodmoon' }
 };
 
 const EGG_RARITIES = {

@@ -100,6 +100,41 @@
         await gameplayStart();
     }
 
+    async function showRewardedVideo() {
+        const currentSdk = await init();
+        if (typeof currentSdk?.adv?.showRewardedVideo !== 'function') {
+            return { available: false, rewarded: false, shown: false };
+        }
+
+        return new Promise(resolve => {
+            let rewarded = false;
+            let settled = false;
+            const finish = result => {
+                if (settled) return;
+                settled = true;
+                gameplayStart();
+                resolve({ available: true, rewarded, ...result });
+            };
+
+            try {
+                currentSdk.adv.showRewardedVideo({
+                    callbacks: {
+                        onOpen: () => gameplayStop(),
+                        onRewarded: () => { rewarded = true; },
+                        onClose: wasShown => finish({ shown: !!wasShown }),
+                        onError: error => {
+                            console.warn('[YandexGames] Rewarded video failed.', error);
+                            finish({ shown: false, error });
+                        }
+                    }
+                });
+            } catch (error) {
+                console.warn('[YandexGames] Rewarded video call failed.', error);
+                finish({ shown: false, error });
+            }
+        });
+    }
+
     document.addEventListener('visibilitychange', () => {
         if (!state.gameReady) return;
         if (document.hidden) gameplayStop();
@@ -111,6 +146,7 @@
         gameReady,
         gameplayStart,
         gameplayStop,
+        showRewardedVideo,
         getSdk: () => sdk,
         getState: () => ({ ...state })
     });
