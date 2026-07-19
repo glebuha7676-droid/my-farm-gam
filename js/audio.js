@@ -3,11 +3,18 @@
     const fileSfx = {
         magmaMutation: 'assets/bcd218f4af76d0e.mp3'
     };
+    const fileSfxCache = new Map(Object.entries(fileSfx).map(([type, url]) => {
+        const audio = new Audio();
+        audio.preload = 'auto';
+        audio.src = url;
+        audio.load();
+        return [type, audio];
+    }));
+    window.gamePreloadAssets = [...new Set([...(window.gamePreloadAssets || []), ...Object.values(fileSfx)])];
     const sfx = {
         play: (type, restartKey = '') => {
             if (fileSfx[type]) {
-                const clip = new Audio(fileSfx[type]);
-                clip.preload = 'auto';
+                const clip = fileSfxCache.get(type).cloneNode();
                 clip.volume = 0.78;
                 clip.play().catch(() => {});
                 return;

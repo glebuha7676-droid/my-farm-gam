@@ -4,9 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Grow a Farm: Mobile Edition</title>
-    <link rel="stylesheet" href="css/styles.css?v=20260718aq">
+    <link rel="stylesheet" href="css/styles.css?v=20260719p">
 </head>
 <body>
+    <div class="game-loader" id="game-loader" role="status" aria-live="polite" aria-label="Загрузка игры">
+        <div class="game-loader-card">
+            <div class="game-loader-logo" aria-hidden="true">
+                <span class="game-loader-sprout"><i></i><i></i></span>
+                <span class="game-loader-pot"></span>
+            </div>
+            <strong>GROW A FARM</strong>
+            <small id="game-loader-status">Подготавливаем ферму...</small>
+            <div class="game-loader-track" aria-hidden="true"><i id="game-loader-fill"></i></div>
+            <em id="game-loader-percent">0%</em>
+        </div>
+    </div>
     <div class="holy-bg-rays"></div>
     <div class="hell-bg-fire"></div>
     <div class="weather-overlay"></div>
@@ -249,7 +261,7 @@
     </div>
     <script src="js/yandex-sdk.js?v=20260718b" defer></script>
     <script src="js/data.js?v=20260718b" defer></script>
-    <script src="js/audio.js?v=20260717a" defer></script>
-    <script src="js/game.js?v=20260718an" defer></script>
+    <script src="js/audio.js?v=20260719b" defer></script>
+    <script src="js/game.js?v=20260719p" defer></script>
 </body>
 </html>

@@ -1,13 +1,13 @@
 ﻿let player = {
         coins: BALANCE.startCoins || 50, lvl: 1, xp: 0, xpNeed: BALANCE.xpNeedStart || 100,
         rares: {}, unlockedMutations: [],
-        pets: [], petLevels: {}, petInventory: [], equippedPets: [null, null, null], unlockedPetSlots: 1,
+        pets: [], petLevels: {}, petInventory: [], equippedPets: [null, null, null], unlockedPetSlots: 1, slimeCollection: {},
         incubator: [null, null, null], quests: [], lastSaved: Date.now(), bank: 0,
         plotStyle: 'default', ownedDecor: ['default'], decorPaintColor: '#ff7675', roomStyle: 'cozy', ownedRoomDecor: ['cozy'], purchasedPlots: [],
         seedInventory: { carrot: 6 },
         shop: { stock: {}, refreshAt: 0, merchantStock: {}, merchantArrivesAt: 0, merchantLeavesAt: 0, adEggViews: 0, adEggUnlocked: false },
         showcase: [null, null, null],
-        companion: { name: 'Слайми', level: 1, xp: 0, slimeLevels: {}, hunger: 82, clean: 88, energy: 92, sleeping: false, skin: 'basic', lastUpdate: Date.now() },
+        companion: { name: 'Слайми', level: 1, xp: 0, slimeLevels: {}, hunger: 82, clean: 88, energy: 92, sleeping: false, skin: 'basic', variant: 'normal', lastUpdate: Date.now() },
         stats: { totalEarned: 0, maxWeight: 0, bestSale: 0, harvested: 0 },
         rewards: {
             dailyClaimed: 0,
@@ -24,7 +24,7 @@
     let eventActions = []; 
     let tiles = Array(12).fill().map((_, i) => ({ id: i, active: false, plantId: null, growth: 0, water: 0, slimeWater: 0, slimeWaterMult: 1, hasWeed: false, mutations: [], scale: .4, weight: 1, weightMult: 1, sizeTier: 'small', beeLock: 0, ghostEchoPercent: 0, ghostMarked: false, ghostCopyMutationCount: 0, ghostEcho: false, ghostValue: 0 }));
     let currentTool = 'water';
-    const TEST_HATCH_INSTANT = false;
+    const TEST_HATCH_INSTANT = true;
     const TITANIC_CROP_CHANCE = 0.001;
     const HUGE_CROP_CHANCE = 0.01;
     const BIG_CROP_CHANCE = 0.09;
@@ -194,9 +194,57 @@
     }
 
     function rollPetVariant() {
+        const roll = Math.random();
+        if (roll < 0.015) return { size: 'normal', shiny: 'rainbow' };
+        if (roll < 0.075) return { size: 'normal', shiny: 'gold' };
+        if (roll < 0.155) return { size: 'huge', shiny: 'normal' };
+        return { size: 'normal', shiny: 'normal' };
+    }
+
+    function companionVariantPet(variant = player.companion?.variant || 'normal') {
+        if (variant === 'huge') return { size: 'huge', shiny: 'normal' };
+        if (variant === 'gold') return { size: 'normal', shiny: 'gold' };
+        if (variant === 'rainbow') return { size: 'normal', shiny: 'rainbow' };
+        return { size: 'normal', shiny: 'normal' };
+    }
+
+    function ensureSlimeCollection() {
+        if (!player.slimeCollection || typeof player.slimeCollection !== 'object' || Array.isArray(player.slimeCollection)) {
+            player.slimeCollection = {};
+        }
+        const basicSaved = player.slimeCollection.basic || {};
+        player.slimeCollection.basic = { owned: true, huge: !!basicSaved.huge, gold: !!basicSaved.gold, rainbow: !!basicSaved.rainbow };
+        Object.keys(PET_DEFS).forEach(id => {
+            const saved = player.slimeCollection[id] || {};
+            player.slimeCollection[id] = {
+                owned: !!saved.owned,
+                huge: !!saved.huge,
+                gold: !!saved.gold,
+                rainbow: !!saved.rainbow
+            };
+        });
+    }
+
+    function slimeCollectionEntry(id) {
+        ensureSlimeCollection();
+        return player.slimeCollection[id] || { owned: false, huge: false, gold: false, rainbow: false };
+    }
+
+    function unlockSlimeCollectible(petId, variant = {}) {
+        ensureSlimeCollection();
+        const entry = slimeCollectionEntry(petId);
+        entry.owned = true;
+        if (variant.size === 'huge') entry.huge = true;
+        if (variant.shiny === 'gold') entry.gold = true;
+        if (variant.shiny === 'rainbow') entry.rainbow = true;
         return {
-            size: Math.random() < 0.08 ? 'huge' : 'normal',
-            shiny: Math.random() < 0.015 ? 'rainbow' : (Math.random() < 0.06 ? 'gold' : 'normal')
+            uid: `collection-${petId}-${Date.now()}`,
+            id: petId,
+            level: companionLevelState(petId).level,
+            hunger: 100,
+            size: variant.size || 'normal',
+            shiny: variant.shiny || 'normal',
+            happy: false
         };
     }
 
@@ -535,6 +583,9 @@
 
     function slimeHTML(def, pet = {}, size = 'medium') {
         const slime = def.slime || {};
+        const goldSparkles = pet.shiny === 'gold'
+            ? '<i class="slime-gold-sparkles" aria-hidden="true"><b></b><b></b><b></b></i>'
+            : '';
         const classes = [
             'slime-pet',
             `slime-${size}`,
@@ -546,7 +597,7 @@
             pet.shiny === 'rainbow' ? 'is-rainbow' : '',
             pet.happy && size === 'featured' ? 'is-happy' : ''
         ].filter(Boolean).join(' ');
-        return `<span class="${classes}" style="--slime-body:${slime.body || '#74b9ff'}; --slime-shade:${slime.shade || '#0984e3'}; --slime-blush:${slime.blush || '#ffb3c7'};"><i class="slime-face"><span class="slime-eye left"></span><span class="slime-eye right"></span><span class="slime-mouth"></span></i><i class="slime-decor"></i></span>`;
+        return `<span class="${classes}" style="--slime-body:${slime.body || '#74b9ff'}; --slime-shade:${slime.shade || '#0984e3'}; --slime-blush:${slime.blush || '#ffb3c7'};">${goldSparkles}<i class="slime-face"><span class="slime-eye left"></span><span class="slime-eye right"></span><span class="slime-mouth"></span></i><i class="slime-decor"></i></span>`;
     }
 
     function seedIcon(id, extraClass = '') {
@@ -658,16 +709,50 @@
         const lunarLight = (mId === 'lunar' || mId === 'bloodmoon')
             ? '<i class="lunar-beam"></i><i class="lunar-pool"></i><i class="lunar-speck speck-one"></i><i class="lunar-speck speck-two"></i><i class="lunar-speck speck-three"></i>'
             : '';
-        /* UNUSED (toxic gas-mask v7 aura): the mask now lives inside plant-wrapper with the model. */
         return `<span class="mut-effect fx-${mId}" style="--mut-color:${mutation.color}; --i:${order};">${cometParticles}${candyPieces}${lunarLight}</span>`;
-    }
-
-    function toxicGasMaskHTML() {
-        return '<i class="toxic-gasmask toxic-gasmask-wearable" aria-hidden="true"><i class="toxic-mask-lens lens-left"></i><i class="toxic-mask-lens lens-right"></i></i>';
     }
 
     function toxicPuddleHTML() {
         return '<div class="toxic-cloud" aria-hidden="true"></div><i class="acid-bubble acid-bubble-one" aria-hidden="true"></i><i class="acid-bubble acid-bubble-two" aria-hidden="true"></i><i class="acid-bubble acid-bubble-three" aria-hidden="true"></i><i class="acid-bubble acid-bubble-four" aria-hidden="true"></i><i class="acid-bubble acid-bubble-five" aria-hidden="true"></i><i class="acid-bubble acid-bubble-six" aria-hidden="true"></i><i class="acid-bubble acid-bubble-seven" aria-hidden="true"></i>';
+    }
+
+    function mutationPresentationParts(mutations) {
+        const badges = [];
+        const auraEffects = [];
+        const candyEffects = [];
+        (mutations || []).forEach((mId, order) => {
+            const mutation = MUTATIONS[mId];
+            if (!mutation) return;
+            badges.push(`<div class="mut-badge" style="--mut-color:${mutation.color};">${mutation.icon}</div>`);
+            const effect = mutationAuraEffectHTML(mId, mutation, order);
+            if (mId === 'candy') candyEffects.push(effect);
+            else auraEffects.push(effect);
+        });
+        return { badges: badges.join(''), aura: auraEffects.join(''), candy: candyEffects.join('') };
+    }
+
+    function renderMutationPresentation(mutations, aura, candyAura, mutContainer) {
+        const parts = mutationPresentationParts(mutations);
+        aura.className = 'mutation-aura';
+        candyAura.className = 'mutation-aura candy-front-aura';
+        aura.innerHTML = parts.aura;
+        candyAura.innerHTML = parts.candy;
+        mutContainer.innerHTML = parts.badges;
+        if (parts.aura) aura.classList.add('active', `stack-${Math.min(mutations.length, 3)}`);
+        if (parts.candy) candyAura.classList.add('active');
+    }
+
+    function syncToxicPuddleMarkup(tileEl, enabled) {
+        const cloud = tileEl.querySelector(':scope > .toxic-cloud');
+        if (enabled && !cloud) {
+            const anchor = tileEl.querySelector(':scope > .mutation-aura');
+            anchor?.insertAdjacentHTML('beforebegin', toxicPuddleHTML());
+            return;
+        }
+        if (!enabled && cloud) {
+            cloud.remove();
+            tileEl.querySelectorAll(':scope > .acid-bubble').forEach(bubble => bubble.remove());
+        }
     }
 
     function cropMutationAuraHTML(mutations) {
@@ -711,10 +796,10 @@
         return `
             <div class="showcase-crop-art">
                 <div class="showcase-tile-preview tile occupied ready crop-normal ${mutClasses} ${primary}" data-source-size="${crop.sizeTier || 'normal'}" style="--plant-scale:${scale}; --crop-color:${p.color}; --showcase-stage-scale:.78;">
-                    ${toxicPuddleHTML()}
+                    ${mutations.includes('toxic') ? toxicPuddleHTML() : ''}
                     ${cropMutationAuraHTML(mutations)}
                     <div class="plant-wrapper">
-                        <div class="model visible model-${p.id} ready">${toxicGasMaskHTML()}${honeyCapHTML(p.id, mutations)}</div>
+                        <div class="model visible model-${p.id} ready">${honeyCapHTML(p.id, mutations)}</div>
                         ${honeyDropsHTML(mutations)}
                     </div>
                 </div>
@@ -737,12 +822,15 @@
     }
 
 function init() {
+        setGameLoaderProgress(18, 'Загружаем сохранение...');
         loadGame();
         startEvent('day');
+        setGameLoaderProgress(38, 'Собираем грядки...');
         renderGarden();
         renderSeeds();
         generateQuestsIfNeeded();
         calcOfflineBank();
+        setGameLoaderProgress(68, 'Готовим модели и эффекты...');
         updateUI();
         updateAdminMutationCycleButton();
         document.getElementById('seeds-window').addEventListener('scroll', updateCarouselArrows);
@@ -757,11 +845,78 @@ function init() {
             if (env.harvestSelectedTile !== null && !event.target.closest('.tile')) clearHarvestSelection();
         }, { passive: true });
         bindPressFeedback();
+        setupMutationPerformanceObservers();
         setInterval(gameTick, 1000);
-        setInterval(realtimeUiTick, 250);
-        setInterval(saveGame, 5000);
+        setInterval(realtimeUiTick, 500);
+        setInterval(saveGame, 10000);
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) saveGame();
+        });
+        window.addEventListener('pagehide', saveGame);
         scheduleCompanionSpecial();
+        finishGameLoading();
+    }
+
+    function setGameLoaderProgress(value, label) {
+        const loader = document.getElementById('game-loader');
+        if (!loader) return;
+        const safe = Math.max(0, Math.min(100, Math.round(Number(value) || 0)));
+        loader.style.setProperty('--loader-progress', `${safe}%`);
+        const fill = document.getElementById('game-loader-fill');
+        const percent = document.getElementById('game-loader-percent');
+        const status = document.getElementById('game-loader-status');
+        if (fill) fill.style.width = `${safe}%`;
+        if (percent) percent.textContent = `${safe}%`;
+        if (status && label) status.textContent = label;
+    }
+
+    async function preloadGameAssets() {
+        const urls = [...new Set([
+            ...(window.gamePreloadAssets || []),
+            ...[...document.querySelectorAll('img[src], audio[src], video[src], source[src]')]
+                .map(node => node.currentSrc || node.src)
+                .filter(Boolean)
+        ])];
+        if (!urls.length) return;
+        await Promise.allSettled(urls.map(url => new Promise(resolve => {
+            let settled = false;
+            const finish = () => {
+                if (settled) return;
+                settled = true;
+                resolve();
+            };
+            setTimeout(finish, 3000);
+            if (/\.(?:mp3|wav|ogg|m4a)(?:[?#].*)?$/i.test(url)) {
+                const audio = new Audio();
+                audio.preload = 'auto';
+                audio.oncanplaythrough = audio.onerror = finish;
+                audio.src = url;
+                audio.load();
+                return;
+            }
+            const image = new Image();
+            image.onload = image.onerror = finish;
+            image.src = url;
+        })));
+    }
+
+    async function finishGameLoading() {
+        setGameLoaderProgress(82, 'Проверяем ресурсы...');
+        await Promise.allSettled([
+            preloadGameAssets(),
+            document.fonts?.ready || Promise.resolve()
+        ]);
+        setGameLoaderProgress(94, 'Запускаем ферму...');
+        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
         window.YandexGames?.gameReady();
+        setGameLoaderProgress(100, 'Готово!');
+        const loader = document.getElementById('game-loader');
+        if (!loader) return;
+        setTimeout(() => {
+            loader.classList.add('is-ready');
+            loader.addEventListener('transitionend', () => loader.remove(), { once: true });
+            setTimeout(() => loader.remove(), 900);
+        }, 180);
     }
 
     function handleGardenDecorTap(event) {
@@ -791,6 +946,7 @@ function init() {
         g.className = `garden style-${player.plotStyle || 'default'}`;
         applyDecorVars(g);
         g.innerHTML = '';
+        const fragment = document.createDocumentFragment();
         tiles.forEach((t, i) => {
             const el = document.createElement('div');
             el.className = 'tile';
@@ -804,8 +960,6 @@ function init() {
                 </div>
                 <div class="tile-soil-detail" aria-hidden="true"></div>
                 <div class="planting-feedback" aria-hidden="true"><i></i><i></i><i></i></div>
-                ${toxicPuddleHTML()}
-                <div class="candy-rain-container"></div>
                 <div class="mutation-aura" id="aura-${i}"></div>
                 <div class="mutation-aura candy-front-aura" id="candy-aura-${i}"></div>
                 <div class="tile-progress"><div class="progress-fill" id="grow-${i}"></div></div>
@@ -816,16 +970,17 @@ function init() {
                 <div class="tile-bee">🐝</div>
                 <div class="weed-model"><span class="weed-model-core">🐛</span></div>
                 <div class="plant-wrapper">
-                    <div class="model" id="model-${i}">${toxicGasMaskHTML()}</div>
+                    <div class="model" id="model-${i}"></div>
                 </div>
             `;
             el.addEventListener('pointerdown', (event) => {
                 event.preventDefault();
                 handleInteract(i);
             });
-            g.appendChild(el);
-            updateTileDOM(i);
+            fragment.appendChild(el);
         });
+        g.appendChild(fragment);
+        tiles.forEach((_, i) => updateTileDOM(i));
         renderPaintPalette(g);
     }
 
@@ -833,6 +988,9 @@ function init() {
         const container = document.getElementById('seeds-track');
         ensureSeedAndShopState();
         ensureSelectedSeedAvailable();
+        const seedSignature = getQuickSeedKeys().map(key => `${key}:${getSeedOwned(key)}:${currentTool === key ? 1 : 0}`).join('|');
+        if (container.dataset.renderSignature === seedSignature) return;
+        container.dataset.renderSignature = seedSignature;
         container.innerHTML = '';
         getQuickSeedKeys().forEach(key => {
             const p = PLANTS[key];
@@ -951,7 +1109,6 @@ function init() {
                 return;
             }
             if (env.harvestSelectedTile === idx) {
-                // UNUSED (one-tap harvest v1): ready crops were sold immediately on the first touch.
                 clearHarvestSelection(idx);
                 harvestPlant(idx);
             } else {
@@ -1176,17 +1333,21 @@ function init() {
     function updateStateIndicator() {
         const indicator = document.getElementById('state-indicator');
         if (!indicator) return;
+        let signature = '';
+        let markup = '';
         if (env.currentEvent === 'day' || (env.eventTimer <= 0 && !hasActiveEventFinale())) {
             const nextTimer = Math.max(0, Math.ceil(Number(env.nextEventTimer) || 0));
-            if (nextTimer > 0) {
-                indicator.innerHTML = `<span class="state-timer">${formatEventTimer(nextTimer)}</span>`;
-            } else {
-                indicator.innerHTML = `<span class="state-timer">0с</span>`;
-            }
-            return;
+            const time = nextTimer > 0 ? formatEventTimer(nextTimer) : '0с';
+            signature = `timer:${time}`;
+            markup = `<span class="state-timer">${time}</span>`;
+        } else {
+            const label = getEventIndicatorLabel(env.currentEvent);
+            signature = `event:${label}`;
+            markup = `<span class="state-label">${label}</span>`;
         }
-        const label = getEventIndicatorLabel(env.currentEvent);
-        indicator.innerHTML = `<span class="state-label">${label}</span>`;
+        if (indicator.dataset.renderSignature === signature) return;
+        indicator.dataset.renderSignature = signature;
+        indicator.innerHTML = markup;
     }
 
     function clearSunpuddingEclipsePhase() {
@@ -1342,21 +1503,6 @@ function init() {
         });
     }
 
-    /* UNUSED (blood moon dawn v1): direct palette interpolation avoids a red overlay over green. */
-    function startBloodmoonDawnCrossfade() {
-        const palette = env.nightPalette;
-        if (!palette?.garden) return false;
-        const { garden, gardenStyles, tiles } = palette;
-        garden.classList.add('bloodmoon-dawn');
-        Object.entries(gardenStyles).forEach(([property, saved]) => restoreInlineStyle(garden, property, saved));
-        tiles.forEach(({ element, styles }) => {
-            if (element.isConnected) restoreInlineStyle(element, 'border-color', styles['border-color']);
-        });
-        stopNightGardenPalette(true);
-        setTimeout(() => garden.classList.remove('bloodmoon-dawn'), NIGHT_AMBIENCE_EXIT_MS);
-        return true;
-    }
-
     function restoreBloodmoonPaletteWithoutBlend() {
         const garden = env.nightPalette?.garden;
         // Disable only the garden transition while restoring literal day colors.
@@ -1421,12 +1567,13 @@ function init() {
 
     function startEvent(type, customDuration = null) {
         clearSunpuddingEclipsePhase();
+        clearEmbergooMagmaTimers();
         clearStargumCometFinale();
         clearMoonmeltLunarFinale();
         clearNightAmbience();
         env.currentEvent = type;
         document.body.className = type === 'day' ? '' : `event-${type}`;
-        const emitters = document.getElementById('bg-emitters'); emitters.innerHTML = '';
+        const emitters = document.getElementById('bg-emitters'); emitters.replaceChildren();
 
         if (type === 'starfall') { showToast("Магия звезд!", "#a29bfe"); createBgParticles(['⭐'], 'bgFlyStar'); }
         else if (type === 'toxic') { showToast("Токсичные осадки!", "#c9ff4c"); createToxicSlimeRain(); }
@@ -1480,7 +1627,10 @@ function init() {
 
     function createBgParticles(chars, animName) {
         const container = document.getElementById('bg-emitters');
-        for(let i=0; i<15; i++) {
+        if (!container) return;
+        const fragment = document.createDocumentFragment();
+        const count = prefersCompactEffects() ? 9 : 15;
+        for(let i=0; i<count; i++) {
             const p = document.createElement('div');
             p.innerText = chars[Math.floor(Math.random()*chars.length)];
             p.className = `bg-particle ${animName}`;
@@ -1489,14 +1639,17 @@ function init() {
             p.style.setProperty('--delay', `${Math.random() * -6}s`);
             p.style.setProperty('--dur', `${Math.random() * 4 + 5}s`);
             p.style.setProperty('--size', `${Math.random() * 14 + 16}px`);
-            container.appendChild(p);
+            fragment.appendChild(p);
         }
+        container.appendChild(fragment);
     }
 
     function createToxicSlimeRain() {
         const container = document.getElementById('bg-emitters');
         if (!container) return;
-        for (let i = 0; i < 18; i++) {
+        const fragment = document.createDocumentFragment();
+        const count = prefersCompactEffects() ? 11 : 18;
+        for (let i = 0; i < count; i++) {
             const blob = document.createElement('i');
             const size = Math.round(9 + Math.random() * 12);
             blob.className = 'bg-toxic-slime';
@@ -1505,8 +1658,13 @@ function init() {
             blob.style.setProperty('--delay', `${-(Math.random() * 5.8).toFixed(2)}s`);
             blob.style.setProperty('--dur', `${(4.6 + Math.random() * 2.4).toFixed(2)}s`);
             blob.style.setProperty('--drift', `${Math.round(-12 + Math.random() * 24)}px`);
-            container.appendChild(blob);
+            fragment.appendChild(blob);
         }
+        container.appendChild(fragment);
+    }
+
+    function prefersCompactEffects() {
+        return window.matchMedia?.('(max-width: 700px)').matches || (navigator.deviceMemory && navigator.deviceMemory <= 4);
     }
 
     function triggerToxicSlimeMutation(idx) {
@@ -1800,13 +1958,13 @@ function init() {
     function triggerLavaMutationOnTile(idx, delay = 0, playSound = false) {
         const el = document.getElementById(`tile-${idx}`);
         if (!el) return false;
-        setTimeout(() => {
+        queueEmbergooMagmaTimer(() => {
             const live = tiles[idx];
             if (!canTileReceiveMutation(live, 'lava')) return;
             if (el.classList.contains('lava-hit')) return;
             if (playSound) sfx.play('lavaRise');
             el.classList.add('lava-hit');
-            setTimeout(() => {
+            queueEmbergooMagmaTimer(() => {
                 const current = tiles[idx];
                 if (!canTileReceiveMutation(current, 'lava')) return;
                 if (commitTileMutation(idx, 'lava')) {
@@ -1815,7 +1973,7 @@ function init() {
                     syncTileMutationPresentation(idx);
                 }
             }, LAVA_MUTATION_COMMIT_DELAY_MS);
-            setTimeout(() => {
+            queueEmbergooMagmaTimer(() => {
                 const liveEl = document.getElementById(`tile-${idx}`);
                 liveEl?.classList.remove('lava-hit');
                 if (liveEl) sfx.play('lavaCool');
@@ -1827,13 +1985,20 @@ function init() {
     function clearEmbergooMagmaTimers() {
         (env.embergooMagmaTimers || []).forEach(timerId => clearTimeout(timerId));
         env.embergooMagmaTimers = [];
+        env.embergooMagmaFinale = false;
+        document.querySelectorAll('.tile.lava-hit').forEach(tile => tile.classList.remove('lava-hit'));
+    }
+
+    function stargumCometFrameSet() {
+        if (!(env.stargumCometFrames instanceof Set)) env.stargumCometFrames = new Set(env.stargumCometFrames || []);
+        return env.stargumCometFrames;
     }
 
     function clearStargumCometFinale() {
         (env.stargumCometTimers || []).forEach(timerId => clearTimeout(timerId));
-        (env.stargumCometFrames || []).forEach(frameId => cancelAnimationFrame(frameId));
+        stargumCometFrameSet().forEach(frameId => cancelAnimationFrame(frameId));
         env.stargumCometTimers = [];
-        env.stargumCometFrames = [];
+        env.stargumCometFrames = new Set();
         env.stargumCometFinale = false;
         document.querySelectorAll('.stargum-background-comet, .stargum-comet-shadow, .stargum-comet-projectile, .stargum-comet-fragment').forEach(effect => effect.remove());
         document.querySelectorAll('.tile.comet-hit').forEach(tile => tile.classList.remove('comet-hit'));
@@ -1862,7 +2027,8 @@ function init() {
     }
 
     function spawnStargumCometFragments(garden, centerX, centerY) {
-        const fragmentCount = 9;
+        const fragmentCount = prefersCompactEffects() ? 6 : 9;
+        const batch = document.createDocumentFragment();
         for (let index = 0; index < fragmentCount; index++) {
             const fragment = document.createElement('span');
             const angle = (Math.PI * 2 * index) / fragmentCount + (Math.random() - .5) * .26;
@@ -1874,9 +2040,10 @@ function init() {
             fragment.style.setProperty('--fragment-y', `${Math.sin(angle) * distance}px`);
             fragment.style.setProperty('--fragment-delay', `${Math.round(Math.random() * 45)}ms`);
             fragment.style.setProperty('--fragment-size', `${5 + Math.random() * 6}px`);
-            garden.appendChild(fragment);
+            batch.appendChild(fragment);
             queueStargumCometTimer(() => fragment.remove(), 980);
         }
+        garden.appendChild(batch);
     }
 
     function playStargumBackgroundComet() {
@@ -1896,7 +2063,7 @@ function init() {
         let currentFrameId = null;
         const frame = now => {
             if (currentFrameId !== null) {
-                env.stargumCometFrames = (env.stargumCometFrames || []).filter(id => id !== currentFrameId);
+                stargumCometFrameSet().delete(currentFrameId);
                 currentFrameId = null;
             }
             if (env.currentEvent !== 'starfall') {
@@ -1913,13 +2080,13 @@ function init() {
             comet.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%) rotate(-45deg) scale(${scale})`;
             if (progress < 1) {
                 currentFrameId = requestAnimationFrame(frame);
-                env.stargumCometFrames = [...(env.stargumCometFrames || []), currentFrameId];
+                stargumCometFrameSet().add(currentFrameId);
                 return;
             }
             comet.remove();
         };
         currentFrameId = requestAnimationFrame(frame);
-        env.stargumCometFrames = [...(env.stargumCometFrames || []), currentFrameId];
+        stargumCometFrameSet().add(currentFrameId);
     }
 
     function animateStargumCometLanding({ garden, idx, shadow, comet, centerX, centerY }) {
@@ -1927,7 +2094,7 @@ function init() {
         let currentFrameId = null;
         const frame = now => {
             if (currentFrameId !== null) {
-                env.stargumCometFrames = (env.stargumCometFrames || []).filter(id => id !== currentFrameId);
+                stargumCometFrameSet().delete(currentFrameId);
                 currentFrameId = null;
             }
             if (env.currentEvent !== 'starfall') return;
@@ -1938,9 +2105,7 @@ function init() {
                 : .48 + stargumCometEaseIn((progress - .68) / .32) * .52;
             const shadowScale = 1.16 - shadowProgress * 1.06;
             const shadowOpacity = Math.sin(Math.min(1, progress * 1.2) * Math.PI * .5) * .72;
-            const shadowBlur = 19 - shadowProgress * 17;
             shadow.style.opacity = `${Math.max(0, shadowOpacity * (1 - Math.max(0, progress - .94) / .06))}`;
-            shadow.style.filter = `blur(${Math.max(1.2, shadowBlur)}px)`;
             shadow.style.transform = `translate(-50%, -50%) scale(${shadowScale})`;
 
             const flightProgress = Math.max(0, (progress - .34) / .66);
@@ -1952,11 +2117,10 @@ function init() {
 
             if (progress < 1) {
                 currentFrameId = requestAnimationFrame(frame);
-                env.stargumCometFrames = [...(env.stargumCometFrames || []), currentFrameId];
+                stargumCometFrameSet().add(currentFrameId);
                 return;
             }
 
-            env.stargumCometFrames = [];
             const liveTile = tiles[idx];
             const liveTileEl = document.getElementById(`tile-${idx}`);
             if (!liveTileEl || !canTileReceiveMutation(liveTile, 'meteor')) return;
@@ -1969,7 +2133,7 @@ function init() {
             }
         };
         currentFrameId = requestAnimationFrame(frame);
-        env.stargumCometFrames = [...(env.stargumCometFrames || []), currentFrameId];
+        stargumCometFrameSet().add(currentFrameId);
     }
 
     function triggerStargumCometMutation(idx, delay = 0) {
@@ -2635,7 +2799,9 @@ function init() {
 
     function gameTick() {
         env.ticks++;
+        const shopStateBefore = `${player.shop?.refreshAt || 0}|${player.shop?.merchantArrivesAt || 0}|${player.shop?.merchantLeavesAt || 0}`;
         updateShopState();
+        const shopStateChanged = shopStateBefore !== `${player.shop.refreshAt}|${player.shop.merchantArrivesAt}|${player.shop.merchantLeavesAt}`;
         ensureRewardsState();
         updateCompanionState();
         if (env.currentEvent !== 'day') {
@@ -2663,8 +2829,13 @@ function init() {
         }
 
         if (env.openMenuSections?.rewards) renderRewards();
-        if (document.getElementById('shop-modal')?.classList.contains('open')) renderShop();
-        renderActiveStatusStrip();
+        const shopOpen = document.getElementById('shop-modal')?.classList.contains('open');
+        const hatchPresentationOpen = !!document.querySelector('.egg-hatch-moment') || document.getElementById('pet-reveal')?.classList.contains('active');
+        if (shopOpen && !hatchPresentationOpen && (env.shopTab !== 'slimes' || !TEST_HATCH_INSTANT)) {
+            if (shopStateChanged) renderShop();
+            else updateOpenShopTimer();
+        }
+        if (document.getElementById('side-menu')?.classList.contains('open')) renderActiveStatusStrip();
         const menuBadge = document.getElementById('menu-badge');
         if (menuBadge) {
             const hasDoneQuests = player.quests.some(q => q.current >= q.target && !q.claimed);
@@ -2731,35 +2902,46 @@ function init() {
         const unlocked = isPlotUnlocked(idx);
         const levelUnlocked = isPlotLevelUnlocked(idx);
         const plotCost = getPlotPurchaseCost(idx);
-        const transientClasses = [...el.classList].filter(cls => TILE_TRANSIENT_EFFECT_CLASSES.has(cls));
         const previousGrowthStage = el.dataset.growthStage || 'empty';
         const nextGrowthStage = !t.active ? 'empty' : (t.growth < 30 ? 'seed' : (t.growth < 100 ? 'sprout' : 'ready'));
         const shouldPlaySproutEmerge = previousGrowthStage === 'seed' && nextGrowthStage === 'sprout';
+        const mutSig = t.mutations.join('|');
 
-        el.style.setProperty('--tile-layer', `${computeTileLayer(t, idx)}`);
-        
-        fill.style.width = `${t.growth}%`;
-        
-        // Пересобираем классы
-        el.className = 'tile';
-        transientClasses.forEach(cls => el.classList.add(cls));
-        if (!unlocked) el.classList.add('locked');
-        if (levelUnlocked && !unlocked) el.classList.add('plot-buyable');
-        if (t.active) el.classList.add('occupied');
-        if (t.active && t.growth < 30) el.classList.add('seed-stage');
-        else if (t.active && t.growth < 100) el.classList.add('sprout-stage');
-        if (t.water > 0) el.classList.add('wet');
-        if (t.slimeWater > 0) el.classList.add('slime-watered');
-        if (t.hasWeed) el.classList.add('has-weed');
-        if (t.growth >= 100) el.classList.add('ready');
-        if (t.beeLock > 0) el.classList.add('bee-arrived'); 
-        if (t.active && t.sizeTier) el.classList.add(`crop-${t.sizeTier}`);
-        if (t.ghostEcho || t.ghostValue > 0) el.classList.add('ghost-echo');
-        if (t.ghostMarked) el.classList.add('ghost-marked');
-        if (env.harvestSelectedTile === idx && (!currentTool || currentTool === 'harvest' || PLANTS[currentTool]) && t.active && t.growth >= 100) el.classList.add('harvest-selected');
-        if (t.mutations.length > 0) {
-            t.mutations.forEach(mId => el.classList.add(`mut-${mId}`));
-            el.classList.add(`primary-${t.mutations[0]}`);
+        const tileLayer = `${computeTileLayer(t, idx)}`;
+        if (el.dataset.tileLayer !== tileLayer) {
+            el.style.setProperty('--tile-layer', tileLayer);
+            el.dataset.tileLayer = tileLayer;
+        }
+
+        const growthWidth = `${Math.max(0, Math.min(100, t.growth)).toFixed(2)}%`;
+        if (fill.dataset.width !== growthWidth) {
+            fill.style.width = growthWidth;
+            fill.dataset.width = growthWidth;
+        }
+
+        const persistentClasses = ['tile'];
+        if (!unlocked) persistentClasses.push('locked');
+        if (levelUnlocked && !unlocked) persistentClasses.push('plot-buyable');
+        if (t.active) persistentClasses.push('occupied');
+        if (t.active && t.growth < 30) persistentClasses.push('seed-stage');
+        else if (t.active && t.growth < 100) persistentClasses.push('sprout-stage');
+        if (t.water > 0) persistentClasses.push('wet');
+        if (t.slimeWater > 0) persistentClasses.push('slime-watered');
+        if (t.hasWeed) persistentClasses.push('has-weed');
+        if (t.growth >= 100) persistentClasses.push('ready');
+        if (t.beeLock > 0) persistentClasses.push('bee-arrived');
+        if (t.active && t.sizeTier) persistentClasses.push(`crop-${t.sizeTier}`);
+        if (t.ghostEcho || t.ghostValue > 0) persistentClasses.push('ghost-echo');
+        if (t.ghostMarked) persistentClasses.push('ghost-marked');
+        if (env.harvestSelectedTile === idx && (!currentTool || currentTool === 'harvest' || PLANTS[currentTool]) && t.active && t.growth >= 100) persistentClasses.push('harvest-selected');
+        t.mutations.forEach(mId => persistentClasses.push(`mut-${mId}`));
+        if (t.mutations.length > 0) persistentClasses.push(`primary-${t.mutations[0]}`);
+        const persistentClassSig = persistentClasses.join(' ');
+        if (el.dataset.persistentClassSig !== persistentClassSig) {
+            const transientClasses = [...el.classList].filter(cls => TILE_TRANSIENT_EFFECT_CLASSES.has(cls));
+            el.className = persistentClassSig;
+            transientClasses.forEach(cls => el.classList.add(cls));
+            el.dataset.persistentClassSig = persistentClassSig;
         }
         if (shouldPlaySproutEmerge) {
             el.classList.add('sprout-emerge');
@@ -2767,12 +2949,14 @@ function init() {
         }
         el.dataset.growthStage = nextGrowthStage;
 
-        if (lock && lockLevel && lockPrice) {
+        const lockSig = `${unlocked}|${levelUnlocked}|${plotCost}`;
+        if (lock && lockLevel && lockPrice && el.dataset.lockSig !== lockSig) {
             lock.style.display = unlocked ? 'none' : 'flex';
             lockLevel.textContent = levelUnlocked ? '' : `ур. ${getPlotUnlockLevel(idx)}`;
             lockLevel.style.display = levelUnlocked ? 'none' : 'inline-flex';
             lockPrice.textContent = levelUnlocked && plotCost > 0 ? `${plotCost}$` : '';
             lockPrice.style.display = levelUnlocked && plotCost > 0 ? 'inline-flex' : 'none';
+            el.dataset.lockSig = lockSig;
         }
 
         const sproutRatio = t.active ? Math.max(0, Math.min(1, (t.growth - 30) / 70)) : 0;
@@ -2782,34 +2966,28 @@ function init() {
             visualPlantScale = (0.58 + easedSproutRatio * 0.42) * (t.scale || 1);
         }
         else if (t.active && t.growth >= 100) visualPlantScale = t.scale || 1;
-        wrapper.style.setProperty('--plant-scale', visualPlantScale.toFixed(3));
+        const plantScale = visualPlantScale.toFixed(3);
+        if (wrapper.dataset.plantScale !== plantScale) {
+            wrapper.style.setProperty('--plant-scale', plantScale);
+            wrapper.dataset.plantScale = plantScale;
+        }
 
-        const mutSig = t.mutations.join('|');
         const prevMutSig = aura.dataset.mutSig || '';
 
         if (prevMutSig !== mutSig) {
-            aura.innerHTML = '';
-            aura.className = 'mutation-aura';
-            candyAura.innerHTML = '';
-            candyAura.className = 'mutation-aura candy-front-aura';
-            mutContainer.innerHTML = '';
-
-            if (t.mutations.length > 0) {
-                t.mutations.forEach((mId, order) => {
-                    const m = MUTATIONS[mId];
-                    mutContainer.innerHTML += `<div class="mut-badge" style="--mut-color:${m.color};">${m.icon}</div>`;
-                    const targetAura = mId === 'candy' ? candyAura : aura;
-                    targetAura.innerHTML += mutationAuraEffectHTML(mId, m, order);
-                });
-                aura.classList.add('active', `stack-${Math.min(t.mutations.length, 3)}`);
-                if (candyAura.childElementCount) candyAura.classList.add('active');
-            }
-
+            renderMutationPresentation(t.mutations, aura, candyAura, mutContainer);
             aura.dataset.mutSig = mutSig;
         }
 
+        const hasToxicMutation = t.mutations.includes('toxic');
+        if (el.dataset.toxicPuddle !== `${hasToxicMutation}`) {
+            syncToxicPuddleMarkup(el, hasToxicMutation);
+            el.dataset.toxicPuddle = `${hasToxicMutation}`;
+        }
+
         // Капли мёда зависят от размера, но не должны перезапускать всю аурную анимацию.
-        if (t.mutations.includes('honey')) {
+        const honeyAccessorySig = `${t.mutations.includes('honey')}|${t.sizeTier || 'normal'}|${t.plantId || ''}`;
+        if (wrapper.dataset.honeyAccessorySig !== honeyAccessorySig && t.mutations.includes('honey')) {
             const honeyDrops = wrapper.querySelectorAll('.honey-drop');
             if (honeyDrops.length !== 3 || honeyDrops[0].dataset.sizeTier !== (t.sizeTier || 'normal')) {
                 honeyDrops.forEach(d => d.remove());
@@ -2829,47 +3007,64 @@ function init() {
                     wrapper.appendChild(drop);
                 }
             }
-        } else {
+            wrapper.dataset.honeyAccessorySig = honeyAccessorySig;
+        } else if (wrapper.dataset.honeyAccessorySig !== honeyAccessorySig) {
             wrapper.querySelectorAll('.honey-drop').forEach(d => d.remove());
+            wrapper.dataset.honeyAccessorySig = honeyAccessorySig;
         }
 
-        const ghostMarker = el.querySelector(':scope > .ghost-plant-marker');
-        const ghostTileBreath = el.querySelector(':scope > .ghost-tile-breath');
-        if (t.ghostMarked && t.active && t.ghostValue <= 0) {
-            if (!ghostMarker) {
-                el.insertAdjacentHTML('beforeend', '<i class="ghost-plant-marker" aria-hidden="true"><i class="ghost-plant-eyes"></i></i>');
+        const ghostVisualActive = t.ghostMarked && t.active && t.ghostValue <= 0;
+        if (el.dataset.ghostVisual !== `${ghostVisualActive}`) {
+            const ghostMarker = el.querySelector(':scope > .ghost-plant-marker');
+            const ghostTileBreath = el.querySelector(':scope > .ghost-tile-breath');
+            if (ghostVisualActive) {
+                if (!ghostMarker) el.insertAdjacentHTML('beforeend', '<i class="ghost-plant-marker" aria-hidden="true"><i class="ghost-plant-eyes"></i></i>');
+                if (!ghostTileBreath) el.insertAdjacentHTML('afterbegin', '<i class="ghost-tile-breath" aria-hidden="true"></i>');
+            } else {
+                ghostMarker?.remove();
+                ghostTileBreath?.remove();
             }
-            if (!ghostTileBreath) el.insertAdjacentHTML('afterbegin', '<i class="ghost-tile-breath" aria-hidden="true"></i>');
-        } else {
-            ghostMarker?.remove();
-            ghostTileBreath?.remove();
+            el.dataset.ghostVisual = `${ghostVisualActive}`;
         }
 
-        const honeyCap = model.querySelector('.honey-cap');
-        if (shouldUseHoneyCap(t.plantId, t.mutations)) {
-            if (!honeyCap) model.insertAdjacentHTML('beforeend', honeyCapHTML(t.plantId, t.mutations));
-        } else {
-            honeyCap?.remove();
+        const needsHoneyCap = shouldUseHoneyCap(t.plantId, t.mutations);
+        const honeyCapSig = `${needsHoneyCap}|${t.plantId || ''}`;
+        if (model.dataset.honeyCapSig !== honeyCapSig) {
+            const honeyCap = model.querySelector('.honey-cap');
+            if (needsHoneyCap) {
+                if (!honeyCap) model.insertAdjacentHTML('beforeend', honeyCapHTML(t.plantId, t.mutations));
+            } else honeyCap?.remove();
+            model.dataset.honeyCapSig = honeyCapSig;
         }
 
         if (!unlocked) {
             aura.innerHTML = '';
+            candyAura.innerHTML = '';
             mutContainer.innerHTML = '';
-            model.className = 'model';
+            if (model.className !== 'model') model.className = 'model';
             wrapper.querySelectorAll('.honey-drop').forEach(d => d.remove());
+            delete el.dataset.fxGeometrySig;
             return;
         }
 
+        let nextModelClass = 'model';
         if (t.active) {
             let stateClass = '';
             if (t.growth < 30) stateClass = 'model-seed growing'; 
             else if (t.growth < 100) stateClass = `sprout-${t.plantId} growing`; 
             else stateClass = `model-${t.plantId} ready`;
-            model.className = `model visible ${stateClass}`;
-        } else {
-            model.className = 'model';
+            nextModelClass = `model visible ${stateClass}`;
         }
-        queueModelBoundMutationGeometry(el, model);
+        if (model.className !== nextModelClass) model.className = nextModelClass;
+
+        const needsModelGeometry = t.mutations.length > 0 || t.hasWeed;
+        const fxGeometrySig = `${nextModelClass}|${plantScale}|${mutSig}|${t.hasWeed}|${t.sizeTier || 'normal'}`;
+        if (needsModelGeometry && el.dataset.fxGeometrySig !== fxGeometrySig) {
+            el.dataset.fxGeometrySig = fxGeometrySig;
+            queueModelBoundMutationGeometry(el, model);
+        } else if (!needsModelGeometry) {
+            delete el.dataset.fxGeometrySig;
+        }
 
         // The wrapper finishes scaling after this DOM update. Re-measure active mutation visuals
         // through stage changes so effects from a seed never retain the seed-sized geometry.
@@ -2879,7 +3074,12 @@ function init() {
     }
 
     function queueModelBoundMutationGeometry(tileEl, model) {
-        requestAnimationFrame(() => updateModelBoundMutationGeometry(tileEl, model));
+        if (!tileEl || tileEl.dataset.fxGeometryQueued === '1') return;
+        tileEl.dataset.fxGeometryQueued = '1';
+        requestAnimationFrame(() => {
+            delete tileEl.dataset.fxGeometryQueued;
+            updateModelBoundMutationGeometry(tileEl, model);
+        });
     }
 
     function updateModelBoundMutationGeometry(tileEl, model) {
@@ -2892,9 +3092,7 @@ function init() {
             ? Math.max(.1, Number.parseFloat(getComputedStyle(tileEl).getPropertyValue('--showcase-stage-scale')) || 1)
             : 1;
 
-        // External mutation effects share the tile's inner axis with every crop model.
-        // UNUSED (per-model horizontal center v1): wrapper/model offsets mixed border and padding
-        // coordinate systems, which gradually pushed puddles and halos to the right.
+        // External effects use the tile axis; model offsets can mix border and padding coordinates.
         const centerX = (tileEl.clientWidth || tileRect.width) / 2;
         const modelTop = (modelRect.top - tileRect.top) / showcaseStageScale;
         const modelBottom = (modelRect.bottom - tileRect.top) / showcaseStageScale;
@@ -2944,13 +3142,48 @@ function init() {
     function trackModelBoundMutationGeometry(tileEl, durationMs = 850) {
         if (!tileEl?.isConnected) return;
         const startedAt = performance.now();
+        let lastMeasuredAt = 0;
         const refresh = now => {
             if (!tileEl.isConnected) return;
-            const model = tileEl.querySelector('.model.visible');
-            if (model) updateModelBoundMutationGeometry(tileEl, model);
+            if (now - lastMeasuredAt >= 32) {
+                lastMeasuredAt = now;
+                const model = tileEl.querySelector('.model.visible');
+                if (model) updateModelBoundMutationGeometry(tileEl, model);
+            }
             if (now - startedAt < durationMs) requestAnimationFrame(refresh);
         };
         requestAnimationFrame(refresh);
+    }
+
+    function scheduleMutationGeometryRefresh() {
+        if (env.mutationGeometryRefreshFrame) return;
+        env.mutationGeometryRefreshFrame = requestAnimationFrame(() => {
+            env.mutationGeometryRefreshFrame = null;
+            document.querySelectorAll('#garden .tile').forEach(tileEl => {
+                const model = tileEl.querySelector('.model.visible');
+                if (!model || (!tileEl.className.includes('mut-') && !tileEl.classList.contains('has-weed'))) return;
+                delete tileEl.dataset.fxGeometrySig;
+                updateModelBoundMutationGeometry(tileEl, model);
+            });
+        });
+    }
+
+    function setupMutationPerformanceObservers() {
+        const garden = document.getElementById('garden');
+        env.mutationGeometryObserver?.disconnect?.();
+        if (garden && window.ResizeObserver) {
+            env.mutationGeometryObserver = new ResizeObserver(scheduleMutationGeometryRefresh);
+            env.mutationGeometryObserver.observe(garden);
+        } else if (!env.mutationResizeFallbackBound) {
+            window.addEventListener('resize', scheduleMutationGeometryRefresh, { passive: true });
+            env.mutationResizeFallbackBound = true;
+        }
+        const syncVisibility = () => document.documentElement.classList.toggle('app-effects-paused', document.hidden);
+        if (!env.mutationVisibilityBound) {
+            document.addEventListener('visibilitychange', syncVisibility, { passive: true });
+            env.mutationVisibilityBound = true;
+        }
+        syncVisibility();
     }
 
     function syncTileMutationPresentation(idx) {
@@ -2971,53 +3204,54 @@ function init() {
             el.classList.add(`primary-${t.mutations[0]}`);
         }
 
-        aura.innerHTML = '';
-        aura.className = 'mutation-aura';
-        candyAura.innerHTML = '';
-        candyAura.className = 'mutation-aura candy-front-aura';
-        mutContainer.innerHTML = '';
-
-        if (t.mutations.length > 0) {
-            t.mutations.forEach((mId, order) => {
-                const m = MUTATIONS[mId];
-                if (!m) return;
-                mutContainer.innerHTML += `<div class="mut-badge" style="--mut-color:${m.color};">${m.icon}</div>`;
-                const targetAura = mId === 'candy' ? candyAura : aura;
-                targetAura.innerHTML += mutationAuraEffectHTML(mId, m, order);
-            });
-            aura.classList.add('active', `stack-${Math.min(t.mutations.length, 3)}`);
-            if (candyAura.childElementCount) candyAura.classList.add('active');
-        }
+        renderMutationPresentation(t.mutations, aura, candyAura, mutContainer);
+        syncToxicPuddleMarkup(el, t.mutations.includes('toxic'));
+        el.dataset.toxicPuddle = `${t.mutations.includes('toxic')}`;
 
         aura.dataset.mutSig = t.mutations.join('|');
+        delete el.dataset.fxGeometrySig;
         queueModelBoundMutationGeometry(el, document.getElementById(`model-${idx}`));
     }
 
     function updateUI() {
-        document.getElementById('ui-coins').innerText = player.coins;
-        document.getElementById('ui-lvl').innerText = player.lvl;
-        document.getElementById('ui-xp-fill').style.width = `${Math.min(100, (player.xp / player.xpNeed) * 100)}%`;
+        const coins = document.getElementById('ui-coins');
+        const level = document.getElementById('ui-lvl');
+        const xpFill = document.getElementById('ui-xp-fill');
+        const xpWidth = `${Math.min(100, (player.xp / player.xpNeed) * 100).toFixed(2)}%`;
+        if (coins.textContent !== `${player.coins}`) coins.textContent = player.coins;
+        if (level.textContent !== `${player.lvl}`) level.textContent = player.lvl;
+        if (xpFill.dataset.width !== xpWidth) {
+            xpFill.style.width = xpWidth;
+            xpFill.dataset.width = xpWidth;
+        }
         let hasDoneQuests = player.quests.some(q => q.current >= q.target && !q.claimed);
         document.getElementById('menu-badge').style.display = (hasDoneQuests || hasClaimableRewards()) ? 'block' : 'none';
         updateMenuMarkers();
         renderSeeds();
         tiles.forEach((_, idx) => updateTileDOM(idx));
-        renderQuests();
-        renderActiveStatusStrip();
-        renderCompanion();
-        renderShowcase();
-        renderDiary();
-        renderRewards();
+        const menuOpen = document.getElementById('side-menu')?.classList.contains('open');
+        if (menuOpen) {
+            renderQuests();
+            renderActiveStatusStrip();
+            renderCompanion();
+            if (env.openMenuSections?.showcase) renderShowcase();
+            if (env.openMenuSections?.diary) renderDiary();
+            if (env.openMenuSections?.rewards) renderRewards();
+        } else {
+            renderCompanionAbility();
+        }
         applyDecorStyle();
         if (document.getElementById('shop-modal')?.classList.contains('open')) renderShop();
     }
 
     function realtimeUiTick() {
+        if (document.hidden) return;
         updateCompanionState();
         renderCompanionAbility();
-        if (document.getElementById('side-menu')?.classList.contains('open')) renderCompanionVitals();
+        const menuOpen = document.getElementById('side-menu')?.classList.contains('open');
+        if (menuOpen) renderCompanionVitals();
         updateStateIndicator();
-        renderActiveStatusStrip();
+        if (menuOpen) renderActiveStatusStrip();
     }
 
     function toggleMenu() {
@@ -3029,12 +3263,6 @@ function init() {
 
     function selectShopTab(tab) {
         env.shopTab = tab;
-        renderShop();
-    }
-
-    // UNUSED: the plot-style storefront is hidden while the shop's room tab is the single decor entry point.
-    function selectDecorShopTab(tab) {
-        env.decorShopTab = tab === 'room' ? 'room' : 'plots';
         renderShop();
     }
 
@@ -3087,13 +3315,18 @@ function init() {
     }
 
     function isSlimeDiscovered(petId) {
-        return (player.petInventory || []).some(pet => pet.id === petId);
+        return slimeCollectionEntry(petId).owned;
     }
 
     function renderEggCandidate(def) {
         const discovered = isSlimeDiscovered(def.id);
+        const collection = slimeCollectionEntry(def.id);
+        const marks = [['huge', 'H'], ['gold', 'G'], ['rainbow', 'R']]
+            .map(([variant, label]) => `<i class="variant-${variant} ${collection[variant] ? 'unlocked' : 'locked'}" title="${label === 'H' ? 'Huge' : label === 'G' ? 'Gold' : 'Rainbow'}">${label}</i>`)
+            .join('');
         return `<span class="egg-candidate rarity-${def.rarity || 'common'} ${discovered ? 'discovered' : 'unknown'}" title="${discovered ? def.name : 'Неизвестный слайм'}">
-            ${discovered ? slimeHTML(def, {}, 'inventory') : '<b>?</b>'}
+            <span class="egg-candidate-model">${discovered ? slimeHTML(def, {}, 'inventory') : '<b>?</b>'}</span>
+            <span class="egg-variant-marks">${marks}</span>
         </span>`;
     }
 
@@ -3111,13 +3344,13 @@ function init() {
         const readyAt = Number(item.readyAt) || now;
         const elapsed = Math.max(0, durationMs - Math.max(0, readyAt - now));
         const progress = Math.min(100, elapsed / durationMs * 100);
-        const ready = readyAt <= now;
+        const ready = TEST_HATCH_INSTANT || readyAt <= now;
         return `<button class="slime-incubator-slot rarity-${egg.id} ${ready ? 'ready' : ''} ${item.hatching ? 'hatching' : ''}" type="button" onclick="hatchIncubatorEgg(${slot})" ${ready && !item.hatching ? '' : 'disabled'}>
             <span class="incubator-slot-number">${slot + 1}</span>
             ${slimeEggModelHTML(egg.id, 'incubator-egg-model')}
             <b>${ready ? 'Яйцо готово!' : egg.label}</b>
             <small>${ready ? 'Нажми, чтобы открыть' : formatTime(readyAt - now)}</small>
-            <span class="slime-incubator-progress"><i style="width:${progress.toFixed(1)}%"></i></span>
+            ${TEST_HATCH_INSTANT ? '' : `<span class="slime-incubator-progress"><i style="width:${progress.toFixed(1)}%"></i></span>`}
         </button>`;
     }
 
@@ -3128,7 +3361,7 @@ function init() {
         const hasFreeSlot = player.incubator.some(slot => !slot);
         const affordable = player.coins >= egg.cost;
         return `<article class="slime-egg-card rarity-${rarityId}">
-            <div class="slime-egg-card-head"><span>${egg.label}</span><small>${formatTime(egg.hatchSeconds * 1000)}</small></div>
+            <div class="slime-egg-card-head"><span>${egg.label}</span>${TEST_HATCH_INSTANT ? '<small>Без ожидания</small>' : `<small>${formatTime(egg.hatchSeconds * 1000)}</small>`}</div>
             <div class="slime-egg-stage">${slimeEggModelHTML(rarityId)}</div>
             <div class="egg-candidate-row" aria-label="Возможные слаймы">${candidates.map(renderEggCandidate).join('')}</div>
             <button class="slime-egg-buy ${affordable && hasFreeSlot ? 'can-buy' : ''}" type="button" onclick="buySlimeEgg('${rarityId}')">
@@ -3156,7 +3389,7 @@ function init() {
         const now = Date.now();
         return `<div class="shop-pane slime-shop-pane">
             <section class="slime-shop-section incubator-section">
-                <div class="slime-shop-section-title"><span><b>Инкубатор</b><small>Яйца вылупляются со временем</small></span><em>${player.incubator.filter(Boolean).length}/3</em></div>
+                <div class="slime-shop-section-title"><span><b>Инкубатор</b><small>${TEST_HATCH_INSTANT ? 'Яйца готовы сразу' : 'Яйца вылупляются со временем'}</small></span><em>${player.incubator.filter(Boolean).length}/3</em></div>
                 <div class="slime-incubator-grid">${player.incubator.map((item, slot) => renderIncubatorSlot(item, slot, now)).join('')}</div>
             </section>
             <section class="slime-shop-section egg-market-section">
@@ -3276,7 +3509,7 @@ function init() {
     }
 
     function defaultCompanionState() {
-        return { name: 'Слайми', level: 1, xp: 0, slimeLevels: {}, hunger: 82, clean: 88, energy: 92, sleeping: false, skin: 'basic', abilityEnergy: 0, abilityCooldownUntil: 0, lastUpdate: Date.now(), hungerClock: 0, cleanClock: 0, energyClock: 0, cleanGraceUntil: 0 };
+        return { name: 'Слайми', level: 1, xp: 0, slimeLevels: {}, hunger: 82, clean: 88, energy: 92, sleeping: false, skin: 'basic', variant: 'normal', abilityEnergy: 0, abilityCooldownUntil: 0, lastUpdate: Date.now(), hungerClock: 0, cleanClock: 0, energyClock: 0, cleanGraceUntil: 0 };
     }
 
     function buySlimeEgg(rarityId) {
@@ -3312,30 +3545,88 @@ function init() {
         return pool[Math.floor(Math.random() * pool.length)] || null;
     }
 
+    function playEggHatchMoment(rarityId, onReveal) {
+        document.querySelector('.egg-hatch-moment')?.remove();
+        const requiredTaps = 5;
+        const burstPoints = [
+            [-72, -48], [-26, -82], [50, -66], [78, -8],
+            [44, 64], [-18, 78], [-70, 34], [4, -72]
+        ];
+        const particles = burstPoints.map(([x, y], index) =>
+            `<i style="--tx:${x}px;--ty:${y}px;--delay:${(index % 3) * 22}ms"></i>`
+        ).join('');
+        const moment = document.createElement('div');
+        moment.className = `egg-hatch-moment rarity-${rarityId}`;
+        moment.innerHTML = `<button class="egg-hatch-scene" type="button" aria-label="Нажимай на яйцо, чтобы оно вылупилось">
+            <span class="egg-hatch-aura"></span>
+            <span class="egg-hatch-ring"></span>
+            <span class="egg-hatch-egg">
+                ${slimeEggModelHTML(rarityId, 'hatch-hero-egg')}
+                <svg class="egg-hatch-cracks" viewBox="0 0 76 98" aria-hidden="true">
+                    <path d="M39 18 L34 31 L41 39 L36 51"></path>
+                    <path d="M40 39 L52 34 L61 44"></path>
+                    <path d="M36 50 L24 57 L16 69"></path>
+                    <path d="M36 50 L44 63 L39 77"></path>
+                    <path d="M44 63 L57 69 L63 82"></path>
+                </svg>
+            </span>
+            <span class="egg-hatch-flash"></span>
+            <span class="egg-hatch-particles">${particles}</span>
+            <span class="egg-hatch-hint"><i></i><i></i><i></i><i></i><i></i></span>
+        </button>`;
+        document.body.appendChild(moment);
+        requestAnimationFrame(() => requestAnimationFrame(() => moment.classList.add('play')));
+        sfx.play('pop');
+        let taps = 0;
+        let completed = false;
+        const scene = moment.querySelector('.egg-hatch-scene');
+        const egg = moment.querySelector('.egg-hatch-egg');
+        scene.addEventListener('pointerdown', event => {
+            event.preventDefault();
+            if (completed) return;
+            taps += 1;
+            moment.classList.add(`crack-${taps}`);
+            egg.classList.remove('tilt-left', 'tilt-right');
+            egg.classList.add(taps % 2 ? 'tilt-left' : 'tilt-right');
+            navigator.vibrate?.(taps >= requiredTaps ? 30 : 12);
+            if (taps < requiredTaps) {
+                sfx.play('pop');
+                return;
+            }
+            completed = true;
+            scene.disabled = true;
+            moment.classList.add('input-locked');
+            moment.classList.add('burst');
+            sfx.play('mut');
+            setTimeout(() => {
+                onReveal();
+                moment.classList.add('revealed');
+            }, 1020);
+            setTimeout(() => moment.remove(), 2100);
+        });
+    }
+
     function hatchIncubatorEgg(slot) {
         const item = player.incubator[slot];
-        if (!item || item.hatching || Number(item.readyAt) > Date.now()) return;
-        if (player.petInventory.length >= (BALANCE.petInventoryMax || 8)) {
-            showToast('Нет места для нового слайма', '#ff7675');
-            return;
-        }
+        if (!item || item.hatching || (!TEST_HATCH_INSTANT && Number(item.readyAt) > Date.now())) return;
         const picked = rollSlimeFromEgg(item.rarity);
         if (!picked) {
             showToast('В этом яйце пока никого нет', '#a29bfe');
             return;
         }
         item.hatching = true;
-        renderShop();
-        sfx.play('pop');
-        setTimeout(() => {
-            const pet = addPetToInventory(picked.id, rollPetVariant());
+        const slotElement = document.querySelector(`.slime-incubator-slot[onclick="hatchIncubatorEgg(${slot})"]`);
+        if (slotElement) {
+            slotElement.classList.add('hatching');
+            slotElement.disabled = true;
+        }
+        playEggHatchMoment(item.rarity, () => {
+            const pet = unlockSlimeCollectible(picked.id, rollPetVariant());
             player.incubator[slot] = null;
-            showPetReveal(pet);
-            renderCompanion();
-            updateUI();
-            if (document.getElementById('shop-modal')?.classList.contains('open')) renderShop();
+            showPetReveal(pet, true);
+            env.pendingSlimeShopRefresh = true;
             saveGame();
-        }, 900);
+        });
     }
 
     async function watchMysteryEggAd() {
@@ -3402,6 +3693,7 @@ function init() {
         });
         player.companion.cleanGraceUntil = Math.max(0, Number(player.companion.cleanGraceUntil) || 0);
         if (player.companion.skin !== 'basic' && !PET_DEFS[player.companion.skin]) player.companion.skin = 'basic';
+        if (!['normal', 'huge', 'gold', 'rainbow'].includes(player.companion.variant)) player.companion.variant = 'normal';
         player.companion.sleeping = !!player.companion.sleeping;
         player.companion.lastUpdate = Number(player.companion.lastUpdate) || Date.now();
     }
@@ -3775,7 +4067,10 @@ function init() {
         const cooldownLeft = Math.max(0, Math.ceil(((pet.abilityCooldownUntil || 0) - now) / 1000));
         const ready = hasAbility && energy >= 100 && cooldownLeft <= 0;
         const meta = companionAbilityMeta();
-        if (root) {
+        const menuOpen = document.getElementById('side-menu')?.classList.contains('open');
+        const rootSignature = `${player.companion.skin}|${energy}|${cooldownLeft}|${ready ? 1 : 0}|${meta.symbol}`;
+        if (root && menuOpen && root.dataset.renderSignature !== rootSignature) {
+            root.dataset.renderSignature = rootSignature;
             root.style.setProperty('--ability-color', meta.color);
             root.style.setProperty('--ability-dark', meta.dark);
             const segments = root.querySelectorAll('.companion-ability-meter i');
@@ -3784,20 +4079,22 @@ function init() {
             root.classList.toggle('is-ready', ready);
             root.classList.toggle('is-cooling', cooldownLeft > 0);
             root.classList.toggle('no-ability', !hasAbility);
+            const name = document.getElementById('companion-ability-name');
+            const percent = document.getElementById('companion-ability-percent');
+            const cooldown = document.getElementById('companion-ability-cooldown');
+            const button = document.getElementById('companion-ability-button');
+            if (name) name.textContent = companionAbilityName();
+            if (percent) percent.textContent = `${energy}%`;
+            if (cooldown) cooldown.textContent = cooldownLeft > 0 ? `КД: ${formatCompanionAbilityCooldown(cooldownLeft)}` : (ready ? 'Готова' : 'КД: нет');
+            if (button) {
+                button.disabled = !ready;
+                const icon = button.querySelector('span');
+                if (icon) icon.textContent = meta.symbol;
+            }
         }
-        const name = document.getElementById('companion-ability-name');
-        const percent = document.getElementById('companion-ability-percent');
-        const cooldown = document.getElementById('companion-ability-cooldown');
-        const button = document.getElementById('companion-ability-button');
-        if (name) name.textContent = companionAbilityName();
-        if (percent) percent.textContent = `${energy}%`;
-        if (cooldown) cooldown.textContent = cooldownLeft > 0 ? `КД: ${formatCompanionAbilityCooldown(cooldownLeft)}` : (ready ? 'Готова' : 'КД: нет');
-        if (button) {
-            button.disabled = !ready;
-            const icon = button.querySelector('span');
-            if (icon) icon.textContent = meta.symbol;
-        }
-        if (quickButton) {
+        const quickSignature = `${player.companion.skin}|${energy}|${cooldownLeft}|${ready ? 1 : 0}|${meta.symbol}`;
+        if (quickButton && quickButton.dataset.renderSignature !== quickSignature) {
+            quickButton.dataset.renderSignature = quickSignature;
             quickButton.disabled = !ready;
             quickButton.style.setProperty('--quick-ability-color', meta.color);
             quickButton.style.setProperty('--quick-ability-dark', meta.dark);
@@ -3900,6 +4197,8 @@ function init() {
         }
         root.classList.toggle('is-sleeping', pet.sleeping);
         root.classList.toggle('is-dirty', pet.clean < 35);
+        ['normal', 'huge', 'gold', 'rainbow'].forEach(variant => root.classList.remove(`companion-variant-${variant}`));
+        root.classList.add(`companion-variant-${player.companion.variant || 'normal'}`);
         applyCompanionRoomStyle(root);
         applyCompanionDirt(root, pet.clean);
         const sleepBtn = document.getElementById('companion-sleep-btn');
@@ -3933,7 +4232,7 @@ function init() {
         root.classList.add(`room-style-${player.roomStyle || 'cozy'}`);
     }
 
-    function renderCompanion() {
+    function renderCompanion(renderDrawer = true) {
         const root = document.getElementById('companion-panel');
         if (!root) return;
         updateCompanionState();
@@ -3943,26 +4242,32 @@ function init() {
         const basicDef = { id: 'basic', rarity: 'common', face: 'happy', slime: { body: '#72db68', shade: '#35a84c', blush: '#ffc1cf', decor: 'none' } };
         const mood = companionMood();
         const renderedDef = { ...(def || basicDef), face: companionFaceForMood(def || basicDef, mood) };
-        const growth = 0.45 + ((levelState.level - 1) / 14) * 1.05;
+        const activeVariant = companionVariantPet();
+        const growth = 0.45 * 1.3;
         const need = companionXpNeed(levelState.level);
         const xpPercent = levelState.level >= 15 ? 100 : Math.min(100, levelState.xp / need * 100);
         root.classList.toggle('is-sleeping', pet.sleeping);
         root.classList.toggle('is-dirty', pet.clean < 35);
         applyCompanionDirt(root, pet.clean);
         root.classList.toggle('is-shower-mode', !!env.companionShower);
+        ['normal', 'huge', 'gold', 'rainbow'].forEach(variant => root.classList.remove(`companion-variant-${variant}`));
+        root.classList.add(`companion-variant-${player.companion.variant || 'normal'}`);
         const nameButton = document.getElementById('companion-name');
-        const editMark = document.createElement('span');
-        editMark.setAttribute('aria-hidden', 'true');
-        editMark.textContent = '✎';
-        nameButton.replaceChildren(document.createTextNode(`${pet.name} `), editMark);
+        if (nameButton.dataset.name !== pet.name) {
+            const editMark = document.createElement('span');
+            editMark.setAttribute('aria-hidden', 'true');
+            editMark.textContent = '✎';
+            nameButton.replaceChildren(document.createTextNode(`${pet.name} `), editMark);
+            nameButton.dataset.name = pet.name;
+        }
         document.getElementById('companion-level').textContent = levelState.level;
         const stage = document.getElementById('companion-stage');
-        stage.style.setProperty('--companion-growth', growth.toFixed(3));
-        stage.className = `companion-stage skin-${def?.id || 'basic'} mood-${mood}`;
+        stage.style.setProperty('--companion-growth', (growth * (player.companion.variant === 'huge' ? 1.65 : 1)).toFixed(3));
+        stage.className = `companion-stage skin-${def?.id || 'basic'} mood-${mood} variant-${player.companion.variant || 'normal'}`;
         stage.classList.toggle('is-tapped', !!env.companionTapTimer);
         stage.classList.toggle('is-petting', !!env.companionPetting);
         if ((env.companionPointerId === null && !env.companionTapTimer) || !stage.querySelector('.slime-pet')) {
-            stage.innerHTML = `<span class="companion-mood-aura" aria-hidden="true"></span>${slimeHTML(renderedDef, {}, 'featured')}`;
+            stage.innerHTML = `<span class="companion-mood-aura" aria-hidden="true"></span>${slimeHTML(renderedDef, activeVariant, 'featured')}`;
         }
         applyCompanionFace(stage, def || basicDef, mood);
         syncCompanionSpecialClasses();
@@ -3971,11 +4276,16 @@ function init() {
         // The room name is now shown in the shop; older markup may still provide this optional label.
         const companionRoomName = document.getElementById('companion-room-name');
         if (companionRoomName) companionRoomName.textContent = ROOM_DECOR_STYLES[player.roomStyle || 'cozy']?.name || 'Уют';
-        document.getElementById('companion-stats').innerHTML = [
-            companionStatHTML('satiety', 'Сытость', pet.hunger, '#ef9c39', '●', 'Корм', '🥕', 'toggleCompanionFeed()'),
-            companionStatHTML('clean', 'Чистота', pet.clean, '#42bde9', '◆', 'Мыть', '🚿', 'toggleCompanionShower()', 'companion-wash-btn'),
-            companionStatHTML('energy', 'Бодрость', pet.energy, '#8a73df', '◐', 'Спать', '🌙', 'toggleCompanionSleep()', 'companion-sleep-btn')
-        ].join('');
+        const statsRoot = document.getElementById('companion-stats');
+        const statsSignature = `${Math.round(pet.hunger)}|${Math.round(pet.clean)}|${Math.round(pet.energy)}|${pet.sleeping ? 1 : 0}`;
+        if (statsRoot.dataset.renderSignature !== statsSignature) {
+            statsRoot.dataset.renderSignature = statsSignature;
+            statsRoot.innerHTML = [
+                companionStatHTML('satiety', 'Сытость', pet.hunger, '#ef9c39', '●', 'Корм', '🥕', 'toggleCompanionFeed()'),
+                companionStatHTML('clean', 'Чистота', pet.clean, '#42bde9', '◆', 'Мыть', '🚿', 'toggleCompanionShower()', 'companion-wash-btn'),
+                companionStatHTML('energy', 'Бодрость', pet.energy, '#8a73df', '◐', 'Спать', '🌙', 'toggleCompanionSleep()', 'companion-sleep-btn')
+            ].join('');
+        }
         const sleepActionBtn = document.getElementById('companion-sleep-btn');
         if (sleepActionBtn) sleepActionBtn.querySelector('b').textContent = 'Спать';
         const feedBtn = root.querySelector('.companion-stat-action.satiety');
@@ -3984,7 +4294,7 @@ function init() {
         if (washBtn) washBtn.disabled = pet.sleeping;
         document.getElementById('companion-wash-btn').classList.toggle('active', !!env.companionShower);
         renderCompanionAbility();
-        renderCompanionDrawer();
+        if (renderDrawer) renderCompanionDrawer();
     }
 
     function renderCompanionDrawer() {
@@ -4007,21 +4317,8 @@ function init() {
             }).join('') : '<div class="companion-empty"><b>Нет готового урожая</b><small>Вырастите растение на грядке</small></div>'}</div>`;
             return;
         }
-        // UNUSED: level details now open as a focused modal card above the game.
-        if (env.companionDrawer === 'level') {
-            const levelState = syncCurrentCompanionLevel();
-            const need = companionXpNeed(levelState.level);
-            const xpPercent = levelState.level >= 15 ? 100 : Math.min(100, levelState.xp / need * 100);
-            drawer.innerHTML = `<div class="companion-drawer-head"><span><b>Уровень - ${player.companion.name}</b><small>Прогресс питомца</small></span><button type="button" onclick="closeCompanionDrawer()">×</button></div>
-                <div class="companion-level-card">
-                    <strong>Уровень ${levelState.level}</strong>
-                    <i><em style="width:${xpPercent}%"></em></i>
-                    <small>${levelState.level >= 15 ? 'Максимальный уровень' : `${Math.floor(levelState.xp)} / ${need} XP до уровня`}</small>
-                </div>`;
-            return;
-        }
         const rarityOrder = { common: 0, rare: 1, legendary: 2, secret: 3 };
-        const skinIds = ['basic', ...Object.keys(PET_DEFS).sort((a, b) => {
+        const skinIds = ['basic', ...Object.keys(PET_DEFS).filter(id => slimeCollectionEntry(id).owned).sort((a, b) => {
             const rankA = rarityOrder[PET_DEFS[a]?.rarity] ?? 99;
             const rankB = rarityOrder[PET_DEFS[b]?.rarity] ?? 99;
             return rankA - rankB;
@@ -4042,13 +4339,22 @@ function init() {
         drawer.innerHTML = `<div class="companion-drawer-head"><span><b>Слаймы</b><small>Выберите слайма</small></span><button type="button" onclick="closeCompanionDrawer()">×</button></div><div class="companion-skin-list">${skinIds.map(id => {
             const def = PET_DEFS[id];
             const selected = player.companion.skin === id;
+            const collection = slimeCollectionEntry(id);
+            const owned = id === 'basic' || collection.owned;
+            const selectedVariant = selected ? (player.companion.variant || 'normal') : 'normal';
             const previewDef = def || { rarity: 'common', face: 'happy', slime: { body: '#72db68', shade: '#35a84c', blush: '#ffc1cf', decor: 'none' } };
             const rarity = def?.rarity || 'common';
             const state = companionLevelState(id);
-            return `<article class="companion-skin-card rarity-${rarity} ${selected ? 'selected' : ''}">
-                <div class="companion-skin-preview">${slimeHTML(previewDef, {}, 'inventory')}</div>
-                <div class="companion-skin-copy"><b>${def ? def.name : 'Базовый слайм'}</b>${companionSkinStars(previewDef)}<small>Уровень ${state.level}</small></div>
-                <button type="button" onclick="selectCompanionSkin('${id}')" ${selected ? 'disabled' : ''}>${selected ? 'Выбран' : 'Выбрать'}</button>
+            const variantButtons = [['huge', 'H', 'Huge'], ['gold', 'G', 'Gold'], ['rainbow', 'R', 'Rainbow']].map(([variant, label, title]) => {
+                const unlocked = !!collection[variant];
+                const active = selected && selectedVariant === variant;
+                return `<button class="companion-variant-btn variant-${variant} ${active ? 'active' : ''} ${unlocked ? 'unlocked' : 'locked'}" type="button" title="${title}" onclick="selectCompanionVariant('${id}','${variant}')" ${unlocked ? '' : 'disabled'}>${label}</button>`;
+            }).join('');
+            return `<article class="companion-skin-card rarity-${rarity} ${selected ? 'selected' : ''} ${owned ? 'owned' : 'locked'}" data-slime-id="${id}">
+                <div class="companion-skin-preview">${owned ? slimeHTML(previewDef, companionVariantPet(selectedVariant), 'inventory') : '<span class="companion-skin-locked">?</span>'}</div>
+                <div class="companion-skin-copy"><b>${def ? def.name : 'Базовый слайм'}</b>${companionSkinStars(previewDef)}<small>${owned ? `Уровень ${state.level}` : 'Не открыт'}</small></div>
+                <button type="button" onclick="selectCompanionSkin('${id}')" ${!owned || selected ? 'disabled' : ''}>${selected ? 'Выбран' : owned ? 'Выбрать' : 'Закрыт'}</button>
+                <div class="companion-variant-row" aria-label="Открытые версии">${variantButtons}</div>
             </article>`;
         }).join('')}</div>`;
     }
@@ -4201,6 +4507,18 @@ function init() {
             </section>
             <small class="companion-level-modal-close">Нажмите в любом месте, чтобы закрыть</small>
         `;
+    }
+
+    function updateOpenShopTimer() {
+        if (env.shopTab !== 'seeds' && env.shopTab !== 'merchant') return;
+        const timer = document.querySelector('#shop-content .shop-info-banner.with-timer b');
+        if (!timer) return;
+        const now = Date.now();
+        const seconds = env.shopTab === 'seeds'
+            ? Math.max(0, Math.ceil((player.shop.refreshAt - now) / 1000))
+            : Math.max(0, Math.ceil(((player.shop.merchantLeavesAt || player.shop.merchantArrivesAt) - now) / 1000));
+        const label = formatEventTimer(seconds);
+        if (timer.textContent !== label) timer.textContent = label;
     }
 
     function closeCompanionLevelModal() {
@@ -4432,14 +4750,54 @@ function init() {
 
     function selectCompanionSkin(id) {
         if (id !== 'basic' && !PET_DEFS[id]) return;
+        if (id !== 'basic' && !slimeCollectionEntry(id).owned) return;
         clearCompanionSpecial(false);
         player.companion.skin = id;
+        player.companion.variant = 'normal';
         syncCurrentCompanionLevel();
-        env.companionDrawer = '';
         sfx.play('pop');
-        renderCompanion();
+        renderCompanion(false);
+        updateCompanionVariantCards();
         scheduleCompanionSpecial();
         saveGame();
+    }
+
+    function selectCompanionVariant(id, variant) {
+        if ((id !== 'basic' && !PET_DEFS[id]) || !['huge', 'gold', 'rainbow'].includes(variant)) return;
+        const collection = slimeCollectionEntry(id);
+        if (!collection.owned || !collection[variant]) return;
+        clearCompanionSpecial(false);
+        const alreadyActive = player.companion.skin === id && player.companion.variant === variant;
+        player.companion.skin = id;
+        player.companion.variant = alreadyActive ? 'normal' : variant;
+        syncCurrentCompanionLevel();
+        sfx.play('pop');
+        renderCompanion(false);
+        updateCompanionVariantCards();
+        scheduleCompanionSpecial();
+        saveGame();
+    }
+
+    function updateCompanionVariantCards() {
+        const list = document.querySelector('.companion-skin-list');
+        if (!list) return;
+        list.querySelectorAll('.companion-skin-card[data-slime-id]').forEach(card => {
+            const id = card.dataset.slimeId;
+            const selected = player.companion.skin === id;
+            const activeVariant = selected ? (player.companion.variant || 'normal') : 'normal';
+            const def = PET_DEFS[id] || { rarity: 'common', face: 'happy', slime: { body: '#72db68', shade: '#35a84c', blush: '#ffc1cf', decor: 'none' } };
+            card.classList.toggle('selected', selected);
+            const preview = card.querySelector('.companion-skin-preview');
+            if (preview) preview.innerHTML = slimeHTML(def, companionVariantPet(activeVariant), 'inventory');
+            const selectButton = card.querySelector(':scope > button');
+            if (selectButton) {
+                selectButton.disabled = selected;
+                selectButton.textContent = selected ? 'Выбран' : 'Выбрать';
+            }
+            card.querySelectorAll('.companion-variant-btn').forEach(button => {
+                button.classList.toggle('active', selected && button.classList.contains(`variant-${activeVariant}`));
+            });
+        });
     }
 
     function selectCompanionRoom(id) {
@@ -4759,7 +5117,13 @@ function init() {
         if (panel) panel.classList.toggle('open', !!env.openMenuSections[section]);
         if (mark) mark.textContent = env.openMenuSections[section] ? '−' : '＋';
         if (section === 'diary' && env.openMenuSections[section]) renderDiary();
-        if (section === 'showcase' && env.openMenuSections[section]) renderShowcase();
+        if (section === 'showcase') {
+            if (env.openMenuSections[section]) renderShowcase();
+            else {
+                document.getElementById('showcase-slots')?.replaceChildren();
+                document.getElementById('showcase-picker')?.replaceChildren();
+            }
+        }
         if (section === 'decor' && env.openMenuSections[section]) renderDecorShop();
         if (section === 'rewards' && env.openMenuSections[section]) renderRewards();
     }
@@ -4965,8 +5329,12 @@ function init() {
             if (!garden.classList.contains('garden') || !garden.classList.contains(styleClass) || hasOtherStyle) {
                 garden.className = `garden ${styleClass}`;
             }
-            applyDecorVars(garden);
-            renderPaintPalette(garden);
+            const decorSignature = `${player.plotStyle || 'default'}|${player.decorPaintColor || DECOR_PAINT_COLORS[0]}`;
+            if (garden.dataset.decorSignature !== decorSignature) {
+                garden.dataset.decorSignature = decorSignature;
+                applyDecorVars(garden);
+                renderPaintPalette(garden);
+            }
             syncBackroomsLamp(garden);
         }
     }
@@ -5073,25 +5441,6 @@ function init() {
         if (!player.rewards.timedCooldownUntil && player.rewards.timedClaimed.every(Boolean)) {
             player.rewards.timedCooldownUntil = now + TIMED_REWARD_COOLDOWN;
         }
-    }
-
-    // UNUSED in the room shop: kept for old saves and possible restoration of plot-style purchases.
-    function buyOrSelectDecor(styleId) {
-        const style = DECOR_STYLES[styleId];
-        if (!style) return;
-        if (player.lvl < (style.lvl || 1)) { showToast(`Нужен уровень ${style.lvl}`, "#ff7675"); return; }
-        if (!Array.isArray(player.ownedDecor)) player.ownedDecor = ['default'];
-        const bought = player.ownedDecor.includes(styleId);
-        if (!bought) {
-            if (player.coins < style.cost) { showToast(`Нужно ${style.cost} монет`, "#ff7675"); return; }
-            player.coins -= style.cost;
-            player.ownedDecor.push(styleId);
-            sfx.play('coin');
-        } else {
-            sfx.play('pop');
-        }
-        player.plotStyle = styleId;
-        updateUI();
     }
 
     function buyOrSelectRoomDecor(styleId) {
@@ -5330,7 +5679,7 @@ function init() {
         player = {
             coins: BALANCE.startCoins || 50, lvl: 1, xp: 0, xpNeed: BALANCE.xpNeedStart || 100,
             rares: {}, unlockedMutations: [],
-            pets: [], petLevels: {}, petInventory: [], equippedPets: [null, null, null], unlockedPetSlots: 1,
+            pets: [], petLevels: {}, petInventory: [], equippedPets: [null, null, null], unlockedPetSlots: 1, slimeCollection: {},
             incubator: [null, null, null], quests: [], lastSaved: Date.now(), bank: 0,
             plotStyle: 'default', ownedDecor: ['default'], decorPaintColor: '#ff7675', roomStyle: 'cozy', ownedRoomDecor: ['cozy'], purchasedPlots: defaultPurchasedPlots(),
             seedInventory: defaultSeedInventory(),
@@ -5457,11 +5806,15 @@ function init() {
     }
 
     function renderQuests() {
-        const c = document.getElementById('quests-container'); c.innerHTML = '';
-        player.quests.forEach((q, i) => {
+        const c = document.getElementById('quests-container');
+        if (!c) return;
+        const signature = player.quests.map(q => `${q.id}:${q.current}:${q.target}:${q.claimed ? 1 : 0}`).join('|');
+        if (c.dataset.renderSignature === signature) return;
+        c.dataset.renderSignature = signature;
+        c.innerHTML = player.quests.map((q, i) => {
             let pct = Math.min(100, (q.current / q.target) * 100); let done = q.current >= q.target;
-            c.innerHTML += `<div class="quest-card ${done ? 'done' : ''} ${q.claimed ? 'claimed' : ''}"><div class="quest-title">${q.desc}</div><div class="quest-progress"><div class="quest-fill" style="width:${pct}%"></div></div><div class="quest-reward"><span>Награда: ${q.reward}$</span>${!q.claimed ? `<button class="btn-claim" onclick="claimQuest(${i})">Забрать</button>` : '<span>✓</span>'}</div></div>`;
-        });
+            return `<div class="quest-card ${done ? 'done' : ''} ${q.claimed ? 'claimed' : ''}"><div class="quest-title">${q.desc}</div><div class="quest-progress"><div class="quest-fill" style="width:${pct}%"></div></div><div class="quest-reward"><span>Награда: ${q.reward}$</span>${!q.claimed ? `<button class="btn-claim" onclick="claimQuest(${i})">Забрать</button>` : '<span>✓</span>'}</div></div>`;
+        }).join('');
     }
 
     function claimQuest(idx) {
@@ -5472,29 +5825,23 @@ function init() {
         }
     }
 
-    function addPetToInventory(petId, variant = {}) {
-        const pet = {
-            uid: `pet-${Date.now()}-${Math.floor(Math.random() * 9999)}`,
-            id: petId,
-            level: 1,
-            hunger: 100,
-            size: variant.size || 'normal',
-            shiny: variant.shiny || 'normal',
-            happy: false
-        };
-        player.petInventory.push(pet);
-        if (!player.equippedPets[0]) player.equippedPets[0] = pet.uid;
-        return pet;
-    }
-
-    function showPetReveal(pet) {
+    function showPetReveal(pet, fromEgg = false) {
         const def = PET_DEFS[pet.id]; const style = PET_RARITY_STYLE[def.rarity] || PET_RARITY_STYLE.common;
+        const revealVariant = pet.shiny === 'rainbow' ? 'rainbow' : pet.shiny === 'gold' ? 'gold' : pet.size === 'huge' ? 'huge' : 'normal';
         const overlay = document.getElementById('pet-reveal');
         const card = document.getElementById('pet-reveal-card');
+        const revealPoints = [[-122,-82],[-42,-138],[62,-126],[132,-46],[108,82],[28,138],[-76,118],[-136,18]];
+        const revealEffect = fromEgg ? `<div class="pet-reveal-effects" aria-hidden="true">
+            <b></b><b></b>
+            ${revealPoints.map(([x, y], index) => `<i style="--fx:${x}px;--fy:${y}px;--fx-delay:${(index % 4) * 45}ms"></i>`).join('')}
+        </div>` : '';
+        overlay.style.setProperty('--rarity-color', style.color);
         card.style.setProperty('--rarity-color', style.color);
-        card.className = `pet-reveal-card rarity-${def.rarity} ${pet.shiny === 'gold' ? 'card-gold' : ''} ${pet.shiny === 'rainbow' ? 'card-rainbow' : ''} ${pet.size === 'huge' ? 'card-huge' : ''}`;
+        overlay.className = `pet-reveal${fromEgg ? ` egg-reveal rarity-${def.rarity}` : ''}`;
+        card.className = `pet-reveal-card rarity-${def.rarity} ${fromEgg ? 'egg-card-arrival' : ''} ${pet.shiny === 'gold' ? 'card-gold' : ''} ${pet.shiny === 'rainbow' ? 'card-rainbow' : ''} ${pet.size === 'huge' ? 'card-huge' : ''}`;
         card.innerHTML = `
-            <div class="pet-reveal-sprite">${slimeHTML(def, pet, 'reveal')}</div>
+            ${revealEffect}
+            <div class="pet-reveal-sprite"><span class="pet-reveal-material variant-${revealVariant}">${slimeHTML(def, pet, 'reveal')}</span></div>
             <div class="pet-reveal-rarity">${petRarityHTML(pet, def)}</div>
             <div class="pet-reveal-name">${petDisplayName(pet)}</div>
             <div class="pet-reveal-role">Новый слайм<br><b>${def.name}</b></div>
@@ -5503,7 +5850,12 @@ function init() {
     }
 
     function closePetReveal() {
-        document.getElementById('pet-reveal').classList.remove('active');
+        const overlay = document.getElementById('pet-reveal');
+        overlay.classList.remove('active', 'egg-reveal', 'rarity-common', 'rarity-rare', 'rarity-legendary', 'rarity-secret');
+        if (env.pendingSlimeShopRefresh) {
+            env.pendingSlimeShopRefresh = false;
+            if (document.getElementById('shop-modal')?.classList.contains('open')) renderShop();
+        }
     }
 
     function formatTime(ms) {
@@ -5579,7 +5931,7 @@ function init() {
             rarity: rarityId,
             startedAt: now,
             duration: egg.hatchSeconds,
-            readyAt: now + egg.hatchSeconds * 1000,
+            readyAt: TEST_HATCH_INSTANT ? now : now + egg.hatchSeconds * 1000,
             hatching: false,
             ready: false
         };
@@ -5588,11 +5940,9 @@ function init() {
 
     function grantSecretSlimeReward() {
         const pool = Object.values(PET_DEFS).filter(def => def.secret);
-        if (!pool.length || player.petInventory.length >= (BALANCE.petInventoryMax || 8)) {
-            return { blocked: true, message: 'Нет мест для слайма' };
-        }
+        if (!pool.length) return { blocked: true, message: 'Слаймы пока недоступны' };
         const picked = pool[Math.floor(Math.random() * pool.length)];
-        const pet = addPetToInventory(picked.id, rollPetVariant());
+        const pet = unlockSlimeCollectible(picked.id, rollPetVariant());
         showPetReveal(pet);
         return { pet };
     }
@@ -5705,6 +6055,9 @@ function init() {
         const list = document.getElementById('active-status-list');
         if (!panel || !list) return;
         const statuses = activeStatusEntries().slice(0, 3);
+        const signature = statuses.map(status => `${status.id}:${status.time}`).join('|');
+        if (panel.dataset.renderSignature === signature) return;
+        panel.dataset.renderSignature = signature;
         panel.style.display = statuses.length ? 'block' : 'none';
         if (!statuses.length) {
             list.innerHTML = '';
@@ -5983,7 +6336,7 @@ function init() {
             player.bank += Math.floor((incomePerHour * cappedSeconds) / 3600);
         }
         player.lastSaved = Date.now();
-        renderShowcase();
+        if (env.openMenuSections?.showcase) renderShowcase();
     }
 
     function claimBank() {
@@ -6055,7 +6408,7 @@ function init() {
                 ...item,
                 duration,
                 startedAt,
-                readyAt: Math.max(startedAt, Number(item.readyAt) || startedAt + duration * 1000),
+                readyAt: TEST_HATCH_INSTANT ? startedAt : Math.max(startedAt, Number(item.readyAt) || startedAt + duration * 1000),
                 hatching: false
             };
         });
@@ -6082,19 +6435,28 @@ function init() {
         if (!player.ownedRoomDecor.includes(player.roomStyle)) player.roomStyle = 'cozy';
 
         const oldPetMap = { dog: 'dewdrop', cat: 'coinblob', dragon: 'sparkjelly', drop: 'dewdrop', dew: 'dewdrop', sun: 'coinblob', bun: 'coinblob', spark: 'sparkjelly', glimmer: 'sparkjelly', clover: 'sproutslime', sprig: 'sproutslime' };
+        ensureSlimeCollection();
         player.pets.forEach(id => {
             const mapped = oldPetMap[id] || id;
-            if (PET_DEFS[mapped] && !player.petInventory.some(p => p.id === mapped)) {
-                player.petInventory.push({ uid: `pet-${mapped}-${Date.now()}-${Math.floor(Math.random() * 999)}`, id: mapped, level: player.petLevels[id] || 1, hunger: 100, size: 'normal', shiny: 'normal', happy: false });
-            }
+            if (PET_DEFS[mapped]) slimeCollectionEntry(mapped).owned = true;
         });
         player.petInventory = player.petInventory.map(p => {
             const mappedId = oldPetMap[p.id] || p.id;
             return {...p, id: mappedId};
         }).filter(p => p && PET_DEFS[p.id]).map(p => ({...p, hunger: Math.max(0, Math.min(100, p.hunger ?? 100)), level: Math.max(1, Math.min(BALANCE.helperMaxLevel, p.level || 1)), size: p.size || 'normal', shiny: p.shiny || 'normal', happy: !!p.happy }));
-        player.petInventory = player.petInventory.slice(0, BALANCE.petInventoryMax || 8);
-        player.equippedPets = player.equippedPets.map((uid, i) => i < player.unlockedPetSlots && player.petInventory.some(p => p.uid === uid) ? uid : null);
-        if (!player.equippedPets[0] && player.petInventory[0]) player.equippedPets[0] = player.petInventory[0].uid;
+        player.petInventory.forEach(pet => {
+            const entry = slimeCollectionEntry(pet.id);
+            entry.owned = true;
+            if (pet.size === 'huge') entry.huge = true;
+            if (pet.shiny === 'gold') entry.gold = true;
+            if (pet.shiny === 'rainbow') entry.rainbow = true;
+        });
+        if (player.companion.skin !== 'basic' && PET_DEFS[player.companion.skin]) slimeCollectionEntry(player.companion.skin).owned = true;
+        const selectedCollection = slimeCollectionEntry(player.companion.skin || 'basic');
+        if (player.companion.variant !== 'normal' && !selectedCollection[player.companion.variant]) player.companion.variant = 'normal';
+        // Save migration: slimeCollection is canonical, while old slot arrays remain empty.
+        player.petInventory = [];
+        player.equippedPets = [null, null, null];
         tiles = tiles.map((tile, index) => {
             const safe = { id: index, active: false, plantId: null, growth: 0, water: 0, slimeWater: 0, slimeWaterMult: 1, hasWeed: false, mutations: [], scale: .4, weight: 1, weightMult: 1, sizeTier: 'small', beeLock: 0, ghostEchoPercent: 0, ghostMarked: false, ghostCopyMutationCount: 0, ghostEcho: false, ghostValue: 0, ...tile };
             safe.id = index;
