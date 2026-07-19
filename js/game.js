@@ -3964,7 +3964,7 @@ function init() {
         const elapsed = Math.max(0, durationMs - Math.max(0, readyAt - now));
         const progress = Math.min(100, elapsed / durationMs * 100);
         const ready = TEST_HATCH_INSTANT || readyAt <= now;
-        return `<button class="slime-incubator-slot rarity-${egg.id} ${ready ? 'ready' : ''} ${item.hatching ? 'hatching' : ''}" type="button" onclick="hatchIncubatorEgg(${slot})" ${ready && !item.hatching ? '' : 'disabled'}>
+        return `<button id="incubator-slot-${slot}" class="slime-incubator-slot rarity-${egg.id} ${ready ? 'ready' : ''} ${item.hatching ? 'hatching' : ''}" type="button" onclick="hatchIncubatorEgg(${slot})" ${ready && !item.hatching ? '' : 'disabled'}>
             <span class="incubator-slot-number">${slot + 1}</span>
             ${slimeEggModelHTML(egg.id, 'incubator-egg-model')}
             <b>${ready ? 'Яйцо готово!' : egg.label}</b>
@@ -5158,6 +5158,30 @@ function init() {
     }
 
     function updateOpenShopTimer() {
+        if (env.shopTab === 'slimes') {
+            const now = Date.now();
+            player.incubator.forEach((item, slot) => {
+                const slotEl = document.getElementById(`incubator-slot-${slot}`);
+                if (!item || !slotEl || !EGG_RARITIES[item.rarity]) return;
+                const egg = EGG_RARITIES[item.rarity];
+                const durationMs = Math.max(1, Number(item.duration || egg.hatchSeconds) * 1000);
+                const readyAt = Number(item.readyAt) || now;
+                const ready = readyAt <= now;
+                if (ready !== slotEl.classList.contains('ready')) {
+                    slotEl.outerHTML = renderIncubatorSlot(item, slot, now);
+                    return;
+                }
+                if (ready) return;
+                const timer = slotEl.querySelector('small');
+                const fill = slotEl.querySelector('.slime-incubator-progress i');
+                const remaining = Math.max(0, readyAt - now);
+                const progress = Math.min(100, ((durationMs - remaining) / durationMs) * 100);
+                const label = formatTime(remaining);
+                if (timer && timer.textContent !== label) timer.textContent = label;
+                if (fill) fill.style.width = `${progress.toFixed(1)}%`;
+            });
+            return;
+        }
         if (env.shopTab !== 'seeds' && env.shopTab !== 'merchant') return;
         const timer = document.querySelector('#shop-content .shop-info-banner.with-timer b');
         if (!timer) return;
