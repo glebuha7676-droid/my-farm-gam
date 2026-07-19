@@ -20950,3 +20950,135 @@ button,
         background:rgba(34,22,14,.62);
     }
 }
+
+/* Active-surface lifecycle: hidden screens keep game state, not rendering work. */
+.side-menu:not(.open),
+.shop-modal:not(.open) {
+    visibility:hidden;
+    content-visibility:hidden;
+    contain:layout paint style;
+}
+.side-menu.open,
+.shop-modal.open {
+    visibility:visible;
+    content-visibility:visible;
+    contain:layout paint style;
+}
+.menu-fold:not(.open) {
+    content-visibility:hidden;
+    contain:strict;
+}
+.menu-fold.open {
+    content-visibility:visible;
+    contain:layout paint style;
+}
+body:not(.surface-garden-active) #garden *,
+body:not(.surface-garden-active) #garden *::before,
+body:not(.surface-garden-active) #garden *::after {
+    animation:none !important;
+    transition:none !important;
+    filter:none !important;
+    will-change:auto !important;
+}
+body:not(.surface-garden-active) #garden :is(
+    .mutation-aura,
+    .toxic-cloud,
+    .acid-bubble,
+    .honey-drop,
+    .tile-bee,
+    .planting-feedback,
+    .lunar-mutation-beam,
+    .bloodmoon-mutation-beam
+) {
+    display:none !important;
+}
+body:not(.surface-garden-active) > :is(
+    .holy-bg-rays,
+    .hell-bg-fire,
+    .weather-overlay,
+    .night-sky-layer,
+    .bg-emitters
+) {
+    display:none !important;
+}
+body.surface-shop-active :is(.game-area,.bottom-ui,.shop-launchbar) {
+    visibility:hidden;
+    content-visibility:hidden;
+}
+
+/* Mobile render profile: same silhouettes and palettes with fewer repainted layers. */
+@media (max-width:720px), (pointer:coarse) {
+    body,
+    .top-bar,
+    .shop-launchbar,
+    .bottom-ui,
+    .game-area,
+    .side-menu,
+    .shop-modal,
+    .plant-inspect-card {
+        transition-property:background-color,border-color,box-shadow,opacity !important;
+    }
+    body.event-night.night-fading :is(.top-bar,.shop-launchbar,.bottom-ui,.plant-inspect-card,.shop-modal),
+    body.event-night.bloodmoon-phase :is(.top-bar,.shop-launchbar,.bottom-ui,.plant-inspect-card,.shop-modal),
+    body.event-night.night-fading .side-menu > .menu-header,
+    body.event-night.night-fading .side-menu > .menu-content > :not(.companion-panel),
+    body.event-night.bloodmoon-phase .side-menu > .menu-header,
+    body.event-night.bloodmoon-phase .side-menu > .menu-content > :not(.companion-panel) {
+        filter:none !important;
+    }
+    #garden,
+    .menu-content,
+    .shop-content {
+        contain:layout style;
+    }
+    #garden :is(.mutation-aura,.plant-wrapper,.model,.toxic-cloud,.acid-bubble,.honey-drop) {
+        will-change:auto !important;
+    }
+    .tile.primary-electric .plant-wrapper {
+        filter:drop-shadow(0 0 4px rgba(72,207,255,.78)) !important;
+    }
+    .tile:not(.mut-electric):is(.mut-gold,.primary-gold) .model {
+        animation:materialGoldPalette 3.2s steps(32,end) infinite !important;
+    }
+    .tile:not(.mut-electric):is(.mut-rainbow,.primary-rainbow) .model {
+        animation:materialRainbowPalette 4.8s steps(48,end) infinite !important;
+    }
+    .tile:not(.mut-electric):is(.mut-diamond,.primary-diamond) .model {
+        animation:materialDiamondPalette 3.5s steps(35,end) infinite !important;
+    }
+    .tile.mut-electric:is(.mut-gold,.mut-rainbow,.mut-diamond) .model {
+        animation:electricPlantHum .42s ease-in-out infinite !important;
+    }
+    .fx-lava,
+    .fx-lava::before {
+        filter:none !important;
+    }
+    .fx-lava::after,
+    .fx-meteor .comet-particle:nth-child(n+3),
+    .fx-candy .candy-float:nth-child(3),
+    .tile.mut-toxic .acid-bubble-three,
+    .fx-lunar .lunar-speck:nth-of-type(n+4),
+    .fx-bloodmoon .lunar-speck:nth-of-type(n+4) {
+        display:none !important;
+    }
+    .fx-lunar .lunar-beam,
+    .fx-bloodmoon .lunar-beam,
+    .lunar-mutation-beam::before,
+    .bloodmoon-mutation-beam::before {
+        filter:none !important;
+        -webkit-mask-image:none !important;
+        mask-image:none !important;
+    }
+    .fx-lunar .lunar-beam {
+        background:linear-gradient(180deg,transparent 0%,rgba(255,255,255,.84) 12%,rgba(238,241,255,.58) 68%,transparent 100%) !important;
+    }
+    .fx-bloodmoon .lunar-beam {
+        background:linear-gradient(180deg,transparent 0%,rgba(255,190,201,.88) 12%,rgba(255,70,105,.56) 68%,transparent 100%) !important;
+    }
+    .basic-rainbow-mutation-flash {
+        mix-blend-mode:normal;
+    }
+    .stargum-comet-shadow {
+        filter:blur(5px);
+    }
+}

@@ -20,7 +20,7 @@
         },
     };
 
-    let env = { ticks: 0, currentEvent: 'day', eventTimer: 0, nextEventTimer: 75, potTimer: 0, potActive: false, activeNest: 0, activeEquip: 0, petPatCooldowns: {}, companionDrawer: '', companionShower: false, companionShowerTimer: null, companionPointerDown: false, companionPointer: null, companionPointerId: null, companionPointerStartedInZone: false, companionPointerStartX: 0, companionPointerStartY: 0, companionPointerLastX: 0, companionPointerLastY: 0, companionPointerStartedAt: 0, companionPetting: false, companionHoldTimer: null, companionTapTimer: null, companionHeartTimer: null, companionSpecial: '', companionSpecialTimer: null, companionSpecialEndTimer: null, companionAbilitySpecial: '', companionAbilitySpecialTimer: null, companionAbilityPayload: null, companionGiftTimers: [], companionSpecialAnchorX: 0, companionSpecialAnchorY: 0, companionCoinBurstAt: 0, harvestSelectedTile: null, harvestSelectionTimer: null, openMenuSections: { showcase: false, diary: false, decor: false, rewards: false, admin: false }, backroomsLampTimer: null, backroomsLampEndTimer: null, shopTab: 'seeds', decorShopTab: 'room', pendingPlotPurchase: null, abilityFloodTimer: null, sunpuddingEclipseTimer: null, sunpuddingEclipseDarkTimer: null, embergooMagmaTimers: [], stargumCometTimers: [], stargumCometFrames: [], stargumCometFinale: false, moonmeltLunarTimers: [], moonmeltLunarFinale: false, nightDawnTimer: null, nightDawnActive: false, nightPaletteFrame: null, nightPalette: null, nightPalettePhase: 'day', fpsMeterFrame: null, perfTelemetry: null, perfLongTaskObserver: null };
+    let env = { ticks: 0, currentEvent: 'day', eventTimer: 0, nextEventTimer: 75, potTimer: 0, potActive: false, activeNest: 0, activeEquip: 0, petPatCooldowns: {}, companionDrawer: '', companionShower: false, companionShowerTimer: null, companionPointerDown: false, companionPointer: null, companionPointerId: null, companionPointerStartedInZone: false, companionPointerStartX: 0, companionPointerStartY: 0, companionPointerLastX: 0, companionPointerLastY: 0, companionPointerStartedAt: 0, companionPetting: false, companionHoldTimer: null, companionTapTimer: null, companionHeartTimer: null, companionSpecial: '', companionSpecialTimer: null, companionSpecialEndTimer: null, companionAbilitySpecial: '', companionAbilitySpecialTimer: null, companionAbilityPayload: null, companionGiftTimers: [], companionSpecialAnchorX: 0, companionSpecialAnchorY: 0, companionCoinBurstAt: 0, harvestSelectedTile: null, harvestSelectionTimer: null, openMenuSections: { showcase: false, diary: false, decor: false, rewards: false, admin: false }, backroomsLampTimer: null, backroomsLampEndTimer: null, shopTab: 'seeds', decorShopTab: 'room', pendingPlotPurchase: null, abilityFloodTimer: null, sunpuddingEclipseTimer: null, sunpuddingEclipseDarkTimer: null, embergooMagmaTimers: [], stargumCometTimers: [], stargumCometFrames: [], stargumCometFinale: false, moonmeltLunarTimers: [], moonmeltLunarFinale: false, nightDawnTimer: null, nightDawnActive: false, nightPaletteFrame: null, nightPalette: null, nightPalettePhase: 'day', fpsMeterFrame: null, perfTelemetry: null, perfLongTaskObserver: null, lastCompanionVitalsAt: 0, rewardsRenderSignature: '' };
     let eventActions = []; 
     let tiles = Array(12).fill().map((_, i) => ({ id: i, active: false, plantId: null, growth: 0, water: 0, slimeWater: 0, slimeWaterMult: 1, hasWeed: false, mutations: [], scale: .4, weight: 1, weightMult: 1, sizeTier: 'small', beeLock: 0, ghostEchoPercent: 0, ghostMarked: false, ghostCopyMutationCount: 0, ghostEcho: false, ghostValue: 0 }));
     let currentTool = 'water';
@@ -741,6 +741,7 @@
         document.body.classList.toggle('surface-garden-active', surface === 'garden');
         document.body.classList.toggle('surface-menu-active', surface === 'menu');
         document.body.classList.toggle('surface-shop-active', surface === 'shop');
+        document.getElementById('garden')?.classList.toggle('effects-suspended', surface !== 'garden');
         if (surface === 'garden') scheduleMutationGeometryRefresh();
     }
 
@@ -901,7 +902,7 @@ function init() {
             frames += 1;
             const frameMs = now - previousFrameAt;
             previousFrameAt = now;
-            if (frameMs >= 55 && frameMs < 1000) recordPerformanceEvent('frame-stall', { frameMs: Math.round(frameMs) }, 850);
+            if (frameMs >= 55 && frameMs < 1000) recordPerformanceEvent('frame-stall', { frameMs: Math.round(frameMs) }, 1400);
             const elapsed = now - sampleStartedAt;
             if (elapsed >= 500) {
                 const fps = Math.round((frames * 1000) / elapsed);
@@ -926,7 +927,7 @@ function init() {
             samples: [],
             lowestFps: 120,
             lastEventAt: {},
-            maxEntries: 360
+            maxEntries: 240
         };
         document.addEventListener('pointerdown', event => trackPerformanceAction(event.target), { passive: true, capture: true });
 
@@ -947,15 +948,23 @@ function init() {
         const planted = tiles.filter(tile => tile.active && tile.plantId);
         const ready = planted.filter(tile => tile.growth >= 100).length;
         const mutationCount = planted.reduce((sum, tile) => sum + (tile.mutations?.length || 0), 0);
+        const mutationTypes = {};
+        planted.forEach(tile => (tile.mutations || []).forEach(id => {
+            mutationTypes[id] = (mutationTypes[id] || 0) + 1;
+        }));
+        const surface = activeSurface();
         return {
-            surface: activeSurface(),
+            surface,
             event: env.currentEvent || 'day',
             eventSecondsLeft: Math.max(0, Math.ceil(Number(env.eventTimer) || 0)),
             plants: planted.length,
             ready,
             growing: planted.length - ready,
             mutations: mutationCount,
-            transientEffects: document.querySelectorAll('.lava-hit,.comet-hit,.lunar-hit,.bloodmoon-hit,.strike,.toxic-hit,.hell-hit,.wave-rise-hit').length,
+            mutationTypes,
+            transientEffects: surface === 'garden'
+                ? document.querySelectorAll('.lava-hit,.comet-hit,.lunar-hit,.bloodmoon-hit,.strike,.toxic-hit,.hell-hit,.wave-rise-hit').length
+                : 0,
             recentActions: env.perfTelemetry?.actionTrail.slice(-6) || []
         };
     }
@@ -973,7 +982,8 @@ function init() {
             snapshot: getPerformanceSnapshot()
         });
         if (telemetry.entries.length > telemetry.maxEntries) telemetry.entries.splice(0, telemetry.entries.length - telemetry.maxEntries);
-        updatePerfPanel();
+        const panel = document.getElementById('perf-panel');
+        if (panel && !panel.hidden) updatePerfPanel();
     }
 
     function recordFpsSample(fps, elapsed) {
@@ -981,8 +991,8 @@ function init() {
         if (!telemetry || document.hidden) return;
         telemetry.lowestFps = Math.min(telemetry.lowestFps, fps);
         telemetry.samples.push({ atMs: Math.round(performance.now()), fps, windowMs: Math.round(elapsed) });
-        if (telemetry.samples.length > 180) telemetry.samples.shift();
-        if (fps < 45) recordPerformanceEvent('low-fps', { fps, windowMs: Math.round(elapsed) }, 1600);
+        if (telemetry.samples.length > 120) telemetry.samples.shift();
+        if (fps < 45) recordPerformanceEvent('low-fps', { fps, windowMs: Math.round(elapsed) }, 2400);
     }
 
     function trackPerformanceAction(target) {
@@ -1670,9 +1680,16 @@ function init() {
             cssColorToRgb(getComputedStyle(tile.element).borderTopColor)
         ]));
         const startedAt = performance.now();
+        const mobilePaintInterval = matchMedia('(max-width:720px), (pointer:coarse)').matches ? 32 : 0;
+        let lastPaintAt = -Infinity;
 
         const frame = now => {
             const progress = Math.min(1, (now - startedAt) / duration);
+            if (progress < 1 && now - lastPaintAt < mobilePaintInterval) {
+                env.nightPaletteFrame = requestAnimationFrame(frame);
+                return;
+            }
+            lastPaintAt = now;
             const eased = nightPaletteEase(progress);
             const gardenStart = targetPhase === 'day' ? (currentGarden || palette.gardenFrom) : (sourceColors ? sourceColors.garden : palette.gardenFrom);
             const borderStart = targetPhase === 'day' ? (currentBorder || palette.borderFrom) : (sourceColors ? sourceColors.border : palette.borderFrom);
@@ -3055,7 +3072,7 @@ function init() {
             }
         }
 
-        if (menuActive && env.openMenuSections?.rewards) renderRewards();
+        if (menuActive && env.openMenuSections?.rewards) updateOpenRewardsTimers();
         const shopOpen = document.getElementById('shop-modal')?.classList.contains('open');
         const hatchPresentationOpen = !!document.querySelector('.egg-hatch-moment') || document.getElementById('pet-reveal')?.classList.contains('active');
         if (shopOpen && !hatchPresentationOpen && (env.shopTab !== 'slimes' || !TEST_HATCH_INSTANT)) {
@@ -3068,7 +3085,7 @@ function init() {
             const hasDoneQuests = player.quests.some(q => q.current >= q.target && !q.claimed);
             menuBadge.style.display = (hasDoneQuests || hasClaimableRewards()) ? 'block' : 'none';
         }
-        updateMenuMarkers();
+        if (menuActive) updateMenuMarkers();
 
         let buffs = getBuffs();
 
@@ -3489,7 +3506,7 @@ function init() {
         }
         let hasDoneQuests = player.quests.some(q => q.current >= q.target && !q.claimed);
         document.getElementById('menu-badge').style.display = (hasDoneQuests || hasClaimableRewards()) ? 'block' : 'none';
-        updateMenuMarkers();
+        if (activeSurface() === 'menu') updateMenuMarkers();
     }
 
     function updateUI() {
@@ -3519,8 +3536,11 @@ function init() {
             renderCompanionAbility();
             updateStateIndicator();
         } else if (surface === 'menu') {
-            renderCompanionVitals();
-            renderActiveStatusStrip();
+            const now = performance.now();
+            if (now - env.lastCompanionVitalsAt >= 1000) {
+                env.lastCompanionVitalsAt = now;
+                renderCompanionVitals();
+            }
         } else {
             updateOpenShopTimer();
         }
@@ -3530,8 +3550,19 @@ function init() {
         toggleShop(false);
         const menu = document.getElementById('side-menu');
         menu.classList.toggle('open');
+        if (!menu.classList.contains('open')) releaseInactiveMenuDom();
         syncActiveSurfaceState();
         updateUI();
+    }
+
+    function releaseInactiveMenuDom() {
+        document.getElementById('showcase-slots')?.replaceChildren();
+        document.getElementById('showcase-picker')?.replaceChildren();
+        document.getElementById('diary-stats')?.replaceChildren();
+        document.getElementById('diary-progress')?.replaceChildren();
+        document.getElementById('diary-mutations')?.replaceChildren();
+        document.getElementById('rewards-content')?.replaceChildren();
+        env.rewardsRenderSignature = '';
     }
 
     function selectShopTab(tab) {
@@ -3546,10 +3577,15 @@ function init() {
         const shouldOpen = typeof force === 'boolean' ? force : !modal.classList.contains('open');
         modal.classList.toggle('open', shouldOpen);
         if (shouldOpen) {
-            document.getElementById('side-menu')?.classList.remove('open');
+            const sideMenu = document.getElementById('side-menu');
+            if (sideMenu?.classList.contains('open')) {
+                sideMenu.classList.remove('open');
+                releaseInactiveMenuDom();
+            }
             syncActiveSurfaceState();
             renderShop();
         } else if (wasOpen) {
+            document.getElementById('shop-content')?.replaceChildren();
             syncActiveSurfaceState();
             updateUI();
         }
@@ -5398,7 +5434,14 @@ function init() {
         const mark = document.getElementById(`${section}-fold-mark`);
         if (panel) panel.classList.toggle('open', !!env.openMenuSections[section]);
         if (mark) mark.textContent = env.openMenuSections[section] ? '−' : '＋';
-        if (section === 'diary' && env.openMenuSections[section]) renderDiary();
+        if (section === 'diary') {
+            if (env.openMenuSections[section]) renderDiary();
+            else {
+                document.getElementById('diary-stats')?.replaceChildren();
+                document.getElementById('diary-progress')?.replaceChildren();
+                document.getElementById('diary-mutations')?.replaceChildren();
+            }
+        }
         if (section === 'showcase') {
             if (env.openMenuSections[section]) renderShowcase();
             else {
@@ -5407,7 +5450,13 @@ function init() {
             }
         }
         if (section === 'decor' && env.openMenuSections[section]) renderDecorShop();
-        if (section === 'rewards' && env.openMenuSections[section]) renderRewards();
+        if (section === 'rewards') {
+            if (env.openMenuSections[section]) renderRewards();
+            else {
+                document.getElementById('rewards-content')?.replaceChildren();
+                env.rewardsRenderSignature = '';
+            }
+        }
     }
 
     function renderRewards() {
@@ -5430,7 +5479,7 @@ function init() {
         root.innerHTML = `
             <div class="reward-block daily-block">
                 <div class="reward-block-head">
-                    <div><b>Ежедневные подарки</b><small>${dailyHeadText}</small></div>
+                    <div><b>Ежедневные подарки</b><small id="daily-reward-countdown">${dailyHeadText}</small></div>
                     <span class="reward-streak">День ${dailyIndex + 1}</span>
                 </div>
                 <div class="daily-rewards-grid">
@@ -5455,7 +5504,7 @@ function init() {
             </div>
             <div class="reward-block timed-block">
                 <div class="reward-block-head">
-                    <div><b>Подарки за время</b><small>${player.rewards.timedCooldownUntil ? `Новая серия через ${formatRewardCountdown(timedCooldown)}` : 'Каждые 10 минут открывается новый подарок'}</small></div>
+                    <div><b>Подарки за время</b><small id="timed-reward-countdown">${player.rewards.timedCooldownUntil ? `Новая серия через ${formatRewardCountdown(timedCooldown)}` : 'Каждые 10 минут открывается новый подарок'}</small></div>
                     <span class="reward-streak">${player.rewards.timedCooldownUntil ? 'Перерыв' : '4 подарка'}</span>
                 </div>
                 <div class="timed-rewards-grid">
@@ -5473,6 +5522,48 @@ function init() {
                 </div>
             </div>
         `;
+        env.rewardsRenderSignature = rewardsAvailabilitySignature();
+    }
+
+    function rewardsAvailabilitySignature() {
+        return [
+            getDailyRewardIndex(),
+            canClaimDailyReward() ? 1 : 0,
+            player.rewards.dailyClaimed,
+            ...(player.rewards.timedClaimed || []).map(Boolean),
+            player.rewards.timedCooldownUntil > Date.now() ? 1 : 0,
+            ...TIMED_REWARDS.map((_, index) => canClaimTimedReward(index) ? 1 : 0)
+        ].join('|');
+    }
+
+    function updateOpenRewardsTimers() {
+        ensureRewardsState();
+        normalizeTimedRewards();
+        const root = document.getElementById('rewards-content');
+        if (!root) return;
+        const signature = rewardsAvailabilitySignature();
+        if (!root.childElementCount || signature !== env.rewardsRenderSignature) {
+            renderRewards();
+            return;
+        }
+        const dailyReady = canClaimDailyReward();
+        const dailyCountdown = document.getElementById('daily-reward-countdown');
+        if (dailyCountdown) {
+            dailyCountdown.textContent = dailyReady
+                ? 'Возьми подарок!'
+                : `Следующая награда через ${formatRewardCountdown(getDailyRewardRemainingMs())}`;
+        }
+        const timedCountdown = document.getElementById('timed-reward-countdown');
+        if (timedCountdown) {
+            const timedCooldown = Math.max(0, player.rewards.timedCooldownUntil - Date.now());
+            timedCountdown.textContent = player.rewards.timedCooldownUntil
+                ? `Новая серия через ${formatRewardCountdown(timedCooldown)}`
+                : 'Каждые 10 минут открывается новый подарок';
+        }
+        root.querySelectorAll('.timed-reward-card .timed-copy small').forEach((label, index) => {
+            const claimed = !!player.rewards.timedClaimed[index];
+            label.textContent = claimed ? 'Открыт' : canClaimTimedReward(index) ? 'Открыть' : formatRewardCountdown(getTimedRewardUnlockMs(index));
+        });
     }
 
     function claimDailyReward(index, button) {
@@ -5972,6 +6063,11 @@ function init() {
             rewards: defaultRewardsState()
         };
         resetTilesState();
+        const persistentPerformanceRuntime = {
+            fpsMeterFrame: env.fpsMeterFrame || null,
+            perfTelemetry: env.perfTelemetry || null,
+            perfLongTaskObserver: env.perfLongTaskObserver || null
+        };
         env = {
             ticks: 0, currentEvent: 'day', eventTimer: 0, nextEventTimer: rollNextEventDelay(), potTimer: 0, potActive: false,
             activeNest: 0, activeEquip: 0, petPatCooldowns: {},
@@ -5987,13 +6083,16 @@ function init() {
             companionSpecialAnchorX: 0, companionSpecialAnchorY: 0,
             companionCoinBurstAt: 0,
             openMenuSections: { showcase: false, diary: false, decor: false, rewards: false, admin: false },
-            backroomsLampTimer: null, backroomsLampEndTimer: null, shopTab: 'seeds', decorShopTab: 'room', pendingPlotPurchase: null, abilityFloodTimer: null, sunpuddingEclipseTimer: null, sunpuddingEclipseDarkTimer: null
+            backroomsLampTimer: null, backroomsLampEndTimer: null, shopTab: 'seeds', decorShopTab: 'room', pendingPlotPurchase: null, abilityFloodTimer: null, sunpuddingEclipseTimer: null, sunpuddingEclipseDarkTimer: null,
+            lastCompanionVitalsAt: 0, rewardsRenderSignature: '',
+            ...persistentPerformanceRuntime
         };
         eventActions = [];
         currentTool = 'water';
         startEvent('day');
         document.getElementById('side-menu').classList.remove('open');
         document.getElementById('shop-modal').classList.remove('open');
+        syncActiveSurfaceState();
         document.getElementById('plot-buy-modal')?.classList.remove('active');
         document.getElementById('pet-reveal').classList.remove('active');
         document.querySelectorAll('.action-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tool === 'water'));
