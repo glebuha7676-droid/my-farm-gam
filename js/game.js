@@ -713,7 +713,35 @@
     }
 
     function toxicPuddleHTML() {
-        return '<div class="toxic-cloud" aria-hidden="true"></div><i class="acid-bubble acid-bubble-one" aria-hidden="true"></i><i class="acid-bubble acid-bubble-two" aria-hidden="true"></i><i class="acid-bubble acid-bubble-three" aria-hidden="true"></i><i class="acid-bubble acid-bubble-four" aria-hidden="true"></i><i class="acid-bubble acid-bubble-five" aria-hidden="true"></i><i class="acid-bubble acid-bubble-six" aria-hidden="true"></i><i class="acid-bubble acid-bubble-seven" aria-hidden="true"></i>';
+        return '<div class="toxic-cloud" aria-hidden="true"></div><i class="acid-bubble acid-bubble-one" aria-hidden="true"></i><i class="acid-bubble acid-bubble-two" aria-hidden="true"></i><i class="acid-bubble acid-bubble-three" aria-hidden="true"></i>';
+    }
+
+    function activeSurface() {
+        if (document.getElementById('shop-modal')?.classList.contains('open')) return 'shop';
+        if (document.getElementById('side-menu')?.classList.contains('open')) return 'menu';
+        return 'garden';
+    }
+
+    function isGardenSurfaceActive() {
+        return !document.hidden && activeSurface() === 'garden';
+    }
+
+    function isElementSurfaceActive(element) {
+        if (!element || document.hidden) return false;
+        const surface = activeSurface();
+        if (element.closest('#garden')) return surface === 'garden';
+        if (element.closest('#shop-modal')) return surface === 'shop';
+        const fold = element.closest('.menu-fold');
+        if (element.closest('#side-menu')) return surface === 'menu' && (!fold || fold.classList.contains('open'));
+        return true;
+    }
+
+    function syncActiveSurfaceState() {
+        const surface = activeSurface();
+        document.body.classList.toggle('surface-garden-active', surface === 'garden');
+        document.body.classList.toggle('surface-menu-active', surface === 'menu');
+        document.body.classList.toggle('surface-shop-active', surface === 'shop');
+        if (surface === 'garden') scheduleMutationGeometryRefresh();
     }
 
     function mutationPresentationParts(mutations) {
@@ -846,6 +874,8 @@ function init() {
         }, { passive: true });
         bindPressFeedback();
         setupMutationPerformanceObservers();
+        syncActiveSurfaceState();
+        initFpsMeter();
         setInterval(gameTick, 1000);
         setInterval(realtimeUiTick, 500);
         setInterval(saveGame, 10000);
@@ -855,6 +885,29 @@ function init() {
         window.addEventListener('pagehide', saveGame);
         scheduleCompanionSpecial();
         finishGameLoading();
+    }
+
+    function initFpsMeter() {
+        const meter = document.getElementById('fps-meter');
+        const value = document.getElementById('fps-value');
+        if (!meter || !value || env.fpsMeterFrame) return;
+
+        let frames = 0;
+        let sampleStartedAt = performance.now();
+        const sample = now => {
+            frames += 1;
+            const elapsed = now - sampleStartedAt;
+            if (elapsed >= 500) {
+                const fps = Math.round((frames * 1000) / elapsed);
+                value.textContent = String(Math.min(120, fps));
+                meter.dataset.state = fps >= 50 ? 'good' : fps >= 30 ? 'warn' : 'bad';
+                frames = 0;
+                sampleStartedAt = now;
+            }
+            env.fpsMeterFrame = requestAnimationFrame(sample);
+        };
+
+        env.fpsMeterFrame = requestAnimationFrame(sample);
     }
 
     function setGameLoaderProgress(value, label) {
@@ -988,11 +1041,12 @@ function init() {
         const container = document.getElementById('seeds-track');
         ensureSeedAndShopState();
         ensureSelectedSeedAvailable();
-        const seedSignature = getQuickSeedKeys().map(key => `${key}:${getSeedOwned(key)}:${currentTool === key ? 1 : 0}`).join('|');
+        const quickSeedKeys = getQuickSeedKeys();
+        const seedSignature = quickSeedKeys.map(key => `${key}:${getSeedOwned(key)}:${currentTool === key ? 1 : 0}`).join('|');
         if (container.dataset.renderSignature === seedSignature) return;
         container.dataset.renderSignature = seedSignature;
         container.innerHTML = '';
-        getQuickSeedKeys().forEach(key => {
+        quickSeedKeys.forEach(key => {
             const p = PLANTS[key];
             const amount = getSeedOwned(key);
             const empty = amount <= 0;
@@ -1007,7 +1061,11 @@ function init() {
             el.innerHTML = `<div class="pkt-top"></div><div class="pkt-bg"></div><div class="seed-name">${p.name}</div><div class="seed-icon">${seedIcon(p.id)}</div><div class="seed-stock">${empty ? 'нет' : `x${amount}`}</div>`;
             container.appendChild(el);
         });
-        setTimeout(updateCarouselArrows, 100);
+        if (env.seedCarouselFrame) cancelAnimationFrame(env.seedCarouselFrame);
+        env.seedCarouselFrame = requestAnimationFrame(() => {
+            env.seedCarouselFrame = null;
+            updateCarouselArrows();
+        });
     }
 
     function scrollSeeds(dir) {
@@ -1129,10 +1187,9 @@ function init() {
             if (starterMutation) commitTileMutation(idx, starterMutation);
             ensureSelectedSeedAvailable();
             decorSfx('pop', 'popitClick'); floatText(idx, `-1 ${p.name}`, "#74b9ff");
-            updateUI(); updateTileDOM(idx);
+            renderSeeds();
+            updateTileDOM(idx);
             const plantedTile = document.getElementById(`tile-${idx}`);
-            plantedTile.classList.remove('planting');
-            void plantedTile.offsetWidth;
             plantedTile.classList.add('planting');
             setTimeout(() => plantedTile.classList.remove('planting'), 760);
         }
@@ -1703,6 +1760,12 @@ function init() {
         const effectiveMutType = resolveEventMutationType(mutType);
         if (!canTileReceiveMutation(t, effectiveMutType)) return;
 
+        // Hidden screens keep game state current without building disposable effects behind them.
+        if (!isGardenSurfaceActive()) {
+            commitTileMutation(idx, effectiveMutType);
+            return;
+        }
+
         const tileEl = document.getElementById(`tile-${idx}`);
 
         // Визуальные эффекты ударов
@@ -2234,6 +2297,10 @@ function init() {
         const startedAt = performance.now();
         const frame = now => {
             if (!element.isConnected) return;
+            if (!isElementSurfaceActive(element)) {
+                renderFrame(1);
+                return;
+            }
             const progress = Math.min(1, Math.max(0, (now - startedAt) / durationMs));
             renderFrame(progress);
             if (progress < 1) requestAnimationFrame(frame);
@@ -2799,6 +2866,8 @@ function init() {
 
     function gameTick() {
         env.ticks++;
+        const gardenActive = isGardenSurfaceActive();
+        const menuActive = activeSurface() === 'menu';
         const shopStateBefore = `${player.shop?.refreshAt || 0}|${player.shop?.merchantArrivesAt || 0}|${player.shop?.merchantLeavesAt || 0}`;
         updateShopState();
         const shopStateChanged = shopStateBefore !== `${player.shop.refreshAt}|${player.shop.merchantArrivesAt}|${player.shop.merchantLeavesAt}`;
@@ -2813,7 +2882,7 @@ function init() {
                     }
                 });
             }
-            updateStateIndicator();
+            if (gardenActive) updateStateIndicator();
             if (env.eventTimer <= 0 && !hasActiveEventFinale()) {
                 if (env.currentEvent === 'night') beginNightDawn();
                 else startEvent('day');
@@ -2821,21 +2890,21 @@ function init() {
         } else {
             if (env.nextEventTimer > 0) {
                 env.nextEventTimer--;
-                updateStateIndicator();
+                if (gardenActive) updateStateIndicator();
             }
             if (env.nextEventTimer <= 0) {
                 triggerRandomDayEvent();
             }
         }
 
-        if (env.openMenuSections?.rewards) renderRewards();
+        if (menuActive && env.openMenuSections?.rewards) renderRewards();
         const shopOpen = document.getElementById('shop-modal')?.classList.contains('open');
         const hatchPresentationOpen = !!document.querySelector('.egg-hatch-moment') || document.getElementById('pet-reveal')?.classList.contains('active');
         if (shopOpen && !hatchPresentationOpen && (env.shopTab !== 'slimes' || !TEST_HATCH_INSTANT)) {
             if (shopStateChanged) renderShop();
             else updateOpenShopTimer();
         }
-        if (document.getElementById('side-menu')?.classList.contains('open')) renderActiveStatusStrip();
+        if (menuActive) renderActiveStatusStrip();
         const menuBadge = document.getElementById('menu-badge');
         if (menuBadge) {
             const hasDoneQuests = player.quests.some(q => q.current >= q.target && !q.claimed);
@@ -2852,20 +2921,26 @@ function init() {
             if (!t.active || t.growth >= 100) {
                 if (wasWet) {
                     t.water = Math.max(0, t.water - 1);
-                    if (t.water === 0) updateTileDOM(idx);
+                    if (gardenActive && t.water === 0) updateTileDOM(idx);
                 }
                 if (hadSlimeWater) {
                     t.slimeWater = Math.max(0, t.slimeWater - 1);
                     if (t.slimeWater === 0) {
-                        triggerTileSlimeWaterFade(idx);
-                        updateTileDOM(idx);
+                        if (gardenActive) {
+                            triggerTileSlimeWaterFade(idx);
+                            updateTileDOM(idx);
+                        }
                     }
                 }
                 return;
             }
 
             if (t.beeLock > 0) { t.beeLock--; return; }
-            if (!t.hasWeed && env.currentEvent === 'day' && Math.random() < BALANCE.weedChance) { t.hasWeed = true; updateTileDOM(idx); return; }
+            if (!t.hasWeed && env.currentEvent === 'day' && Math.random() < BALANCE.weedChance) {
+                t.hasWeed = true;
+                if (gardenActive) updateTileDOM(idx);
+                return;
+            }
             if (t.hasWeed) return;
 
             const p = PLANTS[t.plantId];
@@ -2874,19 +2949,44 @@ function init() {
             else if (wasWet) speed *= 2;
             if (env.currentEvent === 'rain' || env.currentEvent === 'storm') speed *= 3;
 
+            const previousGrowth = t.growth;
             t.growth = Math.min(100, t.growth + (100 / p.time) * speed);
             if (wasWet) t.water = Math.max(0, t.water - 1);
             if (hadSlimeWater) {
                 t.slimeWater = Math.max(0, t.slimeWater - 1);
-                if (t.slimeWater === 0) triggerTileSlimeWaterFade(idx);
+                if (gardenActive && t.slimeWater === 0) triggerTileSlimeWaterFade(idx);
             }
+            let mutationAdded = false;
             if (t.growth >= 100 && t.mutations.length < 3) {
                 let r = Math.random(); let mChance = 1 + buffs.mutChance;
-                if (r < MUTATIONS.rainbow.chance * mChance && canTileReceiveMutation(t, 'rainbow')) commitTileMutation(idx, 'rainbow');
-                else if (r < MUTATIONS.gold.chance * mChance && canTileReceiveMutation(t, 'gold')) commitTileMutation(idx, 'gold');
+                if (r < MUTATIONS.rainbow.chance * mChance && canTileReceiveMutation(t, 'rainbow')) mutationAdded = commitTileMutation(idx, 'rainbow');
+                else if (r < MUTATIONS.gold.chance * mChance && canTileReceiveMutation(t, 'gold')) mutationAdded = commitTileMutation(idx, 'gold');
             }
-            updateTileDOM(idx);
+            if (!gardenActive) return;
+            const stageChanged = (previousGrowth < 30 && t.growth >= 30) || (previousGrowth < 100 && t.growth >= 100);
+            const waterStateChanged = (wasWet && t.water === 0) || (hadSlimeWater && t.slimeWater === 0);
+            if (stageChanged || waterStateChanged || mutationAdded) updateTileDOM(idx);
+            else updateGrowingTileDOM(idx);
         });
+    }
+
+    function updateGrowingTileDOM(idx) {
+        const t = tiles[idx];
+        const fill = document.getElementById(`grow-${idx}`);
+        const wrapper = document.getElementById(`tile-${idx}`)?.querySelector('.plant-wrapper');
+        if (!t || !fill || !wrapper) return;
+        const growthWidth = `${Math.max(0, Math.min(100, t.growth)).toFixed(2)}%`;
+        if (fill.dataset.width !== growthWidth) {
+            fill.style.width = growthWidth;
+            fill.dataset.width = growthWidth;
+        }
+        if (t.growth < 30 || t.growth >= 100) return;
+        const sproutRatio = Math.max(0, Math.min(1, (t.growth - 30) / 70));
+        const plantScale = ((0.58 + Math.sqrt(sproutRatio) * 0.42) * (t.scale || 1)).toFixed(3);
+        if (wrapper.dataset.plantScale !== plantScale) {
+            wrapper.style.setProperty('--plant-scale', plantScale);
+            wrapper.dataset.plantScale = plantScale;
+        }
     }
 
     function updateTileDOM(idx) {
@@ -3078,6 +3178,7 @@ function init() {
         tileEl.dataset.fxGeometryQueued = '1';
         requestAnimationFrame(() => {
             delete tileEl.dataset.fxGeometryQueued;
+            if (!isElementSurfaceActive(tileEl)) return;
             updateModelBoundMutationGeometry(tileEl, model);
         });
     }
@@ -3145,6 +3246,7 @@ function init() {
         let lastMeasuredAt = 0;
         const refresh = now => {
             if (!tileEl.isConnected) return;
+            if (!isElementSurfaceActive(tileEl)) return;
             if (now - lastMeasuredAt >= 32) {
                 lastMeasuredAt = now;
                 const model = tileEl.querySelector('.model.visible');
@@ -3156,9 +3258,11 @@ function init() {
     }
 
     function scheduleMutationGeometryRefresh() {
+        if (!isGardenSurfaceActive()) return;
         if (env.mutationGeometryRefreshFrame) return;
         env.mutationGeometryRefreshFrame = requestAnimationFrame(() => {
             env.mutationGeometryRefreshFrame = null;
+            if (!isGardenSurfaceActive()) return;
             document.querySelectorAll('#garden .tile').forEach(tileEl => {
                 const model = tileEl.querySelector('.model.visible');
                 if (!model || (!tileEl.className.includes('mut-') && !tileEl.classList.contains('has-weed'))) return;
@@ -3181,6 +3285,7 @@ function init() {
         const syncVisibility = () => document.documentElement.classList.toggle('app-effects-paused', document.hidden);
         if (!env.mutationVisibilityBound) {
             document.addEventListener('visibilitychange', syncVisibility, { passive: true });
+            document.addEventListener('visibilitychange', syncActiveSurfaceState, { passive: true });
             env.mutationVisibilityBound = true;
         }
         syncVisibility();
@@ -3213,7 +3318,7 @@ function init() {
         queueModelBoundMutationGeometry(el, document.getElementById(`model-${idx}`));
     }
 
-    function updateUI() {
+    function updateHeaderUI() {
         const coins = document.getElementById('ui-coins');
         const level = document.getElementById('ui-lvl');
         const xpFill = document.getElementById('ui-xp-fill');
@@ -3227,37 +3332,47 @@ function init() {
         let hasDoneQuests = player.quests.some(q => q.current >= q.target && !q.claimed);
         document.getElementById('menu-badge').style.display = (hasDoneQuests || hasClaimableRewards()) ? 'block' : 'none';
         updateMenuMarkers();
-        renderSeeds();
-        tiles.forEach((_, idx) => updateTileDOM(idx));
-        const menuOpen = document.getElementById('side-menu')?.classList.contains('open');
-        if (menuOpen) {
+    }
+
+    function updateUI() {
+        updateHeaderUI();
+        const surface = activeSurface();
+        if (surface === 'garden') {
+            renderSeeds();
+            tiles.forEach((_, idx) => updateTileDOM(idx));
+            renderCompanionAbility();
+        } else if (surface === 'menu') {
             renderQuests();
             renderActiveStatusStrip();
             renderCompanion();
             if (env.openMenuSections?.showcase) renderShowcase();
             if (env.openMenuSections?.diary) renderDiary();
             if (env.openMenuSections?.rewards) renderRewards();
-        } else {
-            renderCompanionAbility();
+        } else if (surface === 'shop') {
+            renderShop();
         }
         applyDecorStyle();
-        if (document.getElementById('shop-modal')?.classList.contains('open')) renderShop();
     }
 
     function realtimeUiTick() {
         if (document.hidden) return;
-        updateCompanionState();
-        renderCompanionAbility();
-        const menuOpen = document.getElementById('side-menu')?.classList.contains('open');
-        if (menuOpen) renderCompanionVitals();
-        updateStateIndicator();
-        if (menuOpen) renderActiveStatusStrip();
+        const surface = activeSurface();
+        if (surface === 'garden') {
+            renderCompanionAbility();
+            updateStateIndicator();
+        } else if (surface === 'menu') {
+            renderCompanionVitals();
+            renderActiveStatusStrip();
+        } else {
+            updateOpenShopTimer();
+        }
     }
 
     function toggleMenu() {
         toggleShop(false);
         const menu = document.getElementById('side-menu');
         menu.classList.toggle('open');
+        syncActiveSurfaceState();
         updateUI();
     }
 
@@ -3269,11 +3384,16 @@ function init() {
     function toggleShop(force) {
         const modal = document.getElementById('shop-modal');
         if (!modal) return;
+        const wasOpen = modal.classList.contains('open');
         const shouldOpen = typeof force === 'boolean' ? force : !modal.classList.contains('open');
         modal.classList.toggle('open', shouldOpen);
         if (shouldOpen) {
             document.getElementById('side-menu')?.classList.remove('open');
+            syncActiveSurfaceState();
             renderShop();
+        } else if (wasOpen) {
+            syncActiveSurfaceState();
+            updateUI();
         }
     }
 
@@ -3978,6 +4098,10 @@ function init() {
         if (env.companionSpecialTimer) clearTimeout(env.companionSpecialTimer);
         env.companionSpecialTimer = setTimeout(() => {
             env.companionSpecialTimer = null;
+            if (activeSurface() !== 'menu' || document.hidden) {
+                scheduleCompanionSpecial();
+                return;
+            }
             const id = player.companion.skin;
             const special = id === 'voidpuddle' ? 'levitating' : '';
             if (special && !player.companion.sleeping && !env.companionPetting && Math.random() < 0.55) startCompanionSpecial(special);
@@ -5801,7 +5925,8 @@ function init() {
         if (q && q.current < q.target) {
             q.current += amount;
             if (q.current >= q.target) { sfx.play('pop'); showToast("Задание выполнено!", "#f1c40f"); }
-            updateUI();
+            updateHeaderUI();
+            if (activeSurface() === 'menu') renderQuests();
         }
     }
 

@@ -15089,7 +15089,7 @@ body.event-alien .companion-panel.room-style-backroom .companion-window::after {
     opacity:0;
     pointer-events:none;
     z-index:56;
-    will-change:clip-path, transform, opacity, background-position, filter;
+    will-change:clip-path, transform, opacity;
     animation:lavaFloodCell 5.8s cubic-bezier(.18,.72,.22,1) forwards;
 }
 .tile.lava-hit::after {
@@ -15111,7 +15111,7 @@ body.event-alien .companion-panel.room-style-backroom .companion-window::after {
     opacity:0;
     pointer-events:none;
     z-index:57;
-    will-change:clip-path, transform, opacity, filter, background-position;
+    will-change:transform, opacity;
     animation:lavaMutationFlash 5.8s cubic-bezier(.18,.72,.2,1) forwards;
 }
 @keyframes lavaModelCoat {
@@ -20720,6 +20720,29 @@ body.event-night.bloodmoon-phase .companion-window-scene::after {
 }
 
 /* Mutation/event performance pass: lightweight gold glints and lifecycle pausing. */
+.fps-meter {
+    position: fixed;
+    top: max(8px, env(safe-area-inset-top));
+    right: max(8px, env(safe-area-inset-right));
+    z-index: 6500;
+    min-width: 54px;
+    padding: 4px 7px;
+    border: 1px solid rgba(255, 255, 255, .22);
+    border-radius: 8px;
+    background: rgba(20, 26, 24, .58);
+    color: rgba(255, 255, 255, .78);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .18);
+    font: 700 10px/1.1 ui-monospace, SFMono-Regular, Consolas, monospace;
+    letter-spacing: .2px;
+    pointer-events: none;
+    user-select: none;
+    backdrop-filter: blur(2px);
+    transition: color .2s ease, border-color .2s ease;
+}
+.fps-meter b { color: #8df08e; }
+.fps-meter[data-state="warn"] b { color: #ffd36b; }
+.fps-meter[data-state="bad"] b { color: #ff8b82; }
+
 .slime-gold-sparkles {
     position:absolute;
     z-index:8;
@@ -20749,6 +20772,26 @@ body.event-night.bloodmoon-phase .companion-window-scene::after {
 .app-effects-paused * { animation-play-state:paused!important; }
 .side-menu:not(.open) *,
 .menu-fold:not(.open) * { animation-play-state:paused!important; }
+html.app-effects-paused *,
+html.app-effects-paused *::before,
+html.app-effects-paused *::after,
+.side-menu:not(.open) *,
+.side-menu:not(.open) *::before,
+.side-menu:not(.open) *::after,
+.menu-fold:not(.open) *,
+.menu-fold:not(.open) *::before,
+.menu-fold:not(.open) *::after,
+.shop-modal:not(.open) *,
+.shop-modal:not(.open) *::before,
+.shop-modal:not(.open) *::after,
+body.surface-menu-active :is(.game-area,.bottom-ui,.shop-modal) *,
+body.surface-menu-active :is(.game-area,.bottom-ui,.shop-modal) *::before,
+body.surface-menu-active :is(.game-area,.bottom-ui,.shop-modal) *::after,
+body.surface-shop-active :is(.game-area,.bottom-ui,.side-menu) *,
+body.surface-shop-active :is(.game-area,.bottom-ui,.side-menu) *::before,
+body.surface-shop-active :is(.game-area,.bottom-ui,.side-menu) *::after {
+    animation-play-state:paused !important;
+}
 .toxic-event-drop,
 .toxic-impact-puddle,
 .stargum-background-comet,
@@ -20776,6 +20819,32 @@ body.event-night.bloodmoon-phase .companion-window-scene::after {
 @keyframes toxicAcidPuddleSway {
     0%,100% { transform:scaleX(.975) scaleY(.96); }
     50% { transform:scaleX(1.02) scaleY(1.035); }
+}
+.tile.mut-toxic .toxic-cloud {
+    animation:none !important;
+    transform:scaleX(1) scaleY(1) !important;
+}
+.tile.primary-electric .plant-wrapper {
+    animation:none !important;
+    filter:
+        drop-shadow(0 3px 3px rgba(0,0,0,.18))
+        drop-shadow(0 0 1px rgba(225,250,255,.96))
+        drop-shadow(0 0 5px rgba(96,220,255,.92))
+        drop-shadow(0 0 9px rgba(22,181,255,.55)) !important;
+}
+.tile.lava-hit::after {
+    clip-path:none !important;
+    background:radial-gradient(ellipse at 50% 54%, rgba(255,232,160,.36), rgba(255,102,46,.18) 48%, transparent 72%) !important;
+    filter:none !important;
+    animation:lavaMutationFlashLite 5.8s cubic-bezier(.18,.72,.2,1) forwards !important;
+}
+@keyframes lavaMutationFlashLite {
+    0%,30% { opacity:0; transform:scale(.94); }
+    37.9% { opacity:.2; transform:scale(1); }
+    48% { opacity:.42; transform:scale(1.01); }
+    68% { opacity:.24; transform:scale(1.005); }
+    88% { opacity:.08; transform:scale(1.015); }
+    100% { opacity:0; transform:scale(1.025); }
 }
 /* Startup loading screen */
 .game-loader {
