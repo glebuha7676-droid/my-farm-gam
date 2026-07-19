@@ -706,6 +706,36 @@ body.event-hell.embergoo-magma-finale .hell-bg-fire { height:62%; opacity:.86; f
             touch-action: manipulation;
             z-index: var(--tile-layer, 1);
         }
+
+        .event-ambience {
+            display:contents;
+        }
+        .event-background-layer {
+            position:fixed;
+            inset:0;
+            z-index:0;
+            display:block;
+            opacity:0;
+            transition:opacity .48s ease;
+            will-change:opacity;
+            pointer-events:none;
+            contain:strict;
+        }
+        .event-background-layer.is-active { opacity:1; }
+        .event-ambience:not(.is-visible) .event-background-layer { opacity:0; }
+        .event-ambience > :not(.event-background-layer) { position:absolute; }
+        .event-ambience.event-rain .weather-overlay,
+        .event-ambience.event-storm .weather-overlay { display:block; }
+        .event-ambience.event-holy .holy-bg-rays { display:block; }
+        .event-ambience.event-hell .hell-bg-fire { display:block; }
+        .event-ambience.event-holy.sunpudding-eclipse-fade .holy-bg-rays { opacity:0 !important; }
+        .event-ambience.event-hell.embergoo-magma-finale .hell-bg-fire {
+            height:62% !important;
+            opacity:.86 !important;
+            filter:saturate(1.18) brightness(1.08) !important;
+            animation-name:flickerFinale !important;
+            animation-duration:.68s !important;
+        }
         .tile:active { transform: translateY(2px); box-shadow: inset 0 5px 10px rgba(0,0,0,0.7), 0 2px 0px rgba(0,0,0,0.3); }
         /* A ready crop needs a second deliberate touch before it can be sold. */
         .tile.harvest-selected { box-shadow:inset 0 0 0 2px rgba(255,229,113,.78), inset 0 0 12px rgba(255,218,94,.16), 0 4px 0 rgba(0,0,0,.3); }
@@ -21023,6 +21053,43 @@ body:not(.surface-garden-active) > :is(
 ) *::after {
     animation-play-state:paused !important;
 }
+body:not(.surface-garden-active) .event-ambience > :is(
+    .event-background-layer,
+    .holy-bg-rays,
+    .hell-bg-fire,
+    .weather-overlay,
+    .night-sky-layer,
+    .bg-emitters
+) {
+    visibility:hidden !important;
+    animation-play-state:paused !important;
+}
+body:not(.surface-garden-active) .event-ambience > :is(
+    .event-background-layer,
+    .holy-bg-rays,
+    .hell-bg-fire,
+    .weather-overlay,
+    .night-sky-layer,
+    .bg-emitters
+) *,
+body:not(.surface-garden-active) .event-ambience > :is(
+    .event-background-layer,
+    .holy-bg-rays,
+    .hell-bg-fire,
+    .weather-overlay,
+    .night-sky-layer,
+    .bg-emitters
+) *::before,
+body:not(.surface-garden-active) .event-ambience > :is(
+    .event-background-layer,
+    .holy-bg-rays,
+    .hell-bg-fire,
+    .weather-overlay,
+    .night-sky-layer,
+    .bg-emitters
+) *::after {
+    animation-play-state:paused !important;
+}
 body.surface-shop-active :is(.game-area,.bottom-ui,.shop-launchbar) {
     visibility:hidden;
     content-visibility:hidden;
@@ -21058,6 +21125,7 @@ body.surface-shop-active :is(.game-area,.bottom-ui,.shop-launchbar) {
     }
     .tile.primary-electric .plant-wrapper {
         filter:drop-shadow(0 0 4px rgba(72,207,255,.78)) !important;
+        will-change:transform !important;
     }
     body.event-rain .weather-overlay,
     body.event-storm .weather-overlay {

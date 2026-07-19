@@ -20,7 +20,7 @@
         },
     };
 
-    let env = { ticks: 0, currentEvent: 'day', eventTimer: 0, nextEventTimer: 75, potTimer: 0, potActive: false, activeNest: 0, activeEquip: 0, petPatCooldowns: {}, companionDrawer: '', companionShower: false, companionShowerTimer: null, companionPointerDown: false, companionPointer: null, companionPointerId: null, companionPointerStartedInZone: false, companionPointerStartX: 0, companionPointerStartY: 0, companionPointerLastX: 0, companionPointerLastY: 0, companionPointerStartedAt: 0, companionPetting: false, companionHoldTimer: null, companionTapTimer: null, companionHeartTimer: null, companionSpecial: '', companionSpecialTimer: null, companionSpecialEndTimer: null, companionAbilitySpecial: '', companionAbilitySpecialTimer: null, companionAbilityPayload: null, companionGiftTimers: [], companionSpecialAnchorX: 0, companionSpecialAnchorY: 0, companionCoinBurstAt: 0, harvestSelectedTile: null, harvestSelectionTimer: null, openMenuSections: { showcase: false, diary: false, decor: false, rewards: false, admin: false }, backroomsLampTimer: null, backroomsLampEndTimer: null, shopTab: 'seeds', decorShopTab: 'room', pendingPlotPurchase: null, abilityFloodTimer: null, sunpuddingEclipseTimer: null, sunpuddingEclipseDarkTimer: null, embergooMagmaTimers: [], stargumCometTimers: [], stargumCometFrames: [], stargumCometFinale: false, moonmeltLunarTimers: [], moonmeltLunarFinale: false, nightDawnTimer: null, nightDawnActive: false, nightPaletteFrame: null, nightPalette: null, nightPalettePhase: 'day', fpsMeterFrame: null, perfTelemetry: null, perfLongTaskObserver: null, lastCompanionVitalsAt: 0, rewardsRenderSignature: '', eventVisualFrame: null };
+    let env = { ticks: 0, currentEvent: 'day', eventTimer: 0, nextEventTimer: 75, potTimer: 0, potActive: false, activeNest: 0, activeEquip: 0, petPatCooldowns: {}, companionDrawer: '', companionShower: false, companionShowerTimer: null, companionPointerDown: false, companionPointer: null, companionPointerId: null, companionPointerStartedInZone: false, companionPointerStartX: 0, companionPointerStartY: 0, companionPointerLastX: 0, companionPointerLastY: 0, companionPointerStartedAt: 0, companionPetting: false, companionHoldTimer: null, companionTapTimer: null, companionHeartTimer: null, companionSpecial: '', companionSpecialTimer: null, companionSpecialEndTimer: null, companionAbilitySpecial: '', companionAbilitySpecialTimer: null, companionAbilityPayload: null, companionGiftTimers: [], companionSpecialAnchorX: 0, companionSpecialAnchorY: 0, companionCoinBurstAt: 0, harvestSelectedTile: null, harvestSelectionTimer: null, openMenuSections: { showcase: false, diary: false, decor: false, rewards: false, admin: false }, backroomsLampTimer: null, backroomsLampEndTimer: null, shopTab: 'seeds', decorShopTab: 'room', pendingPlotPurchase: null, abilityFloodTimer: null, sunpuddingEclipseTimer: null, sunpuddingEclipseDarkTimer: null, embergooMagmaTimers: [], stargumCometTimers: [], stargumCometFrames: [], stargumCometFinale: false, moonmeltLunarTimers: [], moonmeltLunarFinale: false, nightDawnTimer: null, nightDawnActive: false, nightPaletteFrame: null, nightPalette: null, nightPalettePhase: 'day', fpsMeterFrame: null, perfTelemetry: null, perfLongTaskObserver: null, lastCompanionVitalsAt: 0, rewardsRenderSignature: '', eventVisualFrame: null, eventStyleCache: {}, eventBackgroundLayer: 0 };
     let eventActions = []; 
     let tiles = Array(12).fill().map((_, i) => ({ id: i, active: false, plantId: null, growth: 0, water: 0, slimeWater: 0, slimeWaterMult: 1, hasWeed: false, mutations: [], scale: .4, weight: 1, weightMult: 1, sizeTier: 'small', beeLock: 0, ghostEchoPercent: 0, ghostMarked: false, ghostCopyMutationCount: 0, ghostEcho: false, ghostValue: 0 }));
     let currentTool = 'water';
@@ -1143,12 +1143,68 @@ function init() {
         })));
     }
 
+    const ISOLATED_EVENT_TYPES = new Set(['rain', 'storm', 'toxic', 'starfall', 'holy', 'hell', 'candy', 'bee', 'alien', 'cosmic']);
+    const EVENT_OVERLAY_SELECTORS = ['.weather-overlay', '.holy-bg-rays', '.hell-bg-fire', '.night-sky-layer'];
+
+    function copyComputedEventStyle(style) {
+        return {
+            display: style.display,
+            opacity: style.opacity,
+            backgroundColor: style.backgroundColor,
+            backgroundImage: style.backgroundImage,
+            backgroundSize: style.backgroundSize,
+            backgroundPosition: style.backgroundPosition,
+            backgroundRepeat: style.backgroundRepeat,
+            filter: style.filter,
+            animationName: style.animationName,
+            animationDuration: style.animationDuration,
+            animationTimingFunction: style.animationTimingFunction,
+            animationIterationCount: style.animationIterationCount,
+            animationDirection: style.animationDirection
+        };
+    }
+
+    function applyInlineEventStyle(element, style) {
+        if (!element) return;
+        const properties = ['display', 'opacity', 'backgroundColor', 'backgroundImage', 'backgroundSize', 'backgroundPosition', 'backgroundRepeat', 'filter', 'animationName', 'animationDuration', 'animationTimingFunction', 'animationIterationCount', 'animationDirection'];
+        properties.forEach(property => { element.style[property] = style?.[property] || ''; });
+    }
+
+    function applyIsolatedEventVisual(type) {
+        const ambience = document.getElementById('event-ambience');
+        if (!ambience) return;
+        EVENT_BODY_CLASSES.forEach(className => ambience.classList.remove(className));
+        const cache = env.eventStyleCache?.[`event-${type}`];
+        const isIsolated = ISOLATED_EVENT_TYPES.has(type) && cache;
+        ambience.classList.toggle('is-visible', !!isIsolated);
+        if (isIsolated) ambience.classList.add(`event-${type}`);
+
+        const layers = ambience.querySelectorAll('.event-background-layer');
+        if (layers.length === 2) {
+            const nextIndex = env.eventBackgroundLayer === 0 ? 1 : 0;
+            const next = layers[nextIndex];
+            const previous = layers[env.eventBackgroundLayer || 0];
+            applyInlineEventStyle(next, cache?.body);
+            next.style.display = 'block';
+            next.style.opacity = '';
+            next.classList.add('is-active');
+            previous.classList.remove('is-active');
+            env.eventBackgroundLayer = nextIndex;
+        }
+        EVENT_OVERLAY_SELECTORS.forEach(selector => {
+            applyInlineEventStyle(ambience.querySelector(selector), isIsolated ? cache.overlays?.[selector] : null);
+        });
+    }
+
     function setBodyEventClass(type) {
         const nextClass = type && type !== 'day' ? `event-${type}` : '';
         EVENT_BODY_CLASSES.forEach(className => {
             if (className !== nextClass) document.body.classList.remove(className);
         });
-        if (nextClass) document.body.classList.add(nextClass);
+        // Night changes several UI palettes. Regular events are isolated from the app tree
+        // so their start/end cannot invalidate every plant and menu selector at once.
+        if (nextClass && !ISOLATED_EVENT_TYPES.has(type)) document.body.classList.add(nextClass);
+        applyIsolatedEventVisual(type);
     }
 
     async function prewarmEventStyles() {
@@ -1158,7 +1214,16 @@ function init() {
         for (const className of EVENT_BODY_CLASSES) {
             EVENT_BODY_CLASSES.forEach(candidate => document.body.classList.remove(candidate));
             document.body.classList.add(className);
-            getComputedStyle(document.body).backgroundImage;
+            const bodyStyle = getComputedStyle(document.body);
+            const overlays = {};
+            EVENT_OVERLAY_SELECTORS.forEach(selector => {
+                const element = document.querySelector(selector);
+                if (element) overlays[selector] = copyComputedEventStyle(getComputedStyle(element));
+            });
+            env.eventStyleCache[className] = {
+                body: copyComputedEventStyle(bodyStyle),
+                overlays
+            };
             await new Promise(resolve => requestAnimationFrame(resolve));
         }
         EVENT_BODY_CLASSES.forEach(className => document.body.classList.remove(className));
@@ -1259,7 +1324,7 @@ function init() {
         ensureSeedAndShopState();
         ensureSelectedSeedAvailable();
         const quickSeedKeys = getQuickSeedKeys();
-        const seedSignature = quickSeedKeys.map(key => `${key}:${getSeedOwned(key)}:${currentTool === key ? 1 : 0}`).join('|');
+        const seedSignature = getSeedRenderSignature(quickSeedKeys);
         if (container.dataset.renderSignature === seedSignature) return;
         container.dataset.renderSignature = seedSignature;
         container.innerHTML = '';
@@ -1272,7 +1337,7 @@ function init() {
             el.dataset.seed = p.id;
             el.style.setProperty('--pkt-color', p.color);
             el.onclick = () => {
-                if (amount <= 0) { showToast('Купи семена в магазине', 'gray'); return; }
+                if (getSeedOwned(p.id) <= 0) { showToast('Купи семена в магазине', 'gray'); return; }
                 selectAction(p.id);
             };
             el.innerHTML = `<div class="pkt-top"></div><div class="pkt-bg"></div><div class="seed-name">${p.name}</div><div class="seed-icon">${seedIcon(p.id)}</div><div class="seed-stock">${empty ? 'нет' : `x${amount}`}</div>`;
@@ -1308,6 +1373,24 @@ function init() {
         hidePlantInspectCard();
         document.querySelectorAll('.action-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tool === currentTool));
         renderSeeds();
+    }
+
+    function getSeedRenderSignature(keys = getQuickSeedKeys()) {
+        return keys.map(key => `${key}:${getSeedOwned(key)}:${currentTool === key ? 1 : 0}`).join('|');
+    }
+
+    function updateSeedPacketDOM(seedId) {
+        const container = document.getElementById('seeds-track');
+        const packet = container?.querySelector(`.seed-packet[data-seed="${seedId}"]`);
+        if (!container || !packet) {
+            renderSeeds();
+            return;
+        }
+        const amount = getSeedOwned(seedId);
+        packet.classList.toggle('empty', amount <= 0);
+        packet.classList.toggle('unavailable', amount <= 0);
+        packet.querySelector('.seed-stock').textContent = amount <= 0 ? 'нет' : `x${amount}`;
+        container.dataset.renderSignature = getSeedRenderSignature();
     }
 
     function clearHarvestSelection(expectedTileId = null) {
@@ -1373,7 +1456,7 @@ function init() {
             t.water = WATER_DURATION;
             decorSfx('pop', 'popitWater');
             floatText(idx, "💧", "#74b9ff");
-            updateTileDOM(idx);
+            updateTileWaterDOM(idx);
             updateQuest('water_plants', 1);
             return;
         }
@@ -1404,12 +1487,21 @@ function init() {
             if (starterMutation) commitTileMutation(idx, starterMutation);
             ensureSelectedSeedAvailable();
             decorSfx('pop', 'popitClick'); floatText(idx, `-1 ${p.name}`, "#74b9ff");
-            renderSeeds();
+            if (getSeedOwned(p.id) <= 0 || currentTool !== p.id) renderSeeds();
+            else updateSeedPacketDOM(p.id);
             updateTileDOM(idx);
             const plantedTile = document.getElementById(`tile-${idx}`);
             plantedTile.classList.add('planting');
             setTimeout(() => plantedTile.classList.remove('planting'), 760);
         }
+    }
+
+    function updateTileWaterDOM(idx) {
+        const tile = tiles[idx];
+        const element = document.getElementById(`tile-${idx}`);
+        if (!tile || !element) return;
+        element.classList.toggle('wet', tile.water > 0);
+        element.classList.toggle('slime-watered', tile.slimeWater > 0);
     }
 
     function harvestPlant(idx) {
@@ -1630,6 +1722,7 @@ function init() {
         env.sunpuddingEclipseTimer = null;
         env.sunpuddingEclipseDarkTimer = null;
         document.body.classList.remove('sunpudding-eclipse-fade', 'sunpudding-eclipse-dark');
+        document.getElementById('event-ambience')?.classList.remove('sunpudding-eclipse-fade', 'sunpudding-eclipse-dark');
     }
 
     function saveInlineStyle(element, property) {
@@ -1829,12 +1922,14 @@ function init() {
                 return;
             }
             document.body.classList.add('sunpudding-eclipse-fade');
+            document.getElementById('event-ambience')?.classList.add('sunpudding-eclipse-fade');
             env.sunpuddingEclipseDarkTimer = setTimeout(() => {
                 if (env.currentEvent !== 'holy') {
                     clearSunpuddingEclipsePhase();
                     return;
                 }
                 document.body.classList.add('sunpudding-eclipse-dark');
+                document.getElementById('event-ambience')?.classList.add('sunpudding-eclipse-dark');
                 const eclipseCount = tier >= 3 ? (1 + (Math.random() < 0.15 ? 1 : 0)) : 1;
                 const added = addMutationToRandomTiles('eclipse', eclipseCount);
                 if (added > 0) {
@@ -1857,7 +1952,10 @@ function init() {
         env.eventVisualFrame = null;
         env.currentEvent = type;
         setBodyEventClass(type);
-        const emitters = document.getElementById('bg-emitters'); emitters.replaceChildren();
+        const emitters = document.getElementById('bg-emitters');
+        // Particle cleanup is deliberately moved off the same frame as the palette switch.
+        // Combining DOM removal, style invalidation and new particle creation caused event-start spikes.
+        requestAnimationFrame(() => requestAnimationFrame(() => emitters?.replaceChildren()));
         recordPerformanceEvent('event-transition', { from: previousEvent, to: type }, 0);
 
         if (type === 'starfall') { showToast("Магия звезд!", "#a29bfe"); scheduleEventBackgroundParticles(type); }
@@ -1912,15 +2010,17 @@ function init() {
 
     function scheduleEventBackgroundParticles(type) {
         env.eventVisualFrame = requestAnimationFrame(() => {
-            env.eventVisualFrame = null;
-            if (env.currentEvent !== type) return;
-            if (type === 'toxic') createToxicSlimeRain();
-            else if (type === 'starfall') createBgParticles(['⭐'], 'bgFlyStar');
-            else if (type === 'hell') createBgParticles(['■'], 'bgFlyAsh');
-            else if (type === 'candy') createBgParticles(['🍬','🍭','🍩','🍪'], 'bgFlyCandy');
-            else if (type === 'bee') createBgParticles(['🐝'], 'bgFlyBee');
-            else if (type === 'alien') createBgParticles(['🛸'], 'bgFlyUfo');
-            else if (type === 'cosmic') createBgParticles(['●','☄','✦'], 'bgFlyStar');
+            env.eventVisualFrame = requestAnimationFrame(() => {
+                env.eventVisualFrame = null;
+                if (env.currentEvent !== type) return;
+                if (type === 'toxic') createToxicSlimeRain();
+                else if (type === 'starfall') createBgParticles(['⭐'], 'bgFlyStar');
+                else if (type === 'hell') createBgParticles(['■'], 'bgFlyAsh');
+                else if (type === 'candy') createBgParticles(['🍬','🍭','🍩','🍪'], 'bgFlyCandy');
+                else if (type === 'bee') createBgParticles(['🐝'], 'bgFlyBee');
+                else if (type === 'alien') createBgParticles(['🛸'], 'bgFlyUfo');
+                else if (type === 'cosmic') createBgParticles(['●','☄','✦'], 'bgFlyStar');
+            });
         });
     }
 
@@ -2310,6 +2410,8 @@ function init() {
         (env.embergooMagmaTimers || []).forEach(timerId => clearTimeout(timerId));
         env.embergooMagmaTimers = [];
         env.embergooMagmaFinale = false;
+        document.body.classList.remove('embergoo-magma-finale');
+        document.getElementById('event-ambience')?.classList.remove('embergoo-magma-finale');
         document.querySelectorAll('.tile.lava-hit').forEach(tile => tile.classList.remove('lava-hit'));
     }
 
@@ -3214,14 +3316,14 @@ function init() {
             if (!t.active || t.growth >= 100) {
                 if (wasWet) {
                     t.water = Math.max(0, t.water - 1);
-                    if (gardenActive && t.water === 0) updateTileDOM(idx);
+                    if (gardenActive && t.water === 0) updateTileWaterDOM(idx);
                 }
                 if (hadSlimeWater) {
                     t.slimeWater = Math.max(0, t.slimeWater - 1);
                     if (t.slimeWater === 0) {
                         if (gardenActive) {
                             triggerTileSlimeWaterFade(idx);
-                            updateTileDOM(idx);
+                            updateTileWaterDOM(idx);
                         }
                     }
                 }
@@ -3258,9 +3360,37 @@ function init() {
             if (!gardenActive) return;
             const stageChanged = (previousGrowth < 30 && t.growth >= 30) || (previousGrowth < 100 && t.growth >= 100);
             const waterStateChanged = (wasWet && t.water === 0) || (hadSlimeWater && t.slimeWater === 0);
-            if (stageChanged || waterStateChanged || mutationAdded) updateTileDOM(idx);
-            else updateGrowingTileDOM(idx);
+            if (stageChanged || mutationAdded) queueTileVisualRefresh(idx);
+            else {
+                if (waterStateChanged) updateTileWaterDOM(idx);
+                updateGrowingTileDOM(idx);
+            }
         });
+    }
+
+    function queueTileVisualRefresh(idx) {
+        if (!env.pendingTileVisuals) env.pendingTileVisuals = new Set();
+        env.pendingTileVisuals.add(idx);
+        if (env.tileVisualFrame) return;
+        const flush = frameStartedAt => {
+            env.tileVisualFrame = null;
+            if (!isGardenSurfaceActive()) {
+                env.pendingTileVisuals.clear();
+                return;
+            }
+            const queue = env.pendingTileVisuals;
+            // Keep stage swaps under a small frame budget instead of rebuilding every
+            // simultaneously matured crop in the same frame.
+            let processed = 0;
+            while (queue.size && processed < 3 && performance.now() - frameStartedAt < 4.5) {
+                const next = queue.values().next().value;
+                queue.delete(next);
+                updateTileDOM(next);
+                processed++;
+            }
+            if (queue.size) env.tileVisualFrame = requestAnimationFrame(flush);
+        };
+        env.tileVisualFrame = requestAnimationFrame(flush);
     }
 
     function updateGrowingTileDOM(idx) {
@@ -3535,19 +3665,14 @@ function init() {
 
     function trackModelBoundMutationGeometry(tileEl, durationMs = 850) {
         if (!tileEl?.isConnected) return;
-        const startedAt = performance.now();
-        let lastMeasuredAt = 0;
-        const refresh = now => {
-            if (!tileEl.isConnected) return;
-            if (!isElementSurfaceActive(tileEl)) return;
-            if (now - lastMeasuredAt >= 32) {
-                lastMeasuredAt = now;
-                const model = tileEl.querySelector('.model.visible');
-                if (model) updateModelBoundMutationGeometry(tileEl, model);
-            }
-            if (now - startedAt < durationMs) requestAnimationFrame(refresh);
-        };
-        requestAnimationFrame(refresh);
+        queueModelBoundMutationGeometry(tileEl, tileEl.querySelector('.model.visible'));
+        clearTimeout(tileEl._mutationGeometryFinishTimer);
+        tileEl._mutationGeometryFinishTimer = setTimeout(() => {
+            delete tileEl._mutationGeometryFinishTimer;
+            if (!tileEl.isConnected || !isElementSurfaceActive(tileEl)) return;
+            const model = tileEl.querySelector('.model.visible');
+            if (model) queueModelBoundMutationGeometry(tileEl, model);
+        }, Math.max(80, durationMs));
     }
 
     function scheduleMutationGeometryRefresh() {
@@ -4351,6 +4476,7 @@ function init() {
         overlay?.classList.toggle('show-moonmelt-cast', env.companionAbilitySpecial === 'moonmelt');
         habitat?.classList.toggle('cosmic-shadow', env.companionSpecial === 'levitating' || env.companionSpecial === 'landing');
         document.body.classList.toggle('embergoo-magma-finale', embergooSurge && env.currentEvent === 'hell');
+        document.getElementById('event-ambience')?.classList.toggle('embergoo-magma-finale', embergooSurge && env.currentEvent === 'hell');
         garden?.classList.toggle('embergoo-magma-heat', embergooSurge && env.currentEvent === 'hell');
         garden?.classList.toggle('embergoo-magma-cooling', embergooPayload?.phase === 'cooling' && env.currentEvent === 'hell');
         garden?.classList.toggle('moonmelt-moonlit', env.companionAbilitySpecial === 'moonmelt' && env.currentEvent === 'night');
@@ -6185,7 +6311,9 @@ function init() {
         const persistentPerformanceRuntime = {
             fpsMeterFrame: env.fpsMeterFrame || null,
             perfTelemetry: env.perfTelemetry || null,
-            perfLongTaskObserver: env.perfLongTaskObserver || null
+            perfLongTaskObserver: env.perfLongTaskObserver || null,
+            eventStyleCache: env.eventStyleCache || {},
+            eventBackgroundLayer: env.eventBackgroundLayer || 0
         };
         env = {
             ticks: 0, currentEvent: 'day', eventTimer: 0, nextEventTimer: rollNextEventDelay(), potTimer: 0, potActive: false,
@@ -6227,10 +6355,13 @@ function init() {
     }
     
     function floatText(tileIdx, text, color) {
-        const el = document.getElementById(`tile-${tileIdx}`); const rect = el.getBoundingClientRect();
+        const el = document.getElementById(`tile-${tileIdx}`);
+        if (!el) return;
+        const existing = el.querySelectorAll(':scope > .floating-text');
+        if (existing.length >= 2) existing[0].remove();
         const f = document.createElement('div'); f.className = 'floating-text';
-        f.style.left = `${rect.left + rect.width/2 - 20}px`; f.style.top = `${rect.top}px`;
-        f.style.color = color; f.innerHTML = text; document.body.appendChild(f);
+        f.style.left = '50%'; f.style.top = '20%'; f.style.marginLeft = '-32px'; f.style.width = '64px';
+        f.style.color = color; f.textContent = text; el.appendChild(f);
         setTimeout(() => f.remove(), 1200);
     }
 
