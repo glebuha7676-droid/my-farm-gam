@@ -37,9 +37,9 @@ const MUTATIONS = {
 };
 
 const EGG_RARITIES = {
-    common:    { id: 'common',    name: 'Обычное яйцо',  label: 'Обычное',     icon: '🥚', color: '#d8b47a', hatchSeconds: 180,  cost: 50 },
-    rare:      { id: 'rare',      name: 'Синее яйцо',    label: 'Редкое',      icon: '🥚', color: '#4aa3ff', hatchSeconds: 600,  cost: 1500 },
-    legendary: { id: 'legendary', name: 'Золотое яйцо',  label: 'Легендарное', icon: '🥚', color: '#ffd43b', hatchSeconds: 1200, cost: 6000 },
+    common:    { id: 'common',    name: 'Обычное яйцо',  label: 'Обычное',     icon: '🥚', color: '#d8b47a', hatchSeconds: 60,  cost: 50 },
+    rare:      { id: 'rare',      name: 'Синее яйцо',    label: 'Редкое',      icon: '🥚', color: '#4aa3ff', hatchSeconds: 180, cost: 1500 },
+    legendary: { id: 'legendary', name: 'Золотое яйцо',  label: 'Легендарное', icon: '🥚', color: '#ffd43b', hatchSeconds: 300, cost: 6000 },
     mystery:   { id: 'mystery',   name: '???',           label: '???',         icon: '❔', color: '#a29bfe', hatchSeconds: 0,    cost: 0, locked: true }
 };
 

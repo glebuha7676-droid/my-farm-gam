@@ -2,7 +2,7 @@
         coins: BALANCE.startCoins || 50, lvl: 1, xp: 0, xpNeed: BALANCE.xpNeedStart || 100,
         rares: {}, unlockedMutations: [],
         pets: [], petLevels: {}, petInventory: [], equippedPets: [null, null, null], unlockedPetSlots: 1, slimeCollection: {},
-        incubator: [null, null, null], quests: [], lastSaved: Date.now(), bank: 0,
+        incubator: [null, null, null], quests: [], lastSaved: Date.now(), bank: 0, showcasePayoutAt: Date.now() + 30 * 60 * 1000, showcasePayoutRemainder: 0,
         plotStyle: 'default', ownedDecor: ['default'], decorPaintColor: '#ff7675', roomStyle: 'cozy', ownedRoomDecor: ['cozy'], purchasedPlots: [],
         seedInventory: { carrot: 6 },
         shop: { stock: {}, refreshAt: 0, merchantStock: {}, merchantArrivesAt: 0, merchantLeavesAt: 0, adEggViews: 0, adEggUnlocked: false },
@@ -24,7 +24,7 @@
     let eventActions = []; 
     let tiles = Array(12).fill().map((_, i) => ({ id: i, active: false, plantId: null, growth: 0, water: 0, slimeWater: 0, slimeWaterMult: 1, hasWeed: false, mutations: [], scale: .4, weight: 1, weightMult: 1, sizeTier: 'small', beeLock: 0, ghostEchoPercent: 0, ghostMarked: false, ghostCopyMutationCount: 0, ghostEcho: false, ghostValue: 0 }));
     let currentTool = 'water';
-    const TEST_HATCH_INSTANT = true;
+    const TEST_HATCH_INSTANT = false;
     const TITANIC_CROP_CHANCE = 0.001;
     const HUGE_CROP_CHANCE = 0.01;
     const BIG_CROP_CHANCE = 0.09;
@@ -57,7 +57,9 @@
     // UNUSED: daily rewards are temporarily hidden while timed gifts are tuned.
     const DAILY_REWARDS_ENABLED = false;
     const DAILY_REWARD_INTERVAL = 24 * 60 * 60 * 1000;
-    const TIMED_REWARD_STEP = 10 * 60 * 1000;
+    const TIMED_REWARD_STEP = 5 * 60 * 1000;
+    const TIMED_REWARD_COOLDOWN = 60 * 60 * 1000;
+    const SHOWCASE_PAYOUT_INTERVAL = 30 * 60 * 1000;
     // The mutation, its confirmation sound, and the full lava coverage happen together.
     const LAVA_MUTATION_COMMIT_DELAY_MS = 2200;
     const LAVA_MUTATION_REMOVE_DELAY_MS = 5800;
@@ -621,6 +623,13 @@
         return `${scaled.toFixed(decimals).replace(/\.0+$/, '').replace('.', ',')}${unit[1]}`;
     }
 
+    function compactCoinMarkup(value) {
+        const label = compactNumber(value);
+        const match = label.match(/^(.*?)([KMBT])$/);
+        if (!match) return `<b class="coin-number">${label}</b>`;
+        return `<b class="coin-number">${match[1]}</b><small class="coin-abbrev">${match[2]}</small>`;
+    }
+
     function cropSizePercent(weight, sizeTier) {
         return Math.round(visualScaleForWeight(weight, sizeTier) * 100);
     }
@@ -677,6 +686,25 @@
 
     function totalShowcaseIncome() {
         return (player.showcase || []).reduce((sum, crop) => sum + showcaseIncome(crop), 0);
+    }
+
+    function ensureShowcasePayoutState() {
+        const now = Date.now();
+        player.showcasePayoutAt = Math.max(0, Number(player.showcasePayoutAt) || ((Number(player.lastSaved) || now) + SHOWCASE_PAYOUT_INTERVAL));
+        player.showcasePayoutRemainder = Math.max(0, Number(player.showcasePayoutRemainder) || 0);
+    }
+
+    function processShowcasePayout(maxCycles = 4) {
+        ensureShowcasePayoutState();
+        const now = Date.now();
+        if (now < player.showcasePayoutAt) return;
+        const cycles = Math.max(1, Math.min(maxCycles, Math.floor((now - player.showcasePayoutAt) / SHOWCASE_PAYOUT_INTERVAL) + 1));
+        const pending = totalShowcaseIncome() * (cycles / 2) + player.showcasePayoutRemainder;
+        const payout = Math.floor(pending);
+        player.showcasePayoutRemainder = pending - payout;
+        player.bank += payout;
+        player.showcasePayoutAt += cycles * SHOWCASE_PAYOUT_INTERVAL;
+        if (env.openMenuSections?.showcase) renderShowcase();
     }
 
     function cropSnapshotFromTile(idx) {
@@ -3297,6 +3325,7 @@ function init() {
         const shopStateChanged = shopStateBefore !== `${player.shop.refreshAt}|${player.shop.merchantArrivesAt}|${player.shop.merchantLeavesAt}`;
         ensureRewardsState();
         updateCompanionState();
+        processShowcasePayout();
         if (env.currentEvent !== 'day') {
             if (env.eventTimer > 0) {
                 env.eventTimer--;
@@ -3771,7 +3800,10 @@ function init() {
         const xpFill = document.getElementById('ui-xp-fill');
         const xpWidth = `${Math.min(100, (player.xp / player.xpNeed) * 100).toFixed(2)}%`;
         const coinText = compactNumber(player.coins);
-        if (coins.textContent !== coinText) coins.textContent = coinText;
+        if (coins.dataset.value !== coinText) {
+            coins.innerHTML = compactCoinMarkup(player.coins);
+            coins.dataset.value = coinText;
+        }
         if (level.textContent !== `${player.lvl}`) level.textContent = player.lvl;
         if (xpFill.dataset.width !== xpWidth) {
             xpFill.style.width = xpWidth;
@@ -4349,19 +4381,19 @@ function init() {
             pet.cleanClock = 0;
         }
 
-        // Sleep restores fixed chunks, with a small offline cap so returning to the
-        // game cannot instantly refill the meter.
-        const energyElapsed = pet.sleeping ? Math.min(elapsed, 40) : elapsed;
+        // Every sleep tick restores a fixed 5 energy and gives 3 ability charge.
+        const energyElapsed = pet.sleeping ? Math.min(elapsed, 20) : elapsed;
         pet.energyClock += energyElapsed;
-        const energyInterval = pet.sleeping ? 8 : 2;
+        const energyInterval = 2;
         const energySteps = Math.floor(pet.energyClock / energyInterval);
         if (energySteps > 0) {
             const beforeEnergy = pet.energy;
-            const energyDelta = energySteps * (pet.sleeping ? 4 : 1);
+            const energyDelta = energySteps * (pet.sleeping ? 5 : 1);
             pet.energy = pet.sleeping ? Math.min(100, pet.energy + energyDelta) : Math.max(0, pet.energy - energyDelta);
             if (pet.sleeping && pet.energy > beforeEnergy) {
                 const restored = pet.energy - beforeEnergy;
-                chargeCompanionAbility(restored * 0.45);
+                const sleepTicks = Math.ceil(restored / 5);
+                chargeCompanionAbility(sleepTicks * 3);
                 grantCompanionProgress(restored);
             }
             pet.energyClock %= energyInterval;
@@ -5754,7 +5786,9 @@ function init() {
         normalizeTimedRewards();
         const root = document.getElementById('rewards-content');
         if (!root) return;
-        const timedHeadText = 'Новый подарок каждые 10 минут';
+        const timedHeadText = player.rewards.timedCooldownUntil
+            ? `Новая серия через ${formatRewardCountdown(player.rewards.timedCooldownUntil - Date.now())}`
+            : 'Новый подарок каждые 5 минут';
 
         root.innerHTML = `
             <div class="reward-block timed-block">
@@ -5800,7 +5834,9 @@ function init() {
         }
         const timedCountdown = document.getElementById('timed-reward-countdown');
         if (timedCountdown) {
-            timedCountdown.textContent = 'Новый подарок каждые 10 минут';
+            timedCountdown.textContent = player.rewards.timedCooldownUntil
+                ? `Новая серия через ${formatRewardCountdown(player.rewards.timedCooldownUntil - Date.now())}`
+                : 'Новый подарок каждые 5 минут';
         }
         root.querySelectorAll('.timed-reward-card .timed-copy small').forEach((label, index) => {
             const claimed = !!player.rewards.timedClaimed[index];
@@ -5866,6 +5902,9 @@ function init() {
             return;
         }
         player.rewards.timedClaimed[index] = true;
+        if (!TEST_UNLOCK_ALL_REWARDS && player.rewards.timedClaimed.every(Boolean)) {
+            player.rewards.timedCooldownUntil = Date.now() + TIMED_REWARD_COOLDOWN;
+        }
         if (button) {
             button.classList.remove('gift-opened');
             void button.offsetWidth;
@@ -6045,12 +6084,8 @@ function init() {
         if (player.rewards.xpBoostUntil && now >= player.rewards.xpBoostUntil) {
             player.rewards.xpBoostUntil = 0;
         }
-        // Legacy saves can contain an old five-hour cooldown. Timed gifts now
-        // restart immediately after the fourth gift, so it is safe to clear it.
-        if (player.rewards.timedCooldownUntil) {
+        if (player.rewards.timedCooldownUntil && now >= player.rewards.timedCooldownUntil) {
             player.rewards.timedCooldownUntil = 0;
-        }
-        if (!player.rewards.timedCooldownUntil && player.rewards.timedClaimed.every(Boolean)) {
             player.rewards.timedCycleStartedAt = now;
             player.rewards.timedClaimed = [false, false, false, false];
         }
@@ -6294,7 +6329,7 @@ function init() {
             coins: BALANCE.startCoins || 50, lvl: 1, xp: 0, xpNeed: BALANCE.xpNeedStart || 100,
             rares: {}, unlockedMutations: [],
             pets: [], petLevels: {}, petInventory: [], equippedPets: [null, null, null], unlockedPetSlots: 1, slimeCollection: {},
-            incubator: [null, null, null], quests: [], lastSaved: Date.now(), bank: 0,
+            incubator: [null, null, null], quests: [], lastSaved: Date.now(), bank: 0, showcasePayoutAt: Date.now() + SHOWCASE_PAYOUT_INTERVAL, showcasePayoutRemainder: 0,
             plotStyle: 'default', ownedDecor: ['default'], decorPaintColor: '#ff7675', roomStyle: 'cozy', ownedRoomDecor: ['cozy'], purchasedPlots: defaultPurchasedPlots(),
             seedInventory: defaultSeedInventory(),
             shop: defaultShopState(),
@@ -6970,11 +7005,8 @@ function init() {
 
     function calcOfflineBank() {
         let diffSec = Math.floor((Date.now() - player.lastSaved) / 1000);
-        const incomePerHour = totalShowcaseIncome();
-        if (diffSec > 60 && incomePerHour > 0) {
-            const cappedSeconds = Math.min(BALANCE.offlineBankCapSeconds, diffSec);
-            player.bank += Math.floor((incomePerHour * cappedSeconds) / 3600);
-        }
+        const maxCycles = Math.max(1, Math.floor((BALANCE.offlineBankCapSeconds || 0) / (SHOWCASE_PAYOUT_INTERVAL / 1000)));
+        if (diffSec >= SHOWCASE_PAYOUT_INTERVAL / 1000) processShowcasePayout(maxCycles);
         player.lastSaved = Date.now();
         if (env.openMenuSections?.showcase) renderShowcase();
     }
@@ -7042,13 +7074,13 @@ function init() {
         player.incubator = [player.incubator[0] || null, player.incubator[1] || null, player.incubator[2] || null].map(item => {
             if (!item || !EGG_RARITIES[item.rarity] || item.rarity === 'mystery') return null;
             const egg = EGG_RARITIES[item.rarity];
-            const duration = Math.max(1, Number(item.duration) || egg.hatchSeconds);
+            const duration = egg.hatchSeconds;
             const startedAt = Math.max(0, Number(item.startedAt) || Date.now());
             return {
                 ...item,
                 duration,
                 startedAt,
-                readyAt: TEST_HATCH_INSTANT ? startedAt : Math.max(startedAt, Number(item.readyAt) || startedAt + duration * 1000),
+                readyAt: TEST_HATCH_INSTANT ? startedAt : startedAt + duration * 1000,
                 hatching: false
             };
         });
