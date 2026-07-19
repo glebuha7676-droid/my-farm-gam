@@ -20972,15 +20972,13 @@ button,
     content-visibility:visible;
     contain:layout paint style;
 }
-body:not(.surface-garden-active) #garden *,
-body:not(.surface-garden-active) #garden *::before,
-body:not(.surface-garden-active) #garden *::after {
-    animation:none !important;
+#garden.effects-suspended *,
+#garden.effects-suspended *::before,
+#garden.effects-suspended *::after {
+    animation-play-state:paused !important;
     transition:none !important;
-    filter:none !important;
-    will-change:auto !important;
 }
-body:not(.surface-garden-active) #garden :is(
+#garden.effects-suspended :is(
     .mutation-aura,
     .toxic-cloud,
     .acid-bubble,
@@ -20990,7 +20988,7 @@ body:not(.surface-garden-active) #garden :is(
     .lunar-mutation-beam,
     .bloodmoon-mutation-beam
 ) {
-    display:none !important;
+    visibility:hidden !important;
 }
 body:not(.surface-garden-active) > :is(
     .holy-bg-rays,
@@ -20999,7 +20997,31 @@ body:not(.surface-garden-active) > :is(
     .night-sky-layer,
     .bg-emitters
 ) {
-    display:none !important;
+    visibility:hidden !important;
+    animation-play-state:paused !important;
+}
+body:not(.surface-garden-active) > :is(
+    .holy-bg-rays,
+    .hell-bg-fire,
+    .weather-overlay,
+    .night-sky-layer,
+    .bg-emitters
+) *,
+body:not(.surface-garden-active) > :is(
+    .holy-bg-rays,
+    .hell-bg-fire,
+    .weather-overlay,
+    .night-sky-layer,
+    .bg-emitters
+) *::before,
+body:not(.surface-garden-active) > :is(
+    .holy-bg-rays,
+    .hell-bg-fire,
+    .weather-overlay,
+    .night-sky-layer,
+    .bg-emitters
+) *::after {
+    animation-play-state:paused !important;
 }
 body.surface-shop-active :is(.game-area,.bottom-ui,.shop-launchbar) {
     visibility:hidden;
@@ -21036,6 +21058,30 @@ body.surface-shop-active :is(.game-area,.bottom-ui,.shop-launchbar) {
     }
     .tile.primary-electric .plant-wrapper {
         filter:drop-shadow(0 0 4px rgba(72,207,255,.78)) !important;
+    }
+    body.event-rain .weather-overlay,
+    body.event-storm .weather-overlay {
+        animation:rainDropOptimized 1.05s steps(14,end) infinite !important;
+        will-change:auto !important;
+    }
+    body.event-holy .holy-bg-rays {
+        animation:mobileHolyRays 4.2s ease-in-out infinite !important;
+        will-change:opacity !important;
+    }
+    body.event-hell .hell-bg-fire,
+    body.event-hell.embergoo-magma-finale .hell-bg-fire {
+        height:52% !important;
+        transform-origin:50% 100%;
+        animation:mobileHellFire 1.15s ease-in-out infinite alternate !important;
+        filter:none !important;
+        will-change:transform,opacity !important;
+    }
+    body.event-storm {
+        animation-timing-function:steps(1,end) !important;
+    }
+    .bg-particle,
+    .bg-toxic-slime {
+        filter:none !important;
     }
     .tile:not(.mut-electric):is(.mut-gold,.primary-gold) .model {
         animation:materialGoldPalette 3.2s steps(32,end) infinite !important;
@@ -21081,4 +21127,20 @@ body.surface-shop-active :is(.game-area,.bottom-ui,.shop-launchbar) {
     .stargum-comet-shadow {
         filter:blur(5px);
     }
+}
+
+@keyframes mobileHolyRays {
+    0%,100% { opacity:.62; }
+    50% { opacity:.86; }
+}
+@keyframes mobileHellFire {
+    from { opacity:.56; transform:scaleY(.91); }
+    to { opacity:.76; transform:scaleY(1.04); }
+}
+
+html.app-style-prewarm *,
+html.app-style-prewarm *::before,
+html.app-style-prewarm *::after {
+    animation-play-state:paused !important;
+    transition:none !important;
 }

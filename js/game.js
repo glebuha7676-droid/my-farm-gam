@@ -20,7 +20,7 @@
         },
     };
 
-    let env = { ticks: 0, currentEvent: 'day', eventTimer: 0, nextEventTimer: 75, potTimer: 0, potActive: false, activeNest: 0, activeEquip: 0, petPatCooldowns: {}, companionDrawer: '', companionShower: false, companionShowerTimer: null, companionPointerDown: false, companionPointer: null, companionPointerId: null, companionPointerStartedInZone: false, companionPointerStartX: 0, companionPointerStartY: 0, companionPointerLastX: 0, companionPointerLastY: 0, companionPointerStartedAt: 0, companionPetting: false, companionHoldTimer: null, companionTapTimer: null, companionHeartTimer: null, companionSpecial: '', companionSpecialTimer: null, companionSpecialEndTimer: null, companionAbilitySpecial: '', companionAbilitySpecialTimer: null, companionAbilityPayload: null, companionGiftTimers: [], companionSpecialAnchorX: 0, companionSpecialAnchorY: 0, companionCoinBurstAt: 0, harvestSelectedTile: null, harvestSelectionTimer: null, openMenuSections: { showcase: false, diary: false, decor: false, rewards: false, admin: false }, backroomsLampTimer: null, backroomsLampEndTimer: null, shopTab: 'seeds', decorShopTab: 'room', pendingPlotPurchase: null, abilityFloodTimer: null, sunpuddingEclipseTimer: null, sunpuddingEclipseDarkTimer: null, embergooMagmaTimers: [], stargumCometTimers: [], stargumCometFrames: [], stargumCometFinale: false, moonmeltLunarTimers: [], moonmeltLunarFinale: false, nightDawnTimer: null, nightDawnActive: false, nightPaletteFrame: null, nightPalette: null, nightPalettePhase: 'day', fpsMeterFrame: null, perfTelemetry: null, perfLongTaskObserver: null, lastCompanionVitalsAt: 0, rewardsRenderSignature: '' };
+    let env = { ticks: 0, currentEvent: 'day', eventTimer: 0, nextEventTimer: 75, potTimer: 0, potActive: false, activeNest: 0, activeEquip: 0, petPatCooldowns: {}, companionDrawer: '', companionShower: false, companionShowerTimer: null, companionPointerDown: false, companionPointer: null, companionPointerId: null, companionPointerStartedInZone: false, companionPointerStartX: 0, companionPointerStartY: 0, companionPointerLastX: 0, companionPointerLastY: 0, companionPointerStartedAt: 0, companionPetting: false, companionHoldTimer: null, companionTapTimer: null, companionHeartTimer: null, companionSpecial: '', companionSpecialTimer: null, companionSpecialEndTimer: null, companionAbilitySpecial: '', companionAbilitySpecialTimer: null, companionAbilityPayload: null, companionGiftTimers: [], companionSpecialAnchorX: 0, companionSpecialAnchorY: 0, companionCoinBurstAt: 0, harvestSelectedTile: null, harvestSelectionTimer: null, openMenuSections: { showcase: false, diary: false, decor: false, rewards: false, admin: false }, backroomsLampTimer: null, backroomsLampEndTimer: null, shopTab: 'seeds', decorShopTab: 'room', pendingPlotPurchase: null, abilityFloodTimer: null, sunpuddingEclipseTimer: null, sunpuddingEclipseDarkTimer: null, embergooMagmaTimers: [], stargumCometTimers: [], stargumCometFrames: [], stargumCometFinale: false, moonmeltLunarTimers: [], moonmeltLunarFinale: false, nightDawnTimer: null, nightDawnActive: false, nightPaletteFrame: null, nightPalette: null, nightPalettePhase: 'day', fpsMeterFrame: null, perfTelemetry: null, perfLongTaskObserver: null, lastCompanionVitalsAt: 0, rewardsRenderSignature: '', eventVisualFrame: null };
     let eventActions = []; 
     let tiles = Array(12).fill().map((_, i) => ({ id: i, active: false, plantId: null, growth: 0, water: 0, slimeWater: 0, slimeWaterMult: 1, hasWeed: false, mutations: [], scale: .4, weight: 1, weightMult: 1, sizeTier: 'small', beeLock: 0, ghostEchoPercent: 0, ghostMarked: false, ghostCopyMutationCount: 0, ghostEcho: false, ghostValue: 0 }));
     let currentTool = 'water';
@@ -36,6 +36,7 @@
     const WATER_DURATION = 15;
     const COMPANION_ABILITY_DEFAULT_COOLDOWN_MS = 3 * 60 * 1000;
     const MATERIAL_MUTATIONS = new Set(['gold', 'rainbow', 'diamond']);
+    const EVENT_BODY_CLASSES = ['rain', 'storm', 'toxic', 'starfall', 'holy', 'hell', 'candy', 'bee', 'alien', 'night', 'cosmic'].map(type => `event-${type}`);
     // These models already use ::after for their own body details, so honey needs a real child layer.
     const HONEY_CAP_MODEL_IDS = new Set(['pepper', 'corn', 'dragonfruit']);
     const BIG_WEIGHT_MIN = 50;
@@ -876,7 +877,6 @@ function init() {
         bindPressFeedback();
         setupMutationPerformanceObservers();
         syncActiveSurfaceState();
-        initFpsMeter();
         setInterval(gameTick, 1000);
         setInterval(realtimeUiTick, 500);
         setInterval(saveGame, 10000);
@@ -898,10 +898,32 @@ function init() {
         let frames = 0;
         let sampleStartedAt = performance.now();
         let previousFrameAt = sampleStartedAt;
+        let resetAfterHidden = false;
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) resetAfterHidden = true;
+        }, { passive: true });
         const sample = now => {
-            frames += 1;
             const frameMs = now - previousFrameAt;
             previousFrameAt = now;
+            // Time spent in another app is not game FPS; a visible freeze is recorded separately.
+            if (resetAfterHidden) {
+                resetAfterHidden = false;
+                frames = 0;
+                sampleStartedAt = now;
+                env.fpsMeterFrame = requestAnimationFrame(sample);
+                return;
+            }
+            if (frameMs >= 1000) {
+                value.textContent = '0';
+                meter.dataset.state = 'bad';
+                recordPerformanceEvent('frame-freeze', { frameMs: Math.round(frameMs) }, 1000);
+                recordFpsSample(0, frameMs);
+                frames = 0;
+                sampleStartedAt = now;
+                env.fpsMeterFrame = requestAnimationFrame(sample);
+                return;
+            }
+            frames += 1;
             if (frameMs >= 55 && frameMs < 1000) recordPerformanceEvent('frame-stall', { frameMs: Math.round(frameMs) }, 1400);
             const elapsed = now - sampleStartedAt;
             if (elapsed >= 500) {
@@ -1121,16 +1143,43 @@ function init() {
         })));
     }
 
+    function setBodyEventClass(type) {
+        const nextClass = type && type !== 'day' ? `event-${type}` : '';
+        EVENT_BODY_CLASSES.forEach(className => {
+            if (className !== nextClass) document.body.classList.remove(className);
+        });
+        if (nextClass) document.body.classList.add(nextClass);
+    }
+
+    async function prewarmEventStyles() {
+        // Event backgrounds are CSS-generated. Resolve their gradients once behind the loader
+        // so the first real event does not pay that compilation cost during play.
+        document.documentElement.classList.add('app-style-prewarm');
+        for (const className of EVENT_BODY_CLASSES) {
+            EVENT_BODY_CLASSES.forEach(candidate => document.body.classList.remove(candidate));
+            document.body.classList.add(className);
+            getComputedStyle(document.body).backgroundImage;
+            await new Promise(resolve => requestAnimationFrame(resolve));
+        }
+        EVENT_BODY_CLASSES.forEach(className => document.body.classList.remove(className));
+        document.documentElement.classList.remove('app-style-prewarm');
+        setBodyEventClass(env.currentEvent);
+        syncActiveSurfaceState();
+    }
+
     async function finishGameLoading() {
         setGameLoaderProgress(82, 'Проверяем ресурсы...');
         await Promise.allSettled([
             preloadGameAssets(),
             document.fonts?.ready || Promise.resolve()
         ]);
+        setGameLoaderProgress(90, 'Прогреваем графику...');
+        await prewarmEventStyles();
         setGameLoaderProgress(94, 'Запускаем ферму...');
         await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
         window.YandexGames?.gameReady();
         setGameLoaderProgress(100, 'Готово!');
+        initFpsMeter();
         const loader = document.getElementById('game-loader');
         if (!loader) return;
         setTimeout(() => {
@@ -1798,27 +1847,31 @@ function init() {
     }
 
     function startEvent(type, customDuration = null) {
+        const previousEvent = env.currentEvent || 'day';
         clearSunpuddingEclipsePhase();
         clearEmbergooMagmaTimers();
         clearStargumCometFinale();
         clearMoonmeltLunarFinale();
         clearNightAmbience();
+        if (env.eventVisualFrame) cancelAnimationFrame(env.eventVisualFrame);
+        env.eventVisualFrame = null;
         env.currentEvent = type;
-        document.body.className = type === 'day' ? '' : `event-${type}`;
+        setBodyEventClass(type);
         const emitters = document.getElementById('bg-emitters'); emitters.replaceChildren();
+        recordPerformanceEvent('event-transition', { from: previousEvent, to: type }, 0);
 
-        if (type === 'starfall') { showToast("Магия звезд!", "#a29bfe"); createBgParticles(['⭐'], 'bgFlyStar'); }
-        else if (type === 'toxic') { showToast("Токсичные осадки!", "#c9ff4c"); createToxicSlimeRain(); }
+        if (type === 'starfall') { showToast("Магия звезд!", "#a29bfe"); scheduleEventBackgroundParticles(type); }
+        else if (type === 'toxic') { showToast("Токсичные осадки!", "#c9ff4c"); scheduleEventBackgroundParticles(type); }
         else if (type === 'holy') { showToast("Солнечный луч!", "#f5f6fa"); }
-        else if (type === 'hell') { showToast("Теплый вихрь!", "#e84118"); createBgParticles(['■'], 'bgFlyAsh'); }
-        else if (type === 'candy') { showToast("Конфетный дождь!", "#ff9ff3"); createBgParticles(['🍬','🍭','🍩','🍪'], 'bgFlyCandy'); }
-        else if (type === 'bee') { showToast("Жужжание повсюду!", "#f9ca24"); createBgParticles(['🐝'], 'bgFlyBee'); }
-        else if (type === 'alien') { showToast("Инопланетное вторжение!", "#40ffd2"); createBgParticles(['🛸'], 'bgFlyUfo'); }
+        else if (type === 'hell') { showToast("Теплый вихрь!", "#e84118"); scheduleEventBackgroundParticles(type); }
+        else if (type === 'candy') { showToast("Конфетный дождь!", "#ff9ff3"); scheduleEventBackgroundParticles(type); }
+        else if (type === 'bee') { showToast("Жужжание повсюду!", "#f9ca24"); scheduleEventBackgroundParticles(type); }
+        else if (type === 'alien') { showToast("Инопланетное вторжение!", "#40ffd2"); scheduleEventBackgroundParticles(type); }
         else if (type === 'night') {
             showToast("Ночь слайма", "#c4d4ff");
             startNightAmbience();
         }
-        else if (type === 'cosmic') { showToast("Космический ивент!", "#7b4dff"); createBgParticles(['●','☄','✦'], 'bgFlyStar'); }
+        else if (type === 'cosmic') { showToast("Космический ивент!", "#7b4dff"); scheduleEventBackgroundParticles(type); }
 
         if (type === 'day') {
             env.eventTimer = 0;
@@ -1857,11 +1910,25 @@ function init() {
         }
     }
 
+    function scheduleEventBackgroundParticles(type) {
+        env.eventVisualFrame = requestAnimationFrame(() => {
+            env.eventVisualFrame = null;
+            if (env.currentEvent !== type) return;
+            if (type === 'toxic') createToxicSlimeRain();
+            else if (type === 'starfall') createBgParticles(['⭐'], 'bgFlyStar');
+            else if (type === 'hell') createBgParticles(['■'], 'bgFlyAsh');
+            else if (type === 'candy') createBgParticles(['🍬','🍭','🍩','🍪'], 'bgFlyCandy');
+            else if (type === 'bee') createBgParticles(['🐝'], 'bgFlyBee');
+            else if (type === 'alien') createBgParticles(['🛸'], 'bgFlyUfo');
+            else if (type === 'cosmic') createBgParticles(['●','☄','✦'], 'bgFlyStar');
+        });
+    }
+
     function createBgParticles(chars, animName) {
         const container = document.getElementById('bg-emitters');
         if (!container) return;
         const fragment = document.createDocumentFragment();
-        const count = prefersCompactEffects() ? 9 : 15;
+        const count = prefersCompactEffects() ? 6 : 15;
         for(let i=0; i<count; i++) {
             const p = document.createElement('div');
             p.innerText = chars[Math.floor(Math.random()*chars.length)];
@@ -1880,7 +1947,7 @@ function init() {
         const container = document.getElementById('bg-emitters');
         if (!container) return;
         const fragment = document.createDocumentFragment();
-        const count = prefersCompactEffects() ? 11 : 18;
+        const count = prefersCompactEffects() ? 7 : 18;
         for (let i = 0; i < count; i++) {
             const blob = document.createElement('i');
             const size = Math.round(9 + Math.random() * 12);
@@ -1937,7 +2004,7 @@ function init() {
 
         // Hidden screens keep game state current without building disposable effects behind them.
         if (!isGardenSurfaceActive()) {
-            commitTileMutation(idx, effectiveMutType);
+            commitMutationWithoutVisual(idx, effectiveMutType);
             return;
         }
 
@@ -2117,6 +2184,10 @@ function init() {
         return true;
     }
 
+    function commitMutationWithoutVisual(idx, mutType) {
+        return commitTileMutation(idx, resolveEventMutationType(mutType));
+    }
+
     function resolveEventMutationType(mutType) {
         return mutType === 'bee' ? 'honey' : mutType;
     }
@@ -2155,6 +2226,10 @@ function init() {
             const liveTile = tiles[idx];
             const liveTileEl = document.getElementById(`tile-${idx}`);
             if (!liveTile?.active || !liveTileEl || !canTileReceiveMutation(liveTile, 'rainbow')) return;
+            if (!isGardenSurfaceActive()) {
+                commitMutationWithoutVisual(idx, 'rainbow');
+                return;
+            }
             const flare = document.createElement('i');
             flare.className = 'basic-rainbow-mutation-flash';
             flare.setAttribute('aria-hidden', 'true');
@@ -2183,10 +2258,15 @@ function init() {
         const el = document.getElementById(`tile-${idx}`);
         if (!el) return;
         setTimeout(() => {
+            const mutType = type === 'diamond' ? 'diamond' : 'gold';
+            if (!canTileReceiveMutation(tiles[idx], mutType)) return;
+            if (!isGardenSurfaceActive()) {
+                commitMutationWithoutVisual(idx, mutType);
+                return;
+            }
             const className = type === 'diamond' ? 'midas-diamond-hit' : 'midas-coin-hit';
             el.classList.add(className);
             setTimeout(() => {
-                const mutType = type === 'diamond' ? 'diamond' : 'gold';
                 if (commitTileMutation(idx, mutType)) updateTileDOM(idx);
             }, 620);
             setTimeout(() => document.getElementById(`tile-${idx}`)?.classList.remove(className), 950);
@@ -2199,6 +2279,10 @@ function init() {
         queueEmbergooMagmaTimer(() => {
             const live = tiles[idx];
             if (!canTileReceiveMutation(live, 'lava')) return;
+            if (!isGardenSurfaceActive()) {
+                commitMutationWithoutVisual(idx, 'lava');
+                return;
+            }
             if (el.classList.contains('lava-hit')) return;
             if (playSound) sfx.play('lavaRise');
             el.classList.add('lava-hit');
@@ -2206,9 +2290,11 @@ function init() {
                 const current = tiles[idx];
                 if (!canTileReceiveMutation(current, 'lava')) return;
                 if (commitTileMutation(idx, 'lava')) {
-                    sfx.play('magmaMutation');
-                    sfx.play('lavaBubble');
-                    syncTileMutationPresentation(idx);
+                    if (isGardenSurfaceActive()) {
+                        sfx.play('magmaMutation');
+                        sfx.play('lavaBubble');
+                        syncTileMutationPresentation(idx);
+                    }
                 }
             }, LAVA_MUTATION_COMMIT_DELAY_MS);
             queueEmbergooMagmaTimer(() => {
@@ -2304,7 +2390,7 @@ function init() {
                 stargumCometFrameSet().delete(currentFrameId);
                 currentFrameId = null;
             }
-            if (env.currentEvent !== 'starfall') {
+            if (env.currentEvent !== 'starfall' || !isGardenSurfaceActive()) {
                 comet.remove();
                 return;
             }
@@ -2336,6 +2422,12 @@ function init() {
                 currentFrameId = null;
             }
             if (env.currentEvent !== 'starfall') return;
+            if (!isGardenSurfaceActive()) {
+                shadow.remove();
+                comet.remove();
+                commitMutationWithoutVisual(idx, 'meteor');
+                return;
+            }
             const progress = Math.min(1, (now - startedAt) / STARGUM_COMET_IMPACT_DELAY_MS);
 
             const shadowProgress = progress < .68
@@ -2381,10 +2473,20 @@ function init() {
             const tileEl = document.getElementById(`tile-${idx}`);
             const garden = document.getElementById('garden');
             if (!tileEl || !garden || !canTileReceiveMutation(tile, 'meteor')) return;
+            if (!isGardenSurfaceActive()) {
+                queueStargumCometTimer(() => {
+                    if (env.currentEvent === 'starfall') commitMutationWithoutVisual(idx, 'meteor');
+                }, STARGUM_COMET_PRELUDE_MS + STARGUM_COMET_IMPACT_DELAY_MS);
+                return;
+            }
 
             playStargumBackgroundComet();
             queueStargumCometTimer(() => {
                 if (env.currentEvent !== 'starfall') return;
+                if (!isGardenSurfaceActive()) {
+                    commitMutationWithoutVisual(idx, 'meteor');
+                    return;
+                }
 
                 const gardenRect = garden.getBoundingClientRect();
                 const tileRect = tileEl.getBoundingClientRect();
@@ -2523,6 +2625,12 @@ function init() {
             const tile = tiles[idx];
             const tileEl = document.getElementById(`tile-${idx}`);
             if (!tileEl || !canTileReceiveMutation(tile, 'lunar') || tileEl.classList.contains('lunar-hit')) return;
+            if (!isGardenSurfaceActive()) {
+                queueMoonmeltLunarTimer(() => {
+                    if (env.currentEvent === 'night') commitMutationWithoutVisual(idx, 'lunar');
+                }, MOONMELT_LUNAR_BEAM_COMMIT_DELAY_MS);
+                return;
+            }
 
             const beam = document.createElement('span');
             beam.className = 'lunar-mutation-beam';
@@ -2534,8 +2642,10 @@ function init() {
                 const liveTile = tiles[idx];
                 if (!canTileReceiveMutation(liveTile, 'lunar')) return;
                 if (commitTileMutation(idx, 'lunar')) {
-                    sfx.play('mut');
-                    syncTileMutationPresentation(idx);
+                    if (isGardenSurfaceActive()) {
+                        sfx.play('mut');
+                        syncTileMutationPresentation(idx);
+                    }
                 }
             }, MOONMELT_LUNAR_BEAM_COMMIT_DELAY_MS);
 
@@ -2561,6 +2671,12 @@ function init() {
             const tile = tiles[idx];
             const tileEl = document.getElementById(`tile-${idx}`);
             if (!tileEl || !tile?.mutations.includes('lunar') || tileEl.classList.contains('bloodmoon-hit')) return;
+            if (!isGardenSurfaceActive()) {
+                queueMoonmeltLunarTimer(() => {
+                    if (env.currentEvent === 'night') commitMutationWithoutVisual(idx, 'bloodmoon');
+                }, MOONMELT_BLOODMOON_BEAM_COMMIT_DELAY_MS);
+                return;
+            }
 
             const beam = document.createElement('span');
             beam.className = 'bloodmoon-mutation-beam';
@@ -2571,8 +2687,10 @@ function init() {
             queueMoonmeltLunarTimer(() => {
                 if (!tiles[idx]?.mutations.includes('lunar')) return;
                 if (replaceTileMutation(idx, 'lunar', 'bloodmoon')) {
-                    sfx.play('mut');
-                    syncTileMutationPresentation(idx);
+                    if (isGardenSurfaceActive()) {
+                        sfx.play('mut');
+                        syncTileMutationPresentation(idx);
+                    }
                 }
             }, MOONMELT_BLOODMOON_BEAM_COMMIT_DELAY_MS);
 
@@ -3057,7 +3175,7 @@ function init() {
                     }
                 });
             }
-            if (gardenActive) updateStateIndicator();
+            updateStateIndicator();
             if (env.eventTimer <= 0 && !hasActiveEventFinale()) {
                 if (env.currentEvent === 'night') beginNightDawn();
                 else startEvent('day');
@@ -3065,7 +3183,7 @@ function init() {
         } else {
             if (env.nextEventTimer > 0) {
                 env.nextEventTimer--;
-                if (gardenActive) updateStateIndicator();
+                updateStateIndicator();
             }
             if (env.nextEventTimer <= 0) {
                 triggerRandomDayEvent();
@@ -6041,6 +6159,7 @@ function init() {
     }
 
     function resetProgress() {
+        if (env.eventVisualFrame) cancelAnimationFrame(env.eventVisualFrame);
         if (env.companionSpecialTimer) clearTimeout(env.companionSpecialTimer);
         if (env.companionSpecialEndTimer) clearTimeout(env.companionSpecialEndTimer);
         if (env.companionAbilitySpecialTimer) clearTimeout(env.companionAbilitySpecialTimer);
@@ -6084,7 +6203,7 @@ function init() {
             companionCoinBurstAt: 0,
             openMenuSections: { showcase: false, diary: false, decor: false, rewards: false, admin: false },
             backroomsLampTimer: null, backroomsLampEndTimer: null, shopTab: 'seeds', decorShopTab: 'room', pendingPlotPurchase: null, abilityFloodTimer: null, sunpuddingEclipseTimer: null, sunpuddingEclipseDarkTimer: null,
-            lastCompanionVitalsAt: 0, rewardsRenderSignature: '',
+            lastCompanionVitalsAt: 0, rewardsRenderSignature: '', eventVisualFrame: null,
             ...persistentPerformanceRuntime
         };
         eventActions = [];
