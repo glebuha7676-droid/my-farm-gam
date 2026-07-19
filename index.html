@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Grow a Farm: Mobile Edition</title>
-    <link rel="stylesheet" href="css/styles.css?v=20260719r">
+    <link rel="stylesheet" href="css/styles.css?v=20260719s">
 </head>
 <body>
     <div class="game-loader" id="game-loader" role="status" aria-live="polite" aria-label="Загрузка игры">
@@ -25,7 +25,15 @@
     <div class="night-sky-layer" aria-hidden="true"></div>
     <div class="bg-emitters" id="bg-emitters"></div>
     <div class="toast-container" id="toasts"></div>
-    <div class="fps-meter" id="fps-meter" aria-label="Текущая частота кадров">FPS <b id="fps-value">--</b></div>
+    <button class="fps-meter" id="fps-meter" type="button" onclick="togglePerfPanel()" aria-label="Текущая частота кадров. Нажмите, чтобы открыть отчёт производительности">FPS <b id="fps-value">--</b></button>
+    <div class="perf-panel" id="perf-panel" hidden>
+        <b>Диагностика плавности</b>
+        <small id="perf-summary">Запись включена</small>
+        <div>
+            <button type="button" onclick="clearPerformanceReport()">Сбросить</button>
+            <button type="button" class="perf-export-btn" onclick="downloadPerformanceReport()">Скачать отчёт</button>
+        </div>
+    </div>
 
     <div class="big-mutation-overlay" id="mut-overlay">
         <div class="mut-rays"></div>
@@ -263,6 +271,6 @@
     <script src="js/yandex-sdk.js?v=20260718b" defer></script>
     <script src="js/data.js?v=20260718b" defer></script>
     <script src="js/audio.js?v=20260719b" defer></script>
-    <script src="js/game.js?v=20260719r" defer></script>
+    <script src="js/game.js?v=20260719s" defer></script>
 </body>
 </html>

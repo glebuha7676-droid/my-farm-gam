@@ -20734,7 +20734,7 @@ body.event-night.bloodmoon-phase .companion-window-scene::after {
     box-shadow: 0 2px 8px rgba(0, 0, 0, .18);
     font: 700 10px/1.1 ui-monospace, SFMono-Regular, Consolas, monospace;
     letter-spacing: .2px;
-    pointer-events: none;
+    cursor: pointer;
     user-select: none;
     backdrop-filter: blur(2px);
     transition: color .2s ease, border-color .2s ease;
@@ -20742,6 +20742,27 @@ body.event-night.bloodmoon-phase .companion-window-scene::after {
 .fps-meter b { color: #8df08e; }
 .fps-meter[data-state="warn"] b { color: #ffd36b; }
 .fps-meter[data-state="bad"] b { color: #ff8b82; }
+.perf-panel {
+    position: fixed;
+    top: max(42px, calc(env(safe-area-inset-top) + 34px));
+    right: max(8px, env(safe-area-inset-right));
+    z-index: 6500;
+    width: min(210px, calc(100vw - 16px));
+    padding: 9px;
+    border: 1px solid rgba(255,255,255,.25);
+    border-radius: 10px;
+    background: rgba(20,26,24,.88);
+    color: #fff;
+    box-shadow: 0 5px 16px rgba(0,0,0,.28);
+    font: 700 10px/1.25 ui-monospace, SFMono-Regular, Consolas, monospace;
+    text-align: left;
+}
+.perf-panel[hidden] { display:none; }
+.perf-panel b { display:block; font-size:11px; }
+.perf-panel small { display:block; margin:4px 0 8px; color:rgba(255,255,255,.72); font-size:9px; }
+.perf-panel > div { display:flex; gap:5px; }
+.perf-panel button { flex:1; min-height:28px; border:1px solid rgba(255,255,255,.25); border-radius:6px; background:rgba(255,255,255,.12); color:#fff; font:700 9px/1 ui-monospace, SFMono-Regular, Consolas, monospace; }
+.perf-panel .perf-export-btn { background:rgba(78,171,99,.72); border-color:rgba(181,255,173,.55); }
 
 .slime-gold-sparkles {
     position:absolute;

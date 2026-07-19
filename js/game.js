@@ -20,7 +20,7 @@
         },
     };
 
-    let env = { ticks: 0, currentEvent: 'day', eventTimer: 0, nextEventTimer: 75, potTimer: 0, potActive: false, activeNest: 0, activeEquip: 0, petPatCooldowns: {}, companionDrawer: '', companionShower: false, companionShowerTimer: null, companionPointerDown: false, companionPointer: null, companionPointerId: null, companionPointerStartedInZone: false, companionPointerStartX: 0, companionPointerStartY: 0, companionPointerLastX: 0, companionPointerLastY: 0, companionPointerStartedAt: 0, companionPetting: false, companionHoldTimer: null, companionTapTimer: null, companionHeartTimer: null, companionSpecial: '', companionSpecialTimer: null, companionSpecialEndTimer: null, companionAbilitySpecial: '', companionAbilitySpecialTimer: null, companionAbilityPayload: null, companionGiftTimers: [], companionSpecialAnchorX: 0, companionSpecialAnchorY: 0, companionCoinBurstAt: 0, harvestSelectedTile: null, harvestSelectionTimer: null, openMenuSections: { showcase: false, diary: false, decor: false, rewards: false, admin: false }, backroomsLampTimer: null, backroomsLampEndTimer: null, shopTab: 'seeds', decorShopTab: 'room', pendingPlotPurchase: null, abilityFloodTimer: null, sunpuddingEclipseTimer: null, sunpuddingEclipseDarkTimer: null, embergooMagmaTimers: [], stargumCometTimers: [], stargumCometFrames: [], stargumCometFinale: false, moonmeltLunarTimers: [], moonmeltLunarFinale: false, nightDawnTimer: null, nightDawnActive: false, nightPaletteFrame: null, nightPalette: null, nightPalettePhase: 'day' };
+    let env = { ticks: 0, currentEvent: 'day', eventTimer: 0, nextEventTimer: 75, potTimer: 0, potActive: false, activeNest: 0, activeEquip: 0, petPatCooldowns: {}, companionDrawer: '', companionShower: false, companionShowerTimer: null, companionPointerDown: false, companionPointer: null, companionPointerId: null, companionPointerStartedInZone: false, companionPointerStartX: 0, companionPointerStartY: 0, companionPointerLastX: 0, companionPointerLastY: 0, companionPointerStartedAt: 0, companionPetting: false, companionHoldTimer: null, companionTapTimer: null, companionHeartTimer: null, companionSpecial: '', companionSpecialTimer: null, companionSpecialEndTimer: null, companionAbilitySpecial: '', companionAbilitySpecialTimer: null, companionAbilityPayload: null, companionGiftTimers: [], companionSpecialAnchorX: 0, companionSpecialAnchorY: 0, companionCoinBurstAt: 0, harvestSelectedTile: null, harvestSelectionTimer: null, openMenuSections: { showcase: false, diary: false, decor: false, rewards: false, admin: false }, backroomsLampTimer: null, backroomsLampEndTimer: null, shopTab: 'seeds', decorShopTab: 'room', pendingPlotPurchase: null, abilityFloodTimer: null, sunpuddingEclipseTimer: null, sunpuddingEclipseDarkTimer: null, embergooMagmaTimers: [], stargumCometTimers: [], stargumCometFrames: [], stargumCometFinale: false, moonmeltLunarTimers: [], moonmeltLunarFinale: false, nightDawnTimer: null, nightDawnActive: false, nightPaletteFrame: null, nightPalette: null, nightPalettePhase: 'day', fpsMeterFrame: null, perfTelemetry: null, perfLongTaskObserver: null };
     let eventActions = []; 
     let tiles = Array(12).fill().map((_, i) => ({ id: i, active: false, plantId: null, growth: 0, water: 0, slimeWater: 0, slimeWaterMult: 1, hasWeed: false, mutations: [], scale: .4, weight: 1, weightMult: 1, sizeTier: 'small', beeLock: 0, ghostEchoPercent: 0, ghostMarked: false, ghostCopyMutationCount: 0, ghostEcho: false, ghostValue: 0 }));
     let currentTool = 'water';
@@ -892,15 +892,22 @@ function init() {
         const value = document.getElementById('fps-value');
         if (!meter || !value || env.fpsMeterFrame) return;
 
+        initPerformanceTelemetry();
+
         let frames = 0;
         let sampleStartedAt = performance.now();
+        let previousFrameAt = sampleStartedAt;
         const sample = now => {
             frames += 1;
+            const frameMs = now - previousFrameAt;
+            previousFrameAt = now;
+            if (frameMs >= 55 && frameMs < 1000) recordPerformanceEvent('frame-stall', { frameMs: Math.round(frameMs) }, 850);
             const elapsed = now - sampleStartedAt;
             if (elapsed >= 500) {
                 const fps = Math.round((frames * 1000) / elapsed);
                 value.textContent = String(Math.min(120, fps));
                 meter.dataset.state = fps >= 50 ? 'good' : fps >= 30 ? 'warn' : 'bad';
+                recordFpsSample(fps, elapsed);
                 frames = 0;
                 sampleStartedAt = now;
             }
@@ -908,6 +915,157 @@ function init() {
         };
 
         env.fpsMeterFrame = requestAnimationFrame(sample);
+    }
+
+    function initPerformanceTelemetry() {
+        if (env.perfTelemetry) return;
+        env.perfTelemetry = {
+            startedAt: new Date().toISOString(),
+            entries: [],
+            actionTrail: [],
+            samples: [],
+            lowestFps: 120,
+            lastEventAt: {},
+            maxEntries: 360
+        };
+        document.addEventListener('pointerdown', event => trackPerformanceAction(event.target), { passive: true, capture: true });
+
+        if (!('PerformanceObserver' in window)) return;
+        try {
+            env.perfLongTaskObserver = new PerformanceObserver(list => {
+                list.getEntries().forEach(entry => {
+                    recordPerformanceEvent('long-task', { durationMs: Math.round(entry.duration) }, 500);
+                });
+            });
+            env.perfLongTaskObserver.observe({ entryTypes: ['longtask'] });
+        } catch (_) {
+            // Long Tasks API is not available in every mobile browser; frame samples remain enough there.
+        }
+    }
+
+    function getPerformanceSnapshot() {
+        const planted = tiles.filter(tile => tile.active && tile.plantId);
+        const ready = planted.filter(tile => tile.growth >= 100).length;
+        const mutationCount = planted.reduce((sum, tile) => sum + (tile.mutations?.length || 0), 0);
+        return {
+            surface: activeSurface(),
+            event: env.currentEvent || 'day',
+            eventSecondsLeft: Math.max(0, Math.ceil(Number(env.eventTimer) || 0)),
+            plants: planted.length,
+            ready,
+            growing: planted.length - ready,
+            mutations: mutationCount,
+            transientEffects: document.querySelectorAll('.lava-hit,.comet-hit,.lunar-hit,.bloodmoon-hit,.strike,.toxic-hit,.hell-hit,.wave-rise-hit').length,
+            recentActions: env.perfTelemetry?.actionTrail.slice(-6) || []
+        };
+    }
+
+    function recordPerformanceEvent(type, detail = {}, cooldownMs = 0) {
+        const telemetry = env.perfTelemetry;
+        if (!telemetry || document.hidden) return;
+        const now = performance.now();
+        if (cooldownMs && now - (telemetry.lastEventAt[type] || 0) < cooldownMs) return;
+        telemetry.lastEventAt[type] = now;
+        telemetry.entries.push({
+            atMs: Math.round(now),
+            type,
+            ...detail,
+            snapshot: getPerformanceSnapshot()
+        });
+        if (telemetry.entries.length > telemetry.maxEntries) telemetry.entries.splice(0, telemetry.entries.length - telemetry.maxEntries);
+        updatePerfPanel();
+    }
+
+    function recordFpsSample(fps, elapsed) {
+        const telemetry = env.perfTelemetry;
+        if (!telemetry || document.hidden) return;
+        telemetry.lowestFps = Math.min(telemetry.lowestFps, fps);
+        telemetry.samples.push({ atMs: Math.round(performance.now()), fps, windowMs: Math.round(elapsed) });
+        if (telemetry.samples.length > 180) telemetry.samples.shift();
+        if (fps < 45) recordPerformanceEvent('low-fps', { fps, windowMs: Math.round(elapsed) }, 1600);
+    }
+
+    function trackPerformanceAction(target) {
+        const telemetry = env.perfTelemetry;
+        if (!telemetry || !(target instanceof Element)) return;
+        const tile = target.closest('.tile');
+        const tool = target.closest('[data-tool]');
+        const seed = target.closest('[data-seed]');
+        const action = tile ? `tile:${tile.id.replace('tile-', '') || '?'}`
+            : tool ? `tool:${tool.dataset.tool}`
+            : seed ? `seed:${seed.dataset.seed}`
+            : target.closest('#companion-quick-ability') ? 'slime-ability'
+            : target.closest('#menu-btn') ? 'open-menu'
+            : target.closest('#shop-btn') ? 'open-shop'
+            : target.closest('#fps-meter') ? 'open-performance-panel'
+            : '';
+        if (!action) return;
+        const now = performance.now();
+        const previous = telemetry.actionTrail.at(-1);
+        if (previous?.action === action && now - previous.atMs < 700) {
+            previous.count += 1;
+            previous.atMs = Math.round(now);
+        } else {
+            telemetry.actionTrail.push({ atMs: Math.round(now), action, count: 1 });
+            if (telemetry.actionTrail.length > 32) telemetry.actionTrail.shift();
+        }
+    }
+
+    function togglePerfPanel() {
+        const panel = document.getElementById('perf-panel');
+        if (!panel) return;
+        panel.hidden = !panel.hidden;
+        if (!panel.hidden) updatePerfPanel();
+    }
+
+    function updatePerfPanel() {
+        const summary = document.getElementById('perf-summary');
+        const telemetry = env.perfTelemetry;
+        if (!summary || !telemetry) return;
+        summary.textContent = `Запись включена · проблем: ${telemetry.entries.length} · минимум: ${telemetry.lowestFps === 120 ? '--' : telemetry.lowestFps} FPS`;
+    }
+
+    function clearPerformanceReport() {
+        const telemetry = env.perfTelemetry;
+        if (!telemetry) return;
+        telemetry.startedAt = new Date().toISOString();
+        telemetry.entries.length = 0;
+        telemetry.actionTrail.length = 0;
+        telemetry.samples.length = 0;
+        telemetry.lowestFps = 120;
+        telemetry.lastEventAt = {};
+        updatePerfPanel();
+    }
+
+    function downloadPerformanceReport() {
+        const telemetry = env.perfTelemetry;
+        if (!telemetry) return;
+        const report = {
+            format: 'grow-a-farm-performance-report-v1',
+            startedAt: telemetry.startedAt,
+            exportedAt: new Date().toISOString(),
+            device: {
+                userAgent: navigator.userAgent,
+                screen: `${window.screen.width}x${window.screen.height}`,
+                deviceMemoryGb: navigator.deviceMemory || null,
+                cpuThreads: navigator.hardwareConcurrency || null
+            },
+            summary: {
+                lowestFps: telemetry.lowestFps === 120 ? null : telemetry.lowestFps,
+                issueCount: telemetry.entries.length,
+                sampleCount: telemetry.samples.length
+            },
+            currentSnapshot: getPerformanceSnapshot(),
+            entries: telemetry.entries,
+            fpsSamples: telemetry.samples
+        };
+        const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `grow-a-farm-perf-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(url), 0);
     }
 
     function setGameLoaderProgress(value, label) {
