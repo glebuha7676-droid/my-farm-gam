@@ -54,9 +54,10 @@
         huge: { id: 'huge', name: 'Огромный', icon: 'H', mult: 'x3.5+' },
         titanic: { id: 'titanic', name: 'Титанический', icon: 'T', mult: 'x7+' }
     };
+    // UNUSED: daily rewards are temporarily hidden while timed gifts are tuned.
+    const DAILY_REWARDS_ENABLED = false;
     const DAILY_REWARD_INTERVAL = 24 * 60 * 60 * 1000;
     const TIMED_REWARD_STEP = 10 * 60 * 1000;
-    const TIMED_REWARD_COOLDOWN = 5 * 60 * 60 * 1000;
     // The mutation, its confirmation sound, and the full lava coverage happen together.
     const LAVA_MUTATION_COMMIT_DELAY_MS = 2200;
     const LAVA_MUTATION_REMOVE_DELAY_MS = 5800;
@@ -606,10 +607,18 @@
     }
 
     function compactNumber(value) {
-        const n = Math.floor(Number(value) || 0);
-        if (n >= 1000000) return `${(n / 1000000).toFixed(n >= 10000000 ? 0 : 1).replace('.0', '')}m`;
-        if (n >= 1000) return `${(n / 1000).toFixed(n >= 10000 ? 0 : 1).replace('.0', '')}k`;
-        return `${n}`;
+        const n = Math.max(0, Math.floor(Number(value) || 0));
+        const units = [
+            [1000000000000, 'T'],
+            [1000000000, 'B'],
+            [1000000, 'M'],
+            [1000, 'K']
+        ];
+        const unit = units.find(([threshold]) => n >= threshold);
+        if (!unit) return `${n}`;
+        const scaled = n / unit[0];
+        const decimals = scaled >= 100 ? 0 : scaled >= 10 ? 1 : 2;
+        return `${scaled.toFixed(decimals).replace(/\.0+$/, '').replace('.', ',')}${unit[1]}`;
     }
 
     function cropSizePercent(weight, sizeTier) {
@@ -863,7 +872,8 @@ function init() {
         setGameLoaderProgress(68, 'Готовим модели и эффекты...');
         updateUI();
         updateAdminMutationCycleButton();
-        document.getElementById('seeds-window').addEventListener('scroll', updateCarouselArrows);
+        document.getElementById('seeds-window').addEventListener('scroll', scheduleCarouselArrowUpdate, { passive: true });
+        window.addEventListener('resize', refreshSeedCarouselMetrics, { passive: true });
         document.getElementById('garden').addEventListener('pointerdown', handleGardenDecorTap);
         document.addEventListener('pointerdown', (event) => {
             const inspectCard = document.getElementById('plant-inspect-card');
@@ -1346,7 +1356,7 @@ function init() {
         if (env.seedCarouselFrame) cancelAnimationFrame(env.seedCarouselFrame);
         env.seedCarouselFrame = requestAnimationFrame(() => {
             env.seedCarouselFrame = null;
-            updateCarouselArrows();
+            refreshSeedCarouselMetrics();
         });
     }
 
@@ -1354,12 +1364,31 @@ function init() {
         document.getElementById('seeds-window').scrollBy({ left: dir * 160, behavior: 'smooth' });
     }
 
+    function refreshSeedCarouselMetrics() {
+        const windowEl = document.getElementById('seeds-window');
+        if (!windowEl) return;
+        env.seedCarouselMaxScroll = Math.max(0, windowEl.scrollWidth - windowEl.clientWidth);
+        updateCarouselArrows();
+    }
+
+    function scheduleCarouselArrowUpdate() {
+        if (env.seedCarouselScrollFrame) return;
+        env.seedCarouselScrollFrame = requestAnimationFrame(() => {
+            env.seedCarouselScrollFrame = null;
+            updateCarouselArrows();
+        });
+    }
+
     function updateCarouselArrows() {
         const w = document.getElementById('seeds-window');
         const btnLeft = document.getElementById('btn-left');
         const btnRight = document.getElementById('btn-right');
+        if (!w || !btnLeft || !btnRight) return;
+        const maxScroll = Number.isFinite(env.seedCarouselMaxScroll)
+            ? env.seedCarouselMaxScroll
+            : Math.max(0, w.scrollWidth - w.clientWidth);
         if (w.scrollLeft <= 5) btnLeft.classList.add('disabled'); else btnLeft.classList.remove('disabled');
-        if (w.scrollLeft >= (w.scrollWidth - w.clientWidth - 5)) btnRight.classList.add('disabled'); else btnRight.classList.remove('disabled');
+        if (w.scrollLeft >= maxScroll - 5) btnRight.classList.add('disabled'); else btnRight.classList.remove('disabled');
     }
 
     function selectAction(tool) {
@@ -1430,7 +1459,7 @@ function init() {
             t.hasWeed = false;
             const weedReward = grantCoinsReward(getWeedReward());
             sfx.play('coinSoft');
-            floatText(idx, `+${weedReward}$`, '#55efc4');
+            floatText(idx, `+${compactNumber(weedReward)}$`, '#55efc4');
             showToast("🐛 Паразит изгнан!", "#00b894");
             updateTileDOM(idx);
             updateQuest('clear_weeds', 1);
@@ -1564,7 +1593,7 @@ function init() {
             playHarvestSfx(harvestSizeTier);
             showHarvestSizeEffect(idx, harvestSizeTier);
         }
-        floatText(idx, `+${finalReward}$`, highestColor);
+        floatText(idx, `+${compactNumber(finalReward)}$`, highestColor);
         if (p.id === 'carrot') updateQuest('grow_carrot', 1);
         updateQuest('harvest_any', 1);
         updateQuest('earn_coins', finalReward);
@@ -3741,7 +3770,8 @@ function init() {
         const level = document.getElementById('ui-lvl');
         const xpFill = document.getElementById('ui-xp-fill');
         const xpWidth = `${Math.min(100, (player.xp / player.xpNeed) * 100).toFixed(2)}%`;
-        if (coins.textContent !== `${player.coins}`) coins.textContent = player.coins;
+        const coinText = compactNumber(player.coins);
+        if (coins.textContent !== coinText) coins.textContent = coinText;
         if (level.textContent !== `${player.lvl}`) level.textContent = player.lvl;
         if (xpFill.dataset.width !== xpWidth) {
             xpFill.style.width = xpWidth;
@@ -3841,7 +3871,7 @@ function init() {
         const affordable = !soldOut && player.coins >= p.cost;
         const disabled = soldOut;
         const stateClass = soldOut ? 'soldout' : affordable ? 'affordable' : 'pricey';
-        const label = soldOut ? 'Ресток' : affordable ? `${p.cost}$` : `Нужно ${p.cost}$`;
+        const label = soldOut ? 'Ресток' : affordable ? `${compactNumber(p.cost)}$` : `Нужно ${compactNumber(p.cost)}$`;
         const priceClass = soldOut ? 'soldout' : affordable ? 'can-buy' : 'need-money';
         return `<button class="shop-seed-card ${disabled ? 'disabled' : ''} ${stateClass}" style="--shop-seed-color:${p.color};" type="button" onclick="buySeedFromShop('${source}','${id}', this)">
             <div class="pkt-top"></div>
@@ -4275,6 +4305,21 @@ function init() {
         return 40 + Math.max(1, level) * 20;
     }
 
+    function grantCompanionProgress(amount) {
+        const gain = Math.max(0, Math.round(Number(amount) || 0));
+        if (!gain) return 0;
+        const levelState = companionLevelState();
+        levelState.xp += gain;
+        while (levelState.level < 15 && levelState.xp >= companionXpNeed(levelState.level)) {
+            levelState.xp -= companionXpNeed(levelState.level);
+            levelState.level++;
+            showToast(`${player.companion.name}: новый уровень!`, '#72db68');
+        }
+        if (levelState.level >= 15) levelState.xp = 0;
+        syncCurrentCompanionLevel();
+        return gain;
+    }
+
     function updateCompanionState() {
         ensureCompanionState();
         const pet = player.companion;
@@ -4304,14 +4349,21 @@ function init() {
             pet.cleanClock = 0;
         }
 
-        pet.energyClock += elapsed;
-        const energyInterval = pet.sleeping ? 1 : 2;
+        // Sleep restores fixed chunks, with a small offline cap so returning to the
+        // game cannot instantly refill the meter.
+        const energyElapsed = pet.sleeping ? Math.min(elapsed, 40) : elapsed;
+        pet.energyClock += energyElapsed;
+        const energyInterval = pet.sleeping ? 8 : 2;
         const energySteps = Math.floor(pet.energyClock / energyInterval);
         if (energySteps > 0) {
             const beforeEnergy = pet.energy;
-            const energyDelta = energySteps * (pet.sleeping ? 5 : 1);
+            const energyDelta = energySteps * (pet.sleeping ? 4 : 1);
             pet.energy = pet.sleeping ? Math.min(100, pet.energy + energyDelta) : Math.max(0, pet.energy - energyDelta);
-            if (pet.sleeping && pet.energy > beforeEnergy) chargeCompanionAbility((pet.energy - beforeEnergy) * 0.45);
+            if (pet.sleeping && pet.energy > beforeEnergy) {
+                const restored = pet.energy - beforeEnergy;
+                chargeCompanionAbility(restored * 0.45);
+                grantCompanionProgress(restored);
+            }
             pet.energyClock %= energyInterval;
         }
         pet.lastUpdate = now;
@@ -4721,7 +4773,9 @@ function init() {
         const cleanGain = Math.random() < 0.65 ? 1 : 2;
         const beforeClean = player.companion.clean;
         player.companion.clean = Math.min(100, player.companion.clean + cleanGain);
-        chargeCompanionAbility((player.companion.clean - beforeClean) * 0.55);
+        const restored = player.companion.clean - beforeClean;
+        chargeCompanionAbility(restored * 0.55);
+        grantCompanionProgress(restored);
         if (!wasFullyClean && player.companion.clean >= 100) {
             player.companion.cleanGraceUntil = now + 5000;
             player.companion.cleanClock = 0;
@@ -5109,17 +5163,9 @@ function init() {
         const beforeHunger = player.companion.hunger;
         player.companion.hunger = Math.min(100, player.companion.hunger + food);
         chargeCompanionAbility((player.companion.hunger - beforeHunger) * 0.5 + Math.min(8, food * 0.08));
-        const levelState = companionLevelState();
-        levelState.xp += xpGain;
+        grantCompanionProgress(xpGain);
         recordCropStats(crop, 0, true);
         clearTile(tileId);
-        while (levelState.level < 15 && levelState.xp >= companionXpNeed(levelState.level)) {
-            levelState.xp -= companionXpNeed(levelState.level);
-            levelState.level++;
-            showToast(`${player.companion.name}: новый уровень!`, '#72db68');
-        }
-        if (levelState.level >= 15) levelState.xp = 0;
-        syncCurrentCompanionLevel();
         env.companionDrawer = '';
         sfx.play('pop');
         updateUI();
@@ -5708,48 +5754,13 @@ function init() {
         normalizeTimedRewards();
         const root = document.getElementById('rewards-content');
         if (!root) return;
-        const nextDailyIndex = getDailyRewardIndex();
-        const dailyReady = canClaimDailyReward();
-        const waitingForNextDay = !dailyReady && !!player.rewards.dailyLastClaimAt;
-        const dailyIndex = waitingForNextDay
-            ? (nextDailyIndex + DAILY_REWARDS.length - 1) % DAILY_REWARDS.length
-            : nextDailyIndex;
-        const dailyLeft = getDailyRewardRemainingMs();
-        const timedCooldown = Math.max(0, player.rewards.timedCooldownUntil - Date.now());
-        const dailyHeadText = dailyReady
-            ? 'Возьми подарок!'
-            : `Следующая награда через ${formatRewardCountdown(dailyLeft)}`;
+        const timedHeadText = 'Новый подарок каждые 10 минут';
 
         root.innerHTML = `
-            <div class="reward-block daily-block">
-                <div class="reward-block-head">
-                    <div><b>Ежедневные подарки</b><small id="daily-reward-countdown">${dailyHeadText}</small></div>
-                    <span class="reward-streak">День ${dailyIndex + 1}</span>
-                </div>
-                <div class="daily-rewards-grid">
-                    ${DAILY_REWARDS.map((reward, index) => {
-                        const claimed = TEST_UNLOCK_ALL_REWARDS
-                            ? !!player.rewards.dailyTestClaimed?.[index]
-                            : (waitingForNextDay ? index <= dailyIndex : index < dailyIndex);
-                        const current = index === dailyIndex;
-                        const claimable = TEST_UNLOCK_ALL_REWARDS
-                            ? !claimed
-                            : (index === nextDailyIndex && dailyReady);
-                        const locked = !claimed && !claimable;
-                        return `<button type="button" class="daily-reward-card rarity-${reward.rarity || 'common'} ${reward.ultra ? 'ultra' : ''} ${claimed ? 'claimed' : ''} ${current ? 'current' : ''} ${claimable ? 'claimable' : ''} ${locked ? 'locked' : ''}" style="--card-accent:${reward.accent}" ${claimable ? `onclick="claimDailyReward(${index}, this)"` : 'disabled'}>
-                            <span class="daily-day">День ${index + 1}</span>
-                            <div class="daily-icon ${reward.ultra ? 'silhouette' : ''}">${reward.icon}</div>
-                            <div class="daily-copy"><b>${reward.title}</b></div>
-                            ${reward.ultra ? '<div class="ultra-stars" aria-label="5 звезд">★★★★★</div>' : ''}
-                            ${claimed ? '<span class="reward-state received">Получено</span>' : claimable ? '<span class="reward-state ready">Забрать</span>' : '<span class="reward-lock">🔒</span>'}
-                        </button>`;
-                    }).join('')}
-                </div>
-            </div>
             <div class="reward-block timed-block">
                 <div class="reward-block-head">
-                    <div><b>Подарки за время</b><small id="timed-reward-countdown">${player.rewards.timedCooldownUntil ? `Новая серия через ${formatRewardCountdown(timedCooldown)}` : 'Каждые 10 минут открывается новый подарок'}</small></div>
-                    <span class="reward-streak">${player.rewards.timedCooldownUntil ? 'Перерыв' : '4 подарка'}</span>
+                    <div><b>Подарки за время</b><small id="timed-reward-countdown">${timedHeadText}</small></div>
+                    <span class="reward-streak">Серия из 4</span>
                 </div>
                 <div class="timed-rewards-grid">
                     ${TIMED_REWARDS.map((reward, index) => {
@@ -5771,9 +5782,6 @@ function init() {
 
     function rewardsAvailabilitySignature() {
         return [
-            getDailyRewardIndex(),
-            canClaimDailyReward() ? 1 : 0,
-            player.rewards.dailyClaimed,
             ...(player.rewards.timedClaimed || []).map(Boolean),
             player.rewards.timedCooldownUntil > Date.now() ? 1 : 0,
             ...TIMED_REWARDS.map((_, index) => canClaimTimedReward(index) ? 1 : 0)
@@ -5790,19 +5798,9 @@ function init() {
             renderRewards();
             return;
         }
-        const dailyReady = canClaimDailyReward();
-        const dailyCountdown = document.getElementById('daily-reward-countdown');
-        if (dailyCountdown) {
-            dailyCountdown.textContent = dailyReady
-                ? 'Возьми подарок!'
-                : `Следующая награда через ${formatRewardCountdown(getDailyRewardRemainingMs())}`;
-        }
         const timedCountdown = document.getElementById('timed-reward-countdown');
         if (timedCountdown) {
-            const timedCooldown = Math.max(0, player.rewards.timedCooldownUntil - Date.now());
-            timedCountdown.textContent = player.rewards.timedCooldownUntil
-                ? `Новая серия через ${formatRewardCountdown(timedCooldown)}`
-                : 'Каждые 10 минут открывается новый подарок';
+            timedCountdown.textContent = 'Новый подарок каждые 10 минут';
         }
         root.querySelectorAll('.timed-reward-card .timed-copy small').forEach((label, index) => {
             const claimed = !!player.rewards.timedClaimed[index];
@@ -5868,9 +5866,6 @@ function init() {
             return;
         }
         player.rewards.timedClaimed[index] = true;
-        if (!TEST_UNLOCK_ALL_REWARDS && player.rewards.timedClaimed.every(Boolean)) {
-            player.rewards.timedCooldownUntil = Date.now() + TIMED_REWARD_COOLDOWN;
-        }
         if (button) {
             button.classList.remove('gift-opened');
             void button.offsetWidth;
@@ -6008,7 +6003,7 @@ function init() {
                 <div class="decor-preview"></div>
                 <b>${style.name}</b>
                 <small>${style.desc || ''}</small>
-                ${style.cost > 0 && !bought && !locked ? `<em class="${canBuy ? 'can-buy' : 'need-money'}">${style.cost}$</em>` : '<em></em>'}
+                ${style.cost > 0 && !bought && !locked ? `<em class="${canBuy ? 'can-buy' : 'need-money'}">${compactNumber(style.cost)}$</em>` : '<em></em>'}
                 <button type="button" class="decor-buy ${active ? 'selected' : ''} ${pricey ? 'need-money' : ''}" onclick="${actionName}('${style.id}')">${actionText}</button>
             </div>`;
         }).join('');
@@ -6050,13 +6045,14 @@ function init() {
         if (player.rewards.xpBoostUntil && now >= player.rewards.xpBoostUntil) {
             player.rewards.xpBoostUntil = 0;
         }
-        if (player.rewards.timedCooldownUntil && now >= player.rewards.timedCooldownUntil) {
+        // Legacy saves can contain an old five-hour cooldown. Timed gifts now
+        // restart immediately after the fourth gift, so it is safe to clear it.
+        if (player.rewards.timedCooldownUntil) {
             player.rewards.timedCooldownUntil = 0;
-            player.rewards.timedCycleStartedAt = now;
-            player.rewards.timedClaimed = [false, false, false, false];
         }
         if (!player.rewards.timedCooldownUntil && player.rewards.timedClaimed.every(Boolean)) {
-            player.rewards.timedCooldownUntil = now + TIMED_REWARD_COOLDOWN;
+            player.rewards.timedCycleStartedAt = now;
+            player.rewards.timedClaimed = [false, false, false, false];
         }
     }
 
@@ -6067,7 +6063,7 @@ function init() {
         if (!Array.isArray(player.ownedRoomDecor)) player.ownedRoomDecor = ['cozy'];
         const bought = player.ownedRoomDecor.includes(styleId);
         if (!bought) {
-            if (player.coins < style.cost) { showToast(`Нужно ${style.cost} монет`, "#ff7675"); return; }
+            if (player.coins < style.cost) { showToast(`Нужно ${compactNumber(style.cost)} монет`, "#ff7675"); return; }
             player.coins -= style.cost;
             player.ownedRoomDecor.push(styleId);
             sfx.play('coin');
@@ -6380,15 +6376,27 @@ function init() {
         const priceEl = document.getElementById('plot-buy-price');
         if (!modal || !title || !priceEl) return;
         title.textContent = 'Купить';
-        priceEl.textContent = `${price}$`;
-        modal.classList.add('active');
+        priceEl.textContent = `${compactNumber(price)}$`;
+        if (env.plotBuyOpenTimer) clearTimeout(env.plotBuyOpenTimer);
+        modal.classList.add('active', 'opening');
+        // The click synthesized after a short touch must not immediately hit
+        // the newly opened backdrop and close the purchase window.
+        env.plotBuyIgnoreUntil = performance.now() + 260;
+        env.plotBuyOpenTimer = setTimeout(() => {
+            modal.classList.remove('opening');
+            env.plotBuyOpenTimer = null;
+        }, 260);
         sfx.play('pop');
     }
 
     function closePlotBuyModal(event) {
+        if (event && performance.now() < (env.plotBuyIgnoreUntil || 0)) return;
         if (event && event.target && event.target !== event.currentTarget) return;
         env.pendingPlotPurchase = null;
-        document.getElementById('plot-buy-modal')?.classList.remove('active');
+        if (env.plotBuyOpenTimer) clearTimeout(env.plotBuyOpenTimer);
+        env.plotBuyOpenTimer = null;
+        env.plotBuyIgnoreUntil = 0;
+        document.getElementById('plot-buy-modal')?.classList.remove('active', 'opening');
     }
 
     function confirmPlotPurchase() {
@@ -6626,11 +6634,11 @@ function init() {
     function hasClaimableRewards() {
         ensureRewardsState();
         if (TEST_UNLOCK_ALL_REWARDS) {
-            const hasDailyLeft = (player.rewards.dailyTestClaimed || []).some(claimed => !claimed);
+            const hasDailyLeft = DAILY_REWARDS_ENABLED && (player.rewards.dailyTestClaimed || []).some(claimed => !claimed);
             const hasTimedLeft = (player.rewards.timedClaimed || []).some(claimed => !claimed);
             return hasDailyLeft || hasTimedLeft;
         }
-        return canClaimDailyReward() || TIMED_REWARDS.some((_, index) => canClaimTimedReward(index));
+        return (DAILY_REWARDS_ENABLED && canClaimDailyReward()) || TIMED_REWARDS.some((_, index) => canClaimTimedReward(index));
     }
 
     function hasRewardCoinBoost() {
