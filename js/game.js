@@ -23,7 +23,7 @@
     let env = { ticks: 0, currentEvent: 'day', eventTimer: 0, nextEventTimer: 75, potTimer: 0, potActive: false, activeNest: 0, activeEquip: 0, petPatCooldowns: {}, companionDrawer: '', companionShower: false, companionShowerTimer: null, companionPointerDown: false, companionPointer: null, companionPointerId: null, companionPointerStartedInZone: false, companionPointerStartX: 0, companionPointerStartY: 0, companionPointerLastX: 0, companionPointerLastY: 0, companionPointerStartedAt: 0, companionPetting: false, companionHoldTimer: null, companionTapTimer: null, companionHeartTimer: null, companionSpecial: '', companionSpecialTimer: null, companionSpecialEndTimer: null, companionAbilitySpecial: '', companionAbilitySpecialTimer: null, companionAbilityPayload: null, companionGiftTimers: [], companionSpecialAnchorX: 0, companionSpecialAnchorY: 0, companionCoinBurstAt: 0, harvestSelectedTile: null, harvestSelectionTimer: null, openMenuSections: { showcase: false, diary: false, decor: false, rewards: false, admin: false }, backroomsLampTimer: null, backroomsLampEndTimer: null, shopTab: 'seeds', decorShopTab: 'room', pendingPlotPurchase: null, abilityFloodTimer: null, sunpuddingEclipseTimer: null, sunpuddingEclipseDarkTimer: null, embergooMagmaTimers: [], stargumCometTimers: [], stargumCometFrames: [], stargumCometFinale: false, moonmeltLunarTimers: [], moonmeltLunarFinale: false, nightDawnTimer: null, nightDawnActive: false, nightPaletteFrame: null, nightPalette: null, nightPalettePhase: 'day', fpsMeterFrame: null, perfTelemetry: null, perfLongTaskObserver: null, lastCompanionVitalsAt: 0, rewardsRenderSignature: '', eventVisualFrame: null, eventStyleCache: {}, eventBackgroundLayer: 0 };
     let eventActions = []; 
     let tiles = Array(12).fill().map((_, i) => ({ id: i, active: false, plantId: null, growth: 0, water: 0, slimeWater: 0, slimeWaterMult: 1, hasWeed: false, mutations: [], scale: .4, weight: 1, weightMult: 1, sizeTier: 'small', beeLock: 0, ghostEchoPercent: 0, ghostMarked: false, ghostCopyMutationCount: 0, ghostEcho: false, ghostValue: 0 }));
-    let currentTool = 'water';
+    let currentTool = null;
     const TEST_HATCH_INSTANT = false;
     const TITANIC_CROP_CHANCE = 0.001;
     const HUGE_CROP_CHANCE = 0.01;
@@ -79,7 +79,7 @@
     const EMBERGOO_MAGMA_FINALE_TIER2_CHANCE = 0.35;
     const EMBERGOO_MAGMA_SURGE_LEAD_MS = 3600;
     const EMBERGOO_MAGMA_COOLDOWN_MS = 1900;
-    const TILE_TRANSIENT_EFFECT_CLASSES = new Set(['planting', 'sprout-emerge', 'sprout-mut-hit', 'strike', 'star-hit', 'candy-hit', 'toxic-hit', 'holy-hit', 'eclipse-hit', 'hell-hit', 'alien-hit', 'lava-hit', 'comet-hit', 'lunar-hit', 'bloodmoon-hit', 'slime-water-hit', 'slime-water-fade', 'midas-coin-hit', 'midas-diamond-hit', 'wave-rise-hit', 'ability-flooded', 'nectar-grow-hit', 'nectar-titanic-charge', 'nectar-titanic-flash', 'nectar-titanic-growing']);
+    const TILE_TRANSIENT_EFFECT_CLASSES = new Set(['planting', 'sprout-emerge', 'sprout-mut-hit', 'strike', 'star-hit', 'candy-hit', 'toxic-hit', 'holy-hit', 'eclipse-hit', 'hell-hit', 'alien-hit', 'lava-hit', 'comet-hit', 'lunar-hit', 'bloodmoon-hit', 'slime-water-hit', 'slime-water-fade', 'midas-coin-hit', 'midas-diamond-hit', 'wave-rise-hit', 'ability-flooded', 'nectar-grow-hit', 'nectar-titanic-charge', 'nectar-titanic-flash', 'nectar-titanic-growing', 'crop-drag-source']);
     const TEST_MUTATION_SEQUENCE = ['hell', 'toxic', 'electric', 'stellar', 'holy', 'candy', 'honey', 'alien', 'lava', 'meteor', 'lunar', 'bloodmoon', 'gold', 'rainbow', 'diamond', 'eclipse'];
     const REMOVED_MUTATION_IDS = new Set(['void', 'phantom']);
     const TEST_MUTATION_HITS = {
@@ -910,7 +910,7 @@ function init() {
             hidePlantInspectCard();
         }, { passive: true });
         document.addEventListener('pointerdown', (event) => {
-            if (env.harvestSelectedTile !== null && !event.target.closest('.tile')) clearHarvestSelection();
+            if (env.harvestSelectedTile !== null && !event.target.closest('.tile,.garden-crop-action')) clearHarvestSelection();
         }, { passive: true });
         bindPressFeedback();
         setupMutationPerformanceObservers();
@@ -1346,10 +1346,7 @@ function init() {
                     <div class="model" id="model-${i}"></div>
                 </div>
             `;
-            el.addEventListener('pointerdown', (event) => {
-                event.preventDefault();
-                handleInteract(i);
-            });
+            bindTilePointerInteractions(el, i);
             fragment.appendChild(el);
         });
         g.appendChild(fragment);
@@ -1378,7 +1375,7 @@ function init() {
                 if (getSeedOwned(p.id) <= 0) { showToast('Купи семена в магазине', 'gray'); return; }
                 selectAction(p.id);
             };
-            el.innerHTML = `<div class="pkt-top"></div><div class="pkt-bg"></div><div class="seed-name">${p.name}</div><div class="seed-icon">${seedIcon(p.id)}</div><div class="seed-stock">${empty ? 'нет' : `x${amount}`}</div>`;
+            el.innerHTML = `<div class="pkt-top"></div><div class="pkt-bg"></div><div class="seed-name">${p.name}</div><div class="seed-icon">${seedIcon(p.id)}</div><div class="seed-price">${compactNumber(p.cost)}$</div><div class="seed-stock">${empty ? 'x0' : `x${amount}`}</div>`;
             container.appendChild(el);
         });
         if (env.seedCarouselFrame) cancelAnimationFrame(env.seedCarouselFrame);
@@ -1446,7 +1443,7 @@ function init() {
         const amount = getSeedOwned(seedId);
         packet.classList.toggle('empty', amount <= 0);
         packet.classList.toggle('unavailable', amount <= 0);
-        packet.querySelector('.seed-stock').textContent = amount <= 0 ? 'нет' : `x${amount}`;
+        packet.querySelector('.seed-stock').textContent = `x${Math.max(0, amount)}`;
         container.dataset.renderSignature = getSeedRenderSignature();
     }
 
@@ -1457,6 +1454,7 @@ function init() {
         env.harvestSelectionTimer = null;
         env.harvestSelectedTile = null;
         if (selectedTileId !== null) document.getElementById(`tile-${selectedTileId}`)?.classList.remove('harvest-selected');
+        syncGardenCropActionState();
     }
 
     function selectHarvestTile(idx) {
@@ -1467,6 +1465,252 @@ function init() {
         tileEl.classList.add('harvest-selected');
         decorSfx('pop', 'popitClick');
         env.harvestSelectionTimer = setTimeout(() => clearHarvestSelection(idx), 3000);
+        syncGardenCropActionState();
+    }
+
+    function selectedReadyCropId() {
+        if (env.harvestSelectedTile === null || env.harvestSelectedTile === undefined) return null;
+        const idx = Number(env.harvestSelectedTile);
+        if (!Number.isInteger(idx)) return null;
+        const tile = tiles[idx];
+        return tile?.active && tile.growth >= 100 && !tile.hasWeed ? idx : null;
+    }
+
+    function syncGardenCropActionState() {
+        const hasSelection = selectedReadyCropId() !== null;
+        document.getElementById('garden-sell-target')?.classList.toggle('has-selection', hasSelection);
+        document.getElementById('garden-slime-target')?.classList.toggle('has-selection', hasSelection);
+    }
+
+    function sellSelectedCrop() {
+        const idx = selectedReadyCropId();
+        if (idx === null) {
+            showToast('Сначала выбери готовое растение', '#f1c40f');
+            return;
+        }
+        harvestPlant(idx);
+    }
+
+    function feedSelectedCrop() {
+        const idx = selectedReadyCropId();
+        if (idx === null) {
+            showToast('Выбери готовое растение для слайма', '#72db68');
+            return;
+        }
+        updateCompanionState();
+        if (player.companion.sleeping) {
+            showToast('Слайм сейчас спит', '#8a73df');
+            return;
+        }
+        feedCompanion(idx);
+    }
+
+    function openGardenInventoryStub() {
+        clearHarvestSelection();
+        showToast('Инвентарь появится на следующем этапе', '#74b9ff');
+    }
+
+    function renderGardenCompanion() {
+        const stage = document.getElementById('garden-slime-model');
+        const target = document.getElementById('garden-slime-target');
+        if (!stage || !target) return;
+        updateCompanionState();
+        const baseDef = { id: 'basic', rarity: 'common', face: 'happy', slime: { body: '#72db68', shade: '#35a84c', blush: '#ffc1cf', decor: 'none' } };
+        const def = companionSkinDef() || baseDef;
+        const mood = companionMood();
+        const face = companionFaceForMood(def, mood);
+        const variant = player.companion.variant || 'normal';
+        const signature = `${def.id}|${mood}|${face}|${variant}|${env.companionAbilitySpecial || ''}`;
+        if (stage.dataset.renderSignature !== signature) {
+            stage.innerHTML = slimeHTML({ ...def, face }, companionVariantPet(variant), 'medium');
+            stage.dataset.renderSignature = signature;
+        }
+        const targetClassName = `garden-slime-target garden-crop-action skin-${def.id} mood-${mood} variant-${variant}${target.classList.contains('has-selection') ? ' has-selection' : ''}${target.classList.contains('is-drop-active') ? ' is-drop-active' : ''}`;
+        if (target.className !== targetClassName) target.className = targetClassName;
+        document.getElementById('garden-slime-name').textContent = player.companion.name || 'Слайми';
+    }
+
+    function isReadyCropDragCandidate(idx) {
+        const tile = tiles[idx];
+        return !!(tile?.active && tile.growth >= 100 && !tile.hasWeed && isPlotUnlocked(idx));
+    }
+
+    function stripDragGhostChrome(ghost) {
+        ghost.removeAttribute('id');
+        ghost.querySelectorAll('[id]').forEach(node => node.removeAttribute('id'));
+        ghost.querySelectorAll('.tile-lock,.tile-soil-detail,.planting-feedback,.tile-progress,.mutations-container,.harvest-select-shade,.harvest-select-frame,.harvest-select-money,.tile-bee,.weed-model,.floating-text').forEach(node => node.remove());
+        TILE_TRANSIENT_EFFECT_CLASSES.forEach(className => ghost.classList.remove(className));
+        ghost.classList.remove('harvest-selected');
+        ghost.classList.add('crop-drag-ghost');
+        ghost.setAttribute('aria-hidden', 'true');
+    }
+
+    function cropDragTransform(state, x, y, scale = 1.04) {
+        return `translate3d(${x - state.width / 2}px, ${y - state.height / 2}px, 0) scale(${scale})`;
+    }
+
+    function resolveCropDropTarget(x, y) {
+        const element = document.elementFromPoint(x, y);
+        return element?.closest('#garden-sell-target,#garden-slime-target') || null;
+    }
+
+    function setCropDropTarget(target) {
+        const state = env.cropDrag;
+        if (!state || state.dropTarget === target) return;
+        state.dropTarget?.classList.remove('is-drop-active');
+        state.dropTarget = target;
+        state.dropTarget?.classList.add('is-drop-active');
+    }
+
+    function flushCropDragFrame() {
+        const state = env.cropDrag;
+        if (!state || state.finishing) return;
+        state.frame = null;
+        state.ghost.style.transform = cropDragTransform(state, state.x, state.y);
+        setCropDropTarget(resolveCropDropTarget(state.x, state.y));
+    }
+
+    function moveCropDrag(x, y) {
+        const state = env.cropDrag;
+        if (!state || state.finishing) return;
+        state.x = x;
+        state.y = y;
+        if (!state.frame) state.frame = requestAnimationFrame(flushCropDragFrame);
+    }
+
+    function startCropDrag(idx, event) {
+        if (env.cropDrag || !isReadyCropDragCandidate(idx)) return false;
+        const source = document.getElementById(`tile-${idx}`);
+        if (!source) return false;
+        clearHarvestSelection();
+        const rect = source.getBoundingClientRect();
+        const ghost = source.cloneNode(true);
+        stripDragGhostChrome(ghost);
+        ghost.style.width = `${rect.width}px`;
+        ghost.style.height = `${rect.height}px`;
+        document.body.appendChild(ghost);
+        source.classList.add('crop-drag-source');
+        const state = {
+            idx,
+            pointerId: event.pointerId,
+            source,
+            ghost,
+            sourceRect: rect,
+            width: rect.width,
+            height: rect.height,
+            x: event.clientX,
+            y: event.clientY,
+            frame: null,
+            dropTarget: null,
+            finishing: false
+        };
+        env.cropDrag = state;
+        document.body.classList.add('crop-dragging');
+        ghost.style.transform = cropDragTransform(state, state.x, state.y, 0.94);
+        requestAnimationFrame(() => {
+            if (env.cropDrag === state) ghost.style.transform = cropDragTransform(state, state.x, state.y);
+        });
+        if (navigator.vibrate) navigator.vibrate(9);
+        return true;
+    }
+
+    function cleanupCropDrag(state) {
+        if (!state) return;
+        if (state.frame) cancelAnimationFrame(state.frame);
+        state.dropTarget?.classList.remove('is-drop-active');
+        state.source?.classList.remove('crop-drag-source');
+        state.ghost?.remove();
+        document.body.classList.remove('crop-dragging');
+        if (env.cropDrag === state) env.cropDrag = null;
+    }
+
+    function animateCropDragTo(state, rect, scale) {
+        const destinationX = rect.left + rect.width / 2;
+        const destinationY = rect.top + rect.height / 2;
+        const from = cropDragTransform(state, state.x, state.y);
+        const to = cropDragTransform(state, destinationX, destinationY, scale);
+        if (!state.ghost.animate) {
+            state.ghost.style.transform = to;
+            return new Promise(resolve => setTimeout(resolve, 170));
+        }
+        const animation = state.ghost.animate([{ transform: from, opacity: 1 }, { transform: to, opacity: scale < 0.8 ? 0.2 : 1 }], {
+            duration: 190,
+            easing: 'cubic-bezier(.2,.78,.22,1)',
+            fill: 'forwards'
+        });
+        if (animation.finished) return animation.finished.catch(() => undefined);
+        return new Promise(resolve => {
+            animation.onfinish = resolve;
+            animation.oncancel = resolve;
+            setTimeout(resolve, 230);
+        });
+    }
+
+    async function finishCropDrag(cancelled = false) {
+        const state = env.cropDrag;
+        if (!state || state.finishing) return;
+        state.finishing = true;
+        if (state.frame) {
+            cancelAnimationFrame(state.frame);
+            state.frame = null;
+        }
+        const dropTarget = cancelled ? null : resolveCropDropTarget(state.x, state.y);
+        setCropDropTarget(dropTarget);
+        let action = '';
+        if (dropTarget?.id === 'garden-sell-target') action = 'sell';
+        if (dropTarget?.id === 'garden-slime-target') {
+            updateCompanionState();
+            if (player.companion.sleeping) showToast('Слайм сейчас спит', '#8a73df');
+            else action = 'feed';
+        }
+        const destination = action ? dropTarget.getBoundingClientRect() : state.sourceRect;
+        await animateCropDragTo(state, destination, action ? 0.62 : 1);
+        cleanupCropDrag(state);
+        if (!tiles[state.idx]?.active || tiles[state.idx].growth < 100) return;
+        if (action === 'sell') harvestPlant(state.idx);
+        else if (action === 'feed') feedCompanion(state.idx);
+    }
+
+    function bindTilePointerInteractions(tileElement, idx) {
+        let gesture = null;
+        tileElement.addEventListener('pointerdown', event => {
+            if (event.pointerType === 'mouse' && event.button !== 0) return;
+            gesture = {
+                pointerId: event.pointerId,
+                startX: event.clientX,
+                startY: event.clientY,
+                dragCandidate: isReadyCropDragCandidate(idx),
+                dragging: false
+            };
+            tileElement.setPointerCapture?.(event.pointerId);
+            event.preventDefault();
+        });
+        tileElement.addEventListener('pointermove', event => {
+            if (!gesture || gesture.pointerId !== event.pointerId) return;
+            if (!gesture.dragging && gesture.dragCandidate && Math.hypot(event.clientX - gesture.startX, event.clientY - gesture.startY) >= 8) {
+                gesture.dragging = startCropDrag(idx, event);
+            }
+            if (gesture.dragging) {
+                moveCropDrag(event.clientX, event.clientY);
+                event.preventDefault();
+            }
+        });
+        tileElement.addEventListener('pointerup', event => {
+            if (!gesture || gesture.pointerId !== event.pointerId) return;
+            const wasDragging = gesture.dragging;
+            gesture = null;
+            if (wasDragging) {
+                moveCropDrag(event.clientX, event.clientY);
+                finishCropDrag(false);
+            } else handleInteract(idx);
+            event.preventDefault();
+        });
+        tileElement.addEventListener('pointercancel', event => {
+            if (!gesture || gesture.pointerId !== event.pointerId) return;
+            const wasDragging = gesture.dragging;
+            gesture = null;
+            if (wasDragging) finishCropDrag(true);
+        });
     }
 
     function handleInteract(idx) {
@@ -1498,7 +1742,6 @@ function init() {
         if (canUseHarvestSelection && t.active && t.growth >= 100) {
             if (env.harvestSelectedTile === idx) {
                 clearHarvestSelection(idx);
-                harvestPlant(idx);
             } else {
                 selectHarvestTile(idx);
             }
@@ -3820,7 +4063,8 @@ function init() {
         if (surface === 'garden') {
             renderSeeds();
             tiles.forEach((_, idx) => updateTileDOM(idx));
-            renderCompanionAbility();
+            renderGardenCompanion();
+            syncGardenCropActionState();
         } else if (surface === 'menu') {
             renderQuests();
             renderActiveStatusStrip();
@@ -3838,7 +4082,7 @@ function init() {
         if (document.hidden) return;
         const surface = activeSurface();
         if (surface === 'garden') {
-            renderCompanionAbility();
+            renderGardenCompanion();
             updateStateIndicator();
         } else if (surface === 'menu') {
             const now = performance.now();
@@ -6390,14 +6634,14 @@ function init() {
             ...persistentPerformanceRuntime
         };
         eventActions = [];
-        currentTool = 'water';
+        currentTool = null;
         startEvent('day');
         document.getElementById('side-menu').classList.remove('open');
         document.getElementById('shop-modal').classList.remove('open');
         syncActiveSurfaceState();
         document.getElementById('plot-buy-modal')?.classList.remove('active');
         document.getElementById('pet-reveal').classList.remove('active');
-        document.querySelectorAll('.action-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tool === 'water'));
+        document.querySelectorAll('.action-btn').forEach(btn => btn.classList.remove('active'));
         localStorage.removeItem('FarmMobileV2');
         renderGarden();
         renderSeeds();

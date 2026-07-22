@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Grow a Farm: Mobile Edition</title>
-    <link rel="stylesheet" href="css/styles.css?v=20260719z">
+    <link rel="stylesheet" href="css/styles.css?v=20260722a">
 </head>
 <body>
     <div class="game-loader" id="game-loader" role="status" aria-live="polite" aria-label="Загрузка игры">
@@ -56,12 +56,31 @@
         <div class="state-indicator" id="state-indicator">1:15</div>
         <button id="menu-btn" class="btn-icon" type="button" onclick="toggleMenu()">📋 Меню <span id="menu-badge" class="menu-badge"></span></button>
     </div>
-    <div class="shop-launchbar">
-        <button id="shop-btn" class="btn-shop-large" type="button" onclick="toggleShop()">
+    <!-- legacy-ui-disabled: old main shop launcher retained for rollback during the mobile redesign. -->
+    <div class="shop-launchbar legacy-ui-disabled" data-legacy-ui="shop-launch-v1" aria-hidden="true">
+        <button id="shop-btn" class="btn-shop-large" type="button" onclick="toggleShop()" disabled tabindex="-1">
             <span aria-hidden="true">🛒</span>
             <b>Магазин</b>
         </button>
     </div>
+
+    <section class="garden-command-bar" id="garden-command-bar" aria-label="Действия с урожаем">
+        <button class="garden-crop-action crop-sell-target" id="garden-sell-target" type="button" onclick="sellSelectedCrop()">
+            <span class="crop-action-icon" aria-hidden="true">💰</span>
+            <b>Продать</b>
+            <small>урожай</small>
+        </button>
+        <button class="garden-slime-target garden-crop-action" id="garden-slime-target" type="button" onclick="feedSelectedCrop()" aria-label="Покормить слайма выбранным растением">
+            <span class="garden-slime-stage" id="garden-slime-model" aria-hidden="true"></span>
+            <small id="garden-slime-name">Слайми</small>
+            <i>Кормить</i>
+        </button>
+        <button class="garden-crop-action crop-inventory-target" id="garden-inventory-target" type="button" onclick="openGardenInventoryStub()" aria-label="Инвентарь">
+            <span class="crop-action-icon" aria-hidden="true">🎒</span>
+            <b>Инвентарь</b>
+            <small>скоро</small>
+        </button>
+    </section>
     
     <div class="game-area">
         <div class="view-content active" id="view-garden">
@@ -70,7 +89,8 @@
     </div>
 
     <div class="bottom-ui">
-        <div class="actions-row">
+        <!-- legacy-ui-disabled: tool row retained for rollback during the mobile redesign. -->
+        <div class="actions-row legacy-ui-disabled" data-legacy-ui="garden-tools-v1" aria-hidden="true">
             <div class="action-btn active" data-tool="water" onclick="selectAction('water')">💧</div>
             <div class="action-btn" data-tool="shovel" onclick="selectAction('shovel')">⛏️</div>
             <div class="action-btn" data-tool="inspect" onclick="selectAction('inspect')">🔎</div>
@@ -275,6 +295,6 @@
     <script src="js/yandex-sdk.js?v=20260718b" defer></script>
     <script src="js/data.js?v=20260719c" defer></script>
     <script src="js/audio.js?v=20260719b" defer></script>
-    <script src="js/game.js?v=20260719aa" defer></script>
+    <script src="js/game.js?v=20260722a" defer></script>
 </body>
 </html>
