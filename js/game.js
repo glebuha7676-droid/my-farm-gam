@@ -36,7 +36,6 @@
     const WATER_DURATION = 15;
     const CROP_INVENTORY_CAPACITY = 8;
     const CROP_SALE_ABILITY_CHARGE = 5;
-    const COMPANION_ABILITY_DEFAULT_COOLDOWN_MS = 3 * 60 * 1000;
     const MATERIAL_MUTATIONS = new Set(['gold', 'rainbow', 'diamond']);
     const EVENT_BODY_CLASSES = ['rain', 'storm', 'toxic', 'starfall', 'holy', 'hell', 'candy', 'bee', 'alien', 'night', 'cosmic'].map(type => `event-${type}`);
     // These models already use ::after for their own body details, so honey needs a real child layer.
@@ -1808,8 +1807,7 @@ function init() {
         updateCompanionState();
         const pet = player.companion;
         const energy = Math.max(0, Math.min(100, pet.abilityEnergy || 0));
-        const cooldownLeft = Math.max(0, (pet.abilityCooldownUntil || 0) - Date.now());
-        if (energy < 100 || cooldownLeft > 0) {
+        if (energy < 100) {
             const button = document.getElementById('garden-slime-ability-trigger');
             button?.classList.remove('not-ready-tap');
             if (button) void button.offsetWidth;
@@ -2549,8 +2547,7 @@ function init() {
         const face = companionFaceForMood(def, mood);
         const variant = player.companion.variant || 'normal';
         const energy = Math.round(Math.max(0, Math.min(100, player.companion.abilityEnergy || 0)));
-        const cooldownLeft = Math.max(0, (player.companion.abilityCooldownUntil || 0) - Date.now());
-        const abilityReady = energy >= 100 && cooldownLeft <= 0;
+        const abilityReady = energy >= 100;
         const abilityMeta = companionAbilityMeta();
         const foodFocus = selectedReadyCropId() !== null || !!env.cropDrag;
         const signature = `${def.id}|${mood}|${face}|${variant}|${env.companionAbilitySpecial || ''}`;
@@ -2569,7 +2566,7 @@ function init() {
         foodPreview?.style.setProperty('--garden-ability-color', abilityMeta.color);
         foodPreview?.style.setProperty('--garden-ability-dark', abilityMeta.dark);
         abilityButton?.classList.toggle('is-ready', abilityReady);
-        abilityButton?.classList.toggle('is-cooldown', cooldownLeft > 0);
+        abilityButton?.classList.remove('is-cooldown');
         document.querySelectorAll('.garden-ability-arc-fill').forEach(path => {
             path.style.strokeDasharray = `${energy} 100`;
         });
@@ -5847,7 +5844,8 @@ function init() {
             player.companion[key] = Math.round(Math.max(0, Math.min(100, Number(player.companion[key]) || 0)));
         });
         player.companion.abilityEnergy = Math.round(Math.max(0, Math.min(100, Number(player.companion.abilityEnergy) || 0)));
-        player.companion.abilityCooldownUntil = Math.max(0, Number(player.companion.abilityCooldownUntil) || 0);
+        // legacy-cooldown-v1: old saves may contain this field, but abilities now use charge only.
+        player.companion.abilityCooldownUntil = 0;
         ['hungerClock', 'cleanClock', 'energyClock'].forEach(key => {
             player.companion[key] = Math.max(0, Number(player.companion[key]) || 0);
         });
@@ -6168,25 +6166,6 @@ function init() {
         return meta[id] || meta.basic;
     }
 
-    function companionAbilityCooldownMs(id = player.companion.skin || 'basic') {
-        const cooldowns = {
-            dewdrop: 3 * 60 * 1000,
-            sproutslime: 3 * 60 * 1000,
-            coinblob: 5 * 60 * 1000,
-            wavegum: 3 * 60 * 1000,
-            nectar: 5 * 60 * 1000
-        };
-        return cooldowns[id] || COMPANION_ABILITY_DEFAULT_COOLDOWN_MS;
-    }
-
-    function formatCompanionAbilityCooldown(seconds) {
-        const safe = Math.max(0, Math.ceil(Number(seconds) || 0));
-        if (safe < 60) return `${safe}с`;
-        const minutes = Math.floor(safe / 60);
-        const rest = String(safe % 60).padStart(2, '0');
-        return `${minutes}:${rest}`;
-    }
-
     function renderCompanionAbility() {
         const root = document.getElementById('companion-ability');
         const quickButton = document.getElementById('companion-quick-ability');
@@ -6195,12 +6174,10 @@ function init() {
         const pet = player.companion;
         const hasAbility = true;
         const energy = hasAbility ? Math.round(Math.max(0, Math.min(100, pet.abilityEnergy || 0))) : 0;
-        const now = Date.now();
-        const cooldownLeft = Math.max(0, Math.ceil(((pet.abilityCooldownUntil || 0) - now) / 1000));
-        const ready = hasAbility && energy >= 100 && cooldownLeft <= 0;
+        const ready = hasAbility && energy >= 100;
         const meta = companionAbilityMeta();
         const menuOpen = document.getElementById('side-menu')?.classList.contains('open');
-        const rootSignature = `${player.companion.skin}|${energy}|${cooldownLeft}|${ready ? 1 : 0}|${meta.symbol}`;
+        const rootSignature = `${player.companion.skin}|${energy}|${ready ? 1 : 0}|${meta.symbol}`;
         if (root && menuOpen && root.dataset.renderSignature !== rootSignature) {
             root.dataset.renderSignature = rootSignature;
             root.style.setProperty('--ability-color', meta.color);
@@ -6209,7 +6186,7 @@ function init() {
             const filledSegments = Math.ceil(energy / 10);
             segments.forEach((segment, index) => segment.classList.toggle('filled', index < filledSegments));
             root.classList.toggle('is-ready', ready);
-            root.classList.toggle('is-cooling', cooldownLeft > 0);
+            root.classList.remove('is-cooling');
             root.classList.toggle('no-ability', !hasAbility);
             const name = document.getElementById('companion-ability-name');
             const percent = document.getElementById('companion-ability-percent');
@@ -6217,14 +6194,14 @@ function init() {
             const button = document.getElementById('companion-ability-button');
             if (name) name.textContent = companionAbilityName();
             if (percent) percent.textContent = `${energy}%`;
-            if (cooldown) cooldown.textContent = cooldownLeft > 0 ? `КД: ${formatCompanionAbilityCooldown(cooldownLeft)}` : (ready ? 'Готова' : 'КД: нет');
+            if (cooldown) cooldown.textContent = ready ? 'Готова' : `Заряд ${energy}%`;
             if (button) {
                 button.disabled = !ready;
                 const icon = button.querySelector('span');
                 if (icon) icon.textContent = meta.symbol;
             }
         }
-        const quickSignature = `${player.companion.skin}|${energy}|${cooldownLeft}|${ready ? 1 : 0}|${meta.symbol}`;
+        const quickSignature = `${player.companion.skin}|${energy}|${ready ? 1 : 0}|${meta.symbol}`;
         if (quickButton && quickButton.dataset.renderSignature !== quickSignature) {
             quickButton.dataset.renderSignature = quickSignature;
             quickButton.disabled = !ready;
@@ -6232,21 +6209,16 @@ function init() {
             quickButton.style.setProperty('--quick-ability-dark', meta.dark);
             quickButton.style.setProperty('--quick-ability-fill', `${energy}%`);
             quickButton.classList.toggle('is-ready', ready);
-            quickButton.classList.toggle('is-cooling', cooldownLeft > 0);
+            quickButton.classList.remove('is-cooling');
             const quickIcon = quickButton.querySelector('span');
             if (quickIcon) quickIcon.textContent = meta.symbol;
-            const stateLabel = ready ? 'готова' : (cooldownLeft > 0 ? `перезарядка ${formatCompanionAbilityCooldown(cooldownLeft)}` : `${energy}% заряда`);
+            const stateLabel = ready ? 'готова' : `${energy}% заряда`;
             quickButton.setAttribute('aria-label', `${companionAbilityName()}: ${stateLabel}`);
         }
     }
 
     function useCompanionAbility() {
         ensureCompanionState();
-        const cooldownLeft = Math.max(0, Math.ceil(((player.companion.abilityCooldownUntil || 0) - Date.now()) / 1000));
-        if (cooldownLeft > 0) {
-            showToast(`Способность: ${formatCompanionAbilityCooldown(cooldownLeft)}`, '#72db68');
-            return;
-        }
         if ((player.companion.abilityEnergy || 0) < 100) {
             showToast('Способность еще заряжается', '#72db68');
             return;
@@ -6257,7 +6229,7 @@ function init() {
             return;
         }
         player.companion.abilityEnergy = Math.max(0, Math.min(100, Number(result.refund) || 0));
-        player.companion.abilityCooldownUntil = Date.now() + companionAbilityCooldownMs(player.companion.skin || 'basic');
+        player.companion.abilityCooldownUntil = 0;
         startCompanionAbilitySpecial(player.companion.skin || 'basic', result.specialDurationMs || 3000, result.effect || {});
         showToast(result.message || 'Суперспособность!', companionAbilityMeta().color);
         updateUI();

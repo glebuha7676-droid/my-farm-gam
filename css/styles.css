@@ -424,7 +424,6 @@
 .companion-ability-button:active:not(:disabled) { transform:translateY(3px); filter:brightness(.94); box-shadow:inset 0 2px 0 rgba(255,255,255,.42), inset 0 -1px 0 color-mix(in srgb, var(--ability-dark) 30%, transparent), 0 0 0 transparent; }
 .companion-ability.is-ready { border-color:#4cae45; background:linear-gradient(180deg,#fbffe8,#c8f0ad); }
 .companion-ability.is-ready .companion-ability-button { animation:companionAbilityTileReady 1.45s ease-in-out infinite; }
-.companion-ability.is-cooling .companion-ability-button { filter:saturate(.74) brightness(.9); }
 @keyframes companionAbilityTileReady { 0%,100% { box-shadow:inset 0 2px 0 rgba(255,255,255,.64), inset 0 -5px 0 color-mix(in srgb, var(--ability-dark) 24%, transparent), 0 3px 0 color-mix(in srgb, var(--ability-dark) 64%, #3c2414), 0 0 0 rgba(255,255,255,0); } 50% { transform:translateY(-1px) scale(1.035); box-shadow:inset 0 2px 0 rgba(255,255,255,.72), inset 0 -5px 0 color-mix(in srgb, var(--ability-dark) 22%, transparent), 0 4px 0 color-mix(in srgb, var(--ability-dark) 64%, #3c2414), 0 0 15px color-mix(in srgb, var(--ability-color) 72%, transparent); } }
 .companion-buff-row { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:7px; }
 .companion-buff-row>div,.companion-buff-row>button { min-width:0; min-height:50px; padding:7px 9px; border:2px solid #b98b50; border-radius:8px; background:linear-gradient(180deg,#fff9e8,#f2dfb8); color:#533018; text-align:left; font-family:inherit; box-shadow:inset 0 -3px 0 rgba(108,63,24,.08); }
@@ -1181,7 +1180,6 @@ body.event-hell.embergoo-magma-finale .hell-bg-fire { height:62%; opacity:.86; f
         .companion-quick-ability::after { content:''; position:absolute; inset:3px; z-index:1; border-radius:10px; background:linear-gradient(145deg,rgba(255,255,255,.26),transparent 42%); pointer-events:none; }
         .companion-quick-ability span { position:relative; z-index:2; display:grid; place-items:center; width:42px; height:42px; padding-bottom:2px; font-family:"Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif; font-size:27px; line-height:1; color:#fff; text-shadow:0 2px 1px rgba(28,31,24,.48), 0 0 7px rgba(255,255,255,.4); filter:drop-shadow(0 2px 0 rgba(56,38,17,.28)); }
         .companion-quick-ability:disabled { cursor:default; }
-        .companion-quick-ability.is-cooling::before { filter:saturate(.72) brightness(.84); }
         .companion-quick-ability.is-ready { border-color:color-mix(in srgb, var(--quick-ability-dark) 72%, #fff 28%); box-shadow:inset 0 2px 0 rgba(255,255,255,.78), inset 0 -5px 0 color-mix(in srgb, var(--quick-ability-dark) 28%, transparent), 0 4px 0 color-mix(in srgb, var(--quick-ability-dark) 62%, #3c2414), 0 0 14px color-mix(in srgb, var(--quick-ability-color) 70%, transparent); animation:companionQuickAbilityReady 1.45s ease-in-out infinite; }
         .companion-quick-ability:active:not(:disabled) { transform:translateY(4px); filter:brightness(.94); box-shadow:inset 0 2px 0 rgba(255,255,255,.45), inset 0 -1px 0 color-mix(in srgb, var(--quick-ability-dark) 30%, transparent); }
         @keyframes companionQuickAbilityReady { 0%,100% { filter:brightness(1); } 50% { filter:brightness(1.1); } }
@@ -23831,4 +23829,281 @@ body.menu-drawer-open .perf-panel {
     0% { opacity:0; transform:translate(0,0) scale(.4); }
     24% { opacity:1; transform:translate(0,0) scale(1.25); }
     100% { opacity:0; transform:translate(var(--spark-x),var(--spark-y)) scale(.2); }
+}
+
+/* Slime identity polish v1: lightweight head details shared by every portrait. */
+.slime-pet .slime-decor {
+    z-index:4;
+}
+.slime-pet .slime-decor::before,
+.slime-pet .slime-decor::after {
+    box-sizing:border-box;
+    transform-origin:50% 82%;
+}
+
+/* Slimey: a small gel crest keeps the basic slime simple but recognizable. */
+.decor-none .slime-decor::before {
+    left:39%;
+    top:-10%;
+    width:23%;
+    height:17%;
+    background:linear-gradient(145deg,color-mix(in srgb,var(--slime-body) 74%,white),var(--slime-shade));
+    clip-path:polygon(4% 100%,25% 22%,47% 64%,75% 0,97% 100%);
+    filter:drop-shadow(0 1px 0 color-mix(in srgb,var(--slime-shade) 82%,#244822));
+}
+.decor-none .slime-decor::after {
+    left:47%;
+    top:-5%;
+    width:5%;
+    height:5%;
+    border-radius:50%;
+    background:rgba(255,255,255,.72);
+}
+
+/* Dewdrop: clear water bead with a readable glass highlight. */
+.decor-drop .slime-decor::before {
+    left:41% !important;
+    top:-16% !important;
+    width:19% !important;
+    height:27% !important;
+    border:1px solid #278db6;
+    border-radius:58% 50% 58% 18% !important;
+    background:linear-gradient(135deg,#f7feff 4%,#92eaff 38%,#27a9de 100%) !important;
+    box-shadow:inset 2px 2px 0 rgba(255,255,255,.68),0 2px 3px rgba(19,91,128,.25) !important;
+    transform:rotate(45deg) !important;
+}
+.decor-drop .slime-decor::after {
+    left:45%;
+    top:-11%;
+    width:5%;
+    height:8%;
+    border-radius:50%;
+    background:rgba(255,255,255,.88);
+    transform:rotate(38deg);
+}
+
+/* Sprout: two separate leaves and a darker center make the crown legible. */
+.decor-leaf .slime-decor::before {
+    left:48% !important;
+    top:-14% !important;
+    width:25% !important;
+    height:19% !important;
+    border:1px solid #177d3d;
+    border-radius:4% 92% 8% 92% !important;
+    background:linear-gradient(145deg,#a9f67c 2%,#35c96a 50%,#168646) !important;
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.46),0 2px 2px rgba(24,91,43,.2);
+    transform:rotate(27deg) !important;
+}
+.decor-leaf .slime-decor::after {
+    left:31%;
+    top:-10%;
+    width:23%;
+    height:17%;
+    border:1px solid #177d3d;
+    border-radius:92% 5% 92% 8%;
+    background:linear-gradient(215deg,#8dea71,#28b75b 55%,#14753c);
+    box-shadow:inset -1px 1px 0 rgba(255,255,255,.38);
+    transform:rotate(-22deg);
+}
+
+/* Coin: a slightly tilted minted token, not a second eye or face detail. */
+.decor-coin .slime-decor::before {
+    left:37% !important;
+    top:-16% !important;
+    width:27% !important;
+    height:27% !important;
+    border:2px solid #9a5d05 !important;
+    background:linear-gradient(145deg,#fff7a8 3%,#ffd93d 47%,#dc980d 100%) !important;
+    color:#8b5200 !important;
+    font-size:clamp(7px,1em,12px) !important;
+    box-shadow:inset 0 0 0 1px rgba(255,247,169,.7),inset -2px -2px 0 rgba(135,77,0,.18),0 2px 3px rgba(84,48,0,.26) !important;
+    transform:rotate(-8deg);
+}
+.decor-coin .slime-decor::after {
+    left:43%;
+    top:-11%;
+    width:10%;
+    height:3%;
+    border-radius:999px;
+    background:rgba(255,255,255,.88);
+    transform:rotate(-25deg);
+}
+
+/* Moon: a clean cold crescent stays readable on every material variant. */
+.decor-moon .slime-decor::before {
+    left:39% !important;
+    top:-16% !important;
+    width:24% !important;
+    height:29% !important;
+    border-radius:50% !important;
+    background:radial-gradient(circle at 72% 45%,transparent 0 45%,#fffbd6 48% 72%,#c7d8ff 100%) !important;
+    box-shadow:none !important;
+    filter:drop-shadow(0 0 3px rgba(231,239,255,.82));
+}
+
+/* Spark: the head mark is now an unmistakable lightning bolt. */
+.decor-spark .slime-decor::before {
+    left:41% !important;
+    top:-18% !important;
+    width:21% !important;
+    height:31% !important;
+    background:linear-gradient(145deg,#fffbd0 0%,#ffe45c 46%,#4fbcff 100%) !important;
+    clip-path:polygon(54% 0,100% 0,68% 39%,91% 39%,30% 100%,43% 57%,12% 57%) !important;
+    filter:drop-shadow(1px 1px 0 #2677a8) drop-shadow(0 1px 2px rgba(22,81,130,.3));
+}
+.decor-spark .slime-decor::after {
+    left:62%;
+    top:-12%;
+    width:5%;
+    height:5%;
+    border-radius:50%;
+    background:#efffff;
+    box-shadow:0 0 3px #fff;
+}
+
+/* Wave: raised crest with two small foam beads. */
+.decor-wave .slime-decor::before {
+    left:30% !important;
+    top:-12% !important;
+    width:42% !important;
+    height:22% !important;
+    border:0 !important;
+    border-radius:0 !important;
+    background:linear-gradient(180deg,#edffff 0 26%,#6ee8dc 30% 62%,#159fa3 100%) !important;
+    clip-path:polygon(0 75%,12% 48%,27% 58%,42% 7%,60% 47%,77% 34%,100% 74%,100% 100%,0 100%);
+    filter:drop-shadow(0 1px 1px rgba(16,99,108,.28));
+    transform:none !important;
+}
+.decor-wave .slime-decor::after {
+    left:36%;
+    top:-8%;
+    width:5%;
+    height:5%;
+    border-radius:50%;
+    background:#f4ffff;
+    box-shadow:22px -2px 0 -1px rgba(244,255,255,.92);
+}
+
+/* Nectar: glossy honey cap with one controlled drip. */
+.decor-honey .slime-decor::before {
+    left:31% !important;
+    top:-10% !important;
+    width:40% !important;
+    height:20% !important;
+    border:1px solid #b97308;
+    border-radius:58% 58% 43% 47% !important;
+    background:linear-gradient(160deg,#fff29b 0%,#f8c934 42%,#d98b0c 100%) !important;
+    box-shadow:inset 0 2px 0 rgba(255,255,255,.56),0 2px 2px rgba(112,64,0,.22) !important;
+}
+.decor-honey .slime-decor::after {
+    left:60%;
+    top:2%;
+    width:8%;
+    height:15%;
+    border-radius:0 0 70% 70%;
+    background:linear-gradient(180deg,#eaa416,#ffc943);
+    box-shadow:inset 1px 0 rgba(255,247,165,.34);
+}
+
+/* Ghost: a pale spectral wisp instead of a second rounded body. */
+.decor-ghost .slime-decor::before {
+    left:38% !important;
+    top:-18% !important;
+    width:26% !important;
+    height:29% !important;
+    border:1px solid rgba(112,126,198,.55);
+    border-radius:54% 48% 42% 45% !important;
+    background:linear-gradient(155deg,rgba(255,255,255,.96),rgba(211,225,255,.8) 54%,rgba(131,148,229,.52)) !important;
+    clip-path:polygon(50% 0,88% 27%,94% 68%,78% 100%,60% 80%,43% 100%,25% 80%,6% 96%,10% 32%);
+    filter:drop-shadow(0 0 3px rgba(225,236,255,.72));
+}
+
+/* Sun: warm disc plus restrained rays. */
+.decor-sun .slime-decor::before {
+    left:38% !important;
+    top:-16% !important;
+    width:26% !important;
+    height:26% !important;
+    border:1px solid #d58a0a;
+    border-radius:50% !important;
+    background:radial-gradient(circle at 36% 30%,#fff8b5 0 18%,#ffd640 42%,#ef9c17 100%) !important;
+    box-shadow:inset 0 1px rgba(255,255,255,.66),0 0 4px rgba(255,210,55,.6) !important;
+}
+.decor-sun .slime-decor::after {
+    left:34%;
+    top:-20%;
+    width:34%;
+    height:34%;
+    border-radius:50%;
+    background:repeating-conic-gradient(from 8deg,#ffc928 0 8deg,transparent 8deg 30deg);
+    -webkit-mask:radial-gradient(circle,transparent 0 44%,#000 47%);
+    mask:radial-gradient(circle,transparent 0 44%,#000 47%);
+}
+
+/* Ember: one coherent flame with a brighter inner core. */
+.decor-flame .slime-decor::before {
+    left:37% !important;
+    top:-20% !important;
+    width:28% !important;
+    height:35% !important;
+    border-radius:62% 34% 58% 42% !important;
+    background:linear-gradient(150deg,#fff077 0 25%,#ff9f2f 49%,#ef3f2d 100%) !important;
+    box-shadow:0 0 4px rgba(255,101,38,.55) !important;
+    transform:rotate(8deg) !important;
+}
+.decor-flame .slime-decor::after {
+    left:45%;
+    top:-8%;
+    width:12%;
+    height:20%;
+    border-radius:60% 40% 58% 42%;
+    background:linear-gradient(#fffbd0,#ffd53d 66%,#ff8b21);
+    transform:rotate(8deg);
+}
+
+/* Star: crisp golden crest with enough dark edge for pale backgrounds. */
+.decor-star .slime-decor::before {
+    left:37% !important;
+    top:-18% !important;
+    width:29% !important;
+    height:29% !important;
+    background:linear-gradient(145deg,#fffbd0 0 20%,#ffe45c 46%,#e7a719 100%) !important;
+    filter:drop-shadow(0 1px 0 #9b6510) drop-shadow(0 0 2px rgba(255,239,114,.62));
+}
+.decor-star .slime-decor::after {
+    left:45%;
+    top:-13%;
+    width:6%;
+    height:6%;
+    border-radius:50%;
+    background:rgba(255,255,255,.88);
+}
+
+/* Cosmos: compact glass dome and a clearly separated saucer. */
+.decor-ufo .slime-decor::before {
+    left:42% !important;
+    top:-17% !important;
+    width:18% !important;
+    height:16% !important;
+    border:1px solid #237aa2 !important;
+    border-radius:52% 52% 34% 34% !important;
+    background:linear-gradient(145deg,#e8ffff 0%,#74e2f4 46%,#277dd2 100%) !important;
+    box-shadow:inset 2px 1px rgba(255,255,255,.75),0 0 4px rgba(72,235,230,.5) !important;
+}
+.decor-ufo.rarity-secret .slime-decor::after,
+.decor-ufo .slime-decor::after {
+    display:block !important;
+    left:33% !important;
+    top:-8% !important;
+    width:36% !important;
+    height:12% !important;
+    border:1px solid #176c67 !important;
+    border-radius:50% !important;
+    background:
+        radial-gradient(circle at 25% 58%,#ff6e72 0 8%,transparent 10%),
+        radial-gradient(circle at 50% 70%,#fff06a 0 8%,transparent 10%),
+        radial-gradient(circle at 75% 58%,#63f7cb 0 8%,transparent 10%),
+        linear-gradient(180deg,#b8fff2,#36c7ab 55%,#17817d) !important;
+    box-shadow:inset 0 1px rgba(255,255,255,.72),0 2px 2px rgba(18,85,82,.26) !important;
+    animation:none !important;
 }
