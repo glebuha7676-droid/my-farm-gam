@@ -23831,7 +23831,7 @@ body.menu-drawer-open .perf-panel {
     100% { opacity:0; transform:translate(var(--spark-x),var(--spark-y)) scale(.2); }
 }
 
-/* Slime identity polish v1: lightweight head details shared by every portrait. */
+/* Slime identity polish v1: lightweight signature details shared by every portrait. */
 .slime-pet .slime-decor {
     z-index:4;
 }
@@ -23839,25 +23839,6 @@ body.menu-drawer-open .perf-panel {
 .slime-pet .slime-decor::after {
     box-sizing:border-box;
     transform-origin:50% 82%;
-}
-
-/* Slimey: a small gel crest keeps the basic slime simple but recognizable. */
-.decor-none .slime-decor::before {
-    left:39%;
-    top:-10%;
-    width:23%;
-    height:17%;
-    background:linear-gradient(145deg,color-mix(in srgb,var(--slime-body) 74%,white),var(--slime-shade));
-    clip-path:polygon(4% 100%,25% 22%,47% 64%,75% 0,97% 100%);
-    filter:drop-shadow(0 1px 0 color-mix(in srgb,var(--slime-shade) 82%,#244822));
-}
-.decor-none .slime-decor::after {
-    left:47%;
-    top:-5%;
-    width:5%;
-    height:5%;
-    border-radius:50%;
-    background:rgba(255,255,255,.72);
 }
 
 /* Dewdrop: clear water bead with a readable glass highlight. */
@@ -23961,27 +23942,33 @@ body.menu-drawer-open .perf-panel {
     box-shadow:0 0 3px #fff;
 }
 
-/* Wave: raised crest with two small foam beads. */
+/* Wave: a compact side curl gives the slime a clean water-tail silhouette. */
 .decor-wave .slime-decor::before {
-    left:30% !important;
-    top:-12% !important;
-    width:42% !important;
-    height:22% !important;
-    border:0 !important;
-    border-radius:0 !important;
-    background:linear-gradient(180deg,#edffff 0 26%,#6ee8dc 30% 62%,#159fa3 100%) !important;
-    clip-path:polygon(0 75%,12% 48%,27% 58%,42% 7%,60% 47%,77% 34%,100% 74%,100% 100%,0 100%);
-    filter:drop-shadow(0 1px 1px rgba(16,99,108,.28));
-    transform:none !important;
+    left:auto !important;
+    right:-10% !important;
+    top:36% !important;
+    width:31% !important;
+    height:34% !important;
+    border:3px solid #64e2dc !important;
+    border-left-color:transparent !important;
+    border-radius:50% !important;
+    background:transparent !important;
+    clip-path:none !important;
+    box-shadow:inset -1px 1px 0 rgba(241,255,255,.72) !important;
+    filter:drop-shadow(0 1px 1px rgba(12,93,105,.28));
+    opacity:.94;
+    transform:rotate(-18deg) !important;
 }
 .decor-wave .slime-decor::after {
-    left:36%;
-    top:-8%;
-    width:5%;
-    height:5%;
+    left:auto;
+    right:-3%;
+    top:27%;
+    width:7%;
+    height:9%;
     border-radius:50%;
-    background:#f4ffff;
-    box-shadow:22px -2px 0 -1px rgba(244,255,255,.92);
+    background:#efffff;
+    box-shadow:
+        7px 8px 0 -1px rgba(218,255,250,.86);
 }
 
 /* Nectar: glossy honey cap with one controlled drip. */
