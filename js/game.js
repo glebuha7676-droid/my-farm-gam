@@ -4,7 +4,7 @@
         pets: [], petLevels: {}, petInventory: [], equippedPets: [null, null, null], unlockedPetSlots: 1, slimeCollection: {},
         incubator: [null, null, null], quests: [], lastSaved: Date.now(), bank: 0, showcasePayoutAt: Date.now() + 30 * 60 * 1000, showcasePayoutRemainder: 0,
         plotStyle: 'default', ownedDecor: ['default'], decorPaintColor: '#ff7675', roomStyle: 'cozy', ownedRoomDecor: ['cozy'], purchasedPlots: [],
-        seedInventory: { carrot: 6 },
+        seedInventory: { carrot: 6 }, cropInventory: [],
         shop: { stock: {}, refreshAt: 0, merchantStock: {}, merchantArrivesAt: 0, merchantLeavesAt: 0, adEggViews: 0, adEggUnlocked: false },
         showcase: [null, null, null],
         companion: { name: 'Слайми', level: 1, xp: 0, slimeLevels: {}, hunger: 82, clean: 88, energy: 92, sleeping: false, skin: 'basic', variant: 'normal', lastUpdate: Date.now() },
@@ -20,11 +20,11 @@
         },
     };
 
-    let env = { ticks: 0, currentEvent: 'day', eventTimer: 0, nextEventTimer: 75, potTimer: 0, potActive: false, activeNest: 0, activeEquip: 0, petPatCooldowns: {}, companionDrawer: '', companionShower: false, companionShowerTimer: null, companionPointerDown: false, companionPointer: null, companionPointerId: null, companionPointerStartedInZone: false, companionPointerStartX: 0, companionPointerStartY: 0, companionPointerLastX: 0, companionPointerLastY: 0, companionPointerStartedAt: 0, companionPetting: false, companionHoldTimer: null, companionTapTimer: null, companionHeartTimer: null, companionSpecial: '', companionSpecialTimer: null, companionSpecialEndTimer: null, companionAbilitySpecial: '', companionAbilitySpecialTimer: null, companionAbilityPayload: null, companionGiftTimers: [], companionSpecialAnchorX: 0, companionSpecialAnchorY: 0, companionCoinBurstAt: 0, harvestSelectedTile: null, harvestSelectionTimer: null, openMenuSections: { showcase: false, diary: false, decor: false, rewards: false, admin: false }, backroomsLampTimer: null, backroomsLampEndTimer: null, shopTab: 'seeds', decorShopTab: 'room', pendingPlotPurchase: null, abilityFloodTimer: null, sunpuddingEclipseTimer: null, sunpuddingEclipseDarkTimer: null, embergooMagmaTimers: [], stargumCometTimers: [], stargumCometFrames: [], stargumCometFinale: false, moonmeltLunarTimers: [], moonmeltLunarFinale: false, nightDawnTimer: null, nightDawnActive: false, nightPaletteFrame: null, nightPalette: null, nightPalettePhase: 'day', fpsMeterFrame: null, perfTelemetry: null, perfLongTaskObserver: null, lastCompanionVitalsAt: 0, rewardsRenderSignature: '', eventVisualFrame: null, eventStyleCache: {}, eventBackgroundLayer: 0 };
+    let env = { ticks: 0, currentEvent: 'day', eventTimer: 0, nextEventTimer: 75, potTimer: 0, potActive: false, activeNest: 0, activeEquip: 0, petPatCooldowns: {}, companionDrawer: '', companionShower: false, companionShowerTimer: null, companionPointerDown: false, companionPointer: null, companionPointerId: null, companionPointerStartedInZone: false, companionPointerStartX: 0, companionPointerStartY: 0, companionPointerLastX: 0, companionPointerLastY: 0, companionPointerStartedAt: 0, companionPetting: false, companionHoldTimer: null, companionTapTimer: null, companionHeartTimer: null, companionSpecial: '', companionSpecialTimer: null, companionSpecialEndTimer: null, companionAbilitySpecial: '', companionAbilitySpecialTimer: null, companionAbilityPayload: null, companionGiftTimers: [], companionSpecialAnchorX: 0, companionSpecialAnchorY: 0, companionCoinBurstAt: 0, gardenSlimePanelTab: 'profile', slimeFoodReaction: '', slimeFoodReactionTimer: null, harvestSelectedTile: null, harvestSelectionTimer: null, openMenuSections: { showcase: false, diary: false, decor: false, rewards: false, admin: false }, backroomsLampTimer: null, backroomsLampEndTimer: null, shopTab: 'seeds', decorShopTab: 'room', pendingPlotPurchase: null, abilityFloodTimer: null, sunpuddingEclipseTimer: null, sunpuddingEclipseDarkTimer: null, embergooMagmaTimers: [], stargumCometTimers: [], stargumCometFrames: [], stargumCometFinale: false, moonmeltLunarTimers: [], moonmeltLunarFinale: false, nightDawnTimer: null, nightDawnActive: false, nightPaletteFrame: null, nightPalette: null, nightPalettePhase: 'day', fpsMeterFrame: null, perfTelemetry: null, perfLongTaskObserver: null, lastCompanionVitalsAt: 0, rewardsRenderSignature: '', eventVisualFrame: null, eventStyleCache: {}, eventBackgroundLayer: 0 };
     let eventActions = []; 
     let tiles = Array(12).fill().map((_, i) => ({ id: i, active: false, plantId: null, growth: 0, water: 0, slimeWater: 0, slimeWaterMult: 1, hasWeed: false, mutations: [], scale: .4, weight: 1, weightMult: 1, sizeTier: 'small', beeLock: 0, ghostEchoPercent: 0, ghostMarked: false, ghostCopyMutationCount: 0, ghostEcho: false, ghostValue: 0 }));
     let currentTool = null;
-    const TEST_HATCH_INSTANT = false;
+    const TEST_HATCH_INSTANT = true;
     const TITANIC_CROP_CHANCE = 0.001;
     const HUGE_CROP_CHANCE = 0.01;
     const BIG_CROP_CHANCE = 0.09;
@@ -34,6 +34,7 @@
     const NORMAL_WEIGHT_MIN = 10;
     const NORMAL_WEIGHT_MAX = 50;
     const WATER_DURATION = 15;
+    const CROP_INVENTORY_CAPACITY = 8;
     const COMPANION_ABILITY_DEFAULT_COOLDOWN_MS = 3 * 60 * 1000;
     const MATERIAL_MUTATIONS = new Set(['gold', 'rainbow', 'diamond']);
     const EVENT_BODY_CLASSES = ['rain', 'storm', 'toxic', 'starfall', 'holy', 'hell', 'candy', 'bee', 'alien', 'night', 'cosmic'].map(type => `event-${type}`);
@@ -159,6 +160,28 @@
         player.shop.merchantLeavesAt = Number(player.shop.merchantLeavesAt) || 0;
         player.shop.adEggViews = Math.max(0, Math.min(10, Math.floor(Number(player.shop.adEggViews) || 0)));
         player.shop.adEggUnlocked = !!player.shop.adEggUnlocked || player.shop.adEggViews >= 10;
+    }
+
+    function ensureCropInventoryState() {
+        const crops = Array.isArray(player.cropInventory) ? player.cropInventory : [];
+        player.cropInventory = crops
+            .filter(crop => crop && PLANTS[crop.plantId])
+            .map((crop, index) => {
+                const mutations = Array.isArray(crop.mutations) ? crop.mutations.filter(id => MUTATIONS[id]) : [];
+                const weight = clampTileWeight(crop, PLANTS[crop.plantId]);
+                const sizeTier = sizeTierFromWeight(weight, crop.sizeTier === 'titanic');
+                const value = Math.max(1, Math.floor(Number(crop.value) || cropSaleValue(crop.plantId, mutations, weight, 0, sizeTier)));
+                return {
+                    ...crop,
+                    uid: crop.uid || `crop-${Number(crop.createdAt) || Date.now()}-${index}`,
+                    mutations,
+                    weight: Math.round(weight * 10) / 10,
+                    weightMult: Number(crop.weightMult) || getWeightMultiplier(weight, sizeTier),
+                    sizeTier,
+                    value,
+                    createdAt: Number(crop.createdAt) || Date.now()
+                };
+            });
     }
 
     function ensurePlotPurchaseState() {
@@ -431,11 +454,8 @@
     }
 
     function getQuickSeedKeys() {
-        return seedKeys
+        return seedKeys.slice()
             .sort((a, b) => {
-                const aOwned = getSeedOwned(a) > 0 ? 1 : 0;
-                const bOwned = getSeedOwned(b) > 0 ? 1 : 0;
-                if (aOwned !== bOwned) return bOwned - aOwned;
                 const costDiff = (PLANTS[a]?.cost || 0) - (PLANTS[b]?.cost || 0);
                 if (costDiff !== 0) return costDiff;
                 return seedKeys.indexOf(a) - seedKeys.indexOf(b);
@@ -446,7 +466,7 @@
         if (!PLANTS[currentTool]) return;
         if (getSeedOwned(currentTool) > 0) return;
         const nextSeed = getQuickSeedKeys().find(id => getSeedOwned(id) > 0);
-        currentTool = nextSeed || 'water';
+        currentTool = nextSeed || null;
     }
 
     function visualScaleForWeight(weight, tier) {
@@ -660,7 +680,7 @@
         if (!Array.isArray(player.unlockedMutations)) player.unlockedMutations = [];
     }
 
-    function recordCropStats(crop, earned = 0, countTraits = true) {
+    function recordCropStats(crop, earned = 0, countTraits = true, options = {}) {
         if (!crop) return;
         ensureStats();
         const value = Math.floor(Number(earned) || 0);
@@ -675,7 +695,7 @@
             player.rares[mId] = (player.rares[mId] || 0) + 1;
             if (!player.unlockedMutations.includes(mId)) {
                 player.unlockedMutations.push(mId);
-                showBigMutation(mId);
+                if (!options.quiet) showBigMutation(mId);
             }
         });
         if (env.openMenuSections.diary) renderDiary();
@@ -851,18 +871,19 @@
         ).join('');
     }
 
-    function showcaseCropHTML(crop) {
+    function showcaseCropHTML(crop, options = {}) {
         if (!crop || !PLANTS[crop.plantId]) return '';
         const p = PLANTS[crop.plantId];
         // Showcase uses one dependable model scale. Garden size tiers remain in crop data and labels,
         // but the compact card has a single coordinate system for every mutation visual.
-        const scale = 1;
+        const scale = Math.max(.72, Math.min(1.22, Number(options.modelScale) || 1));
+        const stageScale = Math.max(.62, Math.min(.82, Number(options.stageScale) || .78));
         const mutations = crop.mutations || [];
         const mutClasses = mutations.map(mId => `mut-${mId}`).join(' ');
         const primary = mutations[0] ? `primary-${mutations[0]}` : '';
         return `
             <div class="showcase-crop-art">
-                <div class="showcase-tile-preview tile occupied ready crop-normal ${mutClasses} ${primary}" data-source-size="${crop.sizeTier || 'normal'}" style="--plant-scale:${scale}; --crop-color:${p.color}; --showcase-stage-scale:.78;">
+                <div class="showcase-tile-preview tile occupied ready crop-normal ${mutClasses} ${primary}" data-source-size="${crop.sizeTier || 'normal'}" style="--plant-scale:${scale}; --crop-color:${p.color}; --showcase-stage-scale:${stageScale};">
                     ${mutations.includes('toxic') ? toxicPuddleHTML() : ''}
                     ${cropMutationAuraHTML(mutations)}
                     <div class="plant-wrapper">
@@ -1356,33 +1377,59 @@ function init() {
 
     function renderSeeds() {
         const container = document.getElementById('seeds-track');
+        const windowEl = document.getElementById('seeds-window');
+        if (!container || !windowEl) return;
         ensureSeedAndShopState();
         ensureSelectedSeedAvailable();
         const quickSeedKeys = getQuickSeedKeys();
         const seedSignature = getSeedRenderSignature(quickSeedKeys);
         if (container.dataset.renderSignature === seedSignature) return;
+        const previousScrollLeft = windowEl.scrollLeft;
         container.dataset.renderSignature = seedSignature;
         container.innerHTML = '';
         quickSeedKeys.forEach(key => {
             const p = PLANTS[key];
             const amount = getSeedOwned(key);
             const empty = amount <= 0;
+            const affordable = player.coins >= p.cost;
             const el = document.createElement('div');
-            el.className = `seed-packet ${empty ? 'empty unavailable' : ''} ${currentTool === p.id ? 'active' : ''}`;
+            el.className = `seed-packet ${empty ? 'empty needs-purchase' : ''} ${affordable ? '' : 'cant-afford'} ${currentTool === p.id ? 'active' : ''}`;
             el.dataset.seed = p.id;
             el.style.setProperty('--pkt-color', p.color);
             el.onclick = () => {
-                if (getSeedOwned(p.id) <= 0) { showToast('Купи семена в магазине', 'gray'); return; }
+                if (getSeedOwned(p.id) <= 0) { showToast('Нажми на цену, чтобы купить семечко', '#f1c40f'); return; }
                 selectAction(p.id);
             };
-            el.innerHTML = `<div class="pkt-top"></div><div class="pkt-bg"></div><div class="seed-name">${p.name}</div><div class="seed-icon">${seedIcon(p.id)}</div><div class="seed-price">${compactNumber(p.cost)}$</div><div class="seed-stock">${empty ? 'x0' : `x${amount}`}</div>`;
+            el.innerHTML = `<div class="pkt-top"></div><div class="pkt-bg"></div><div class="seed-name">${p.name}</div><div class="seed-icon">${seedIcon(p.id)}</div><button class="seed-price" type="button" ${affordable ? '' : 'disabled'}>${compactNumber(p.cost)}$</button><div class="seed-stock">x${amount}</div>`;
+            el.querySelector('.seed-price').addEventListener('click', event => {
+                event.stopPropagation();
+                buySeedFromQuickPanel(p.id);
+            });
             container.appendChild(el);
         });
         if (env.seedCarouselFrame) cancelAnimationFrame(env.seedCarouselFrame);
         env.seedCarouselFrame = requestAnimationFrame(() => {
             env.seedCarouselFrame = null;
+            windowEl.scrollLeft = previousScrollLeft;
             refreshSeedCarouselMetrics();
         });
+    }
+
+    function buySeedFromQuickPanel(seedId) {
+        const plant = PLANTS[seedId];
+        if (!plant) return;
+        if (player.coins < plant.cost) {
+            showToast('Не хватает монет', '#ff7675');
+            sfx.play('error');
+            return;
+        }
+        player.coins -= plant.cost;
+        player.seedInventory[seedId] = getSeedOwned(seedId) + 1;
+        decorSfx('coin', 'popitClick');
+        showToast(`+1 ${plant.name}`, plant.color);
+        updateHeaderUI();
+        renderSeeds();
+        saveGame();
     }
 
     function scrollSeeds(dir) {
@@ -1417,7 +1464,9 @@ function init() {
     }
 
     function selectAction(tool) {
+        const abandonedFood = selectedReadyCropId() !== null;
         clearHarvestSelection();
+        if (abandonedFood) setGardenSlimeFoodReaction('missed', 950);
         if (tool === 'shop') {
             toggleShop();
             return;
@@ -1430,7 +1479,7 @@ function init() {
     }
 
     function getSeedRenderSignature(keys = getQuickSeedKeys()) {
-        return keys.map(key => `${key}:${getSeedOwned(key)}:${currentTool === key ? 1 : 0}`).join('|');
+        return keys.map(key => `${key}:${getSeedOwned(key)}:${currentTool === key ? 1 : 0}:${player.coins >= (PLANTS[key]?.cost || 0) ? 1 : 0}`).join('|');
     }
 
     function updateSeedPacketDOM(seedId) {
@@ -1442,7 +1491,7 @@ function init() {
         }
         const amount = getSeedOwned(seedId);
         packet.classList.toggle('empty', amount <= 0);
-        packet.classList.toggle('unavailable', amount <= 0);
+        packet.classList.toggle('needs-purchase', amount <= 0);
         packet.querySelector('.seed-stock').textContent = `x${Math.max(0, amount)}`;
         container.dataset.renderSignature = getSeedRenderSignature();
     }
@@ -1464,7 +1513,11 @@ function init() {
         env.harvestSelectedTile = idx;
         tileEl.classList.add('harvest-selected');
         decorSfx('pop', 'popitClick');
-        env.harvestSelectionTimer = setTimeout(() => clearHarvestSelection(idx), 3000);
+        env.harvestSelectionTimer = setTimeout(() => {
+            if (env.harvestSelectedTile !== idx) return;
+            clearHarvestSelection(idx);
+            setGardenSlimeFoodReaction('missed', 950);
+        }, 3000);
         syncGardenCropActionState();
     }
 
@@ -1478,17 +1531,46 @@ function init() {
 
     function syncGardenCropActionState() {
         const hasSelection = selectedReadyCropId() !== null;
+        const hasCropInHand = hasSelection || !!env.cropDrag;
+        const inventoryCount = Array.isArray(player.cropInventory) ? player.cropInventory.length : 0;
         document.getElementById('garden-sell-target')?.classList.toggle('has-selection', hasSelection);
-        document.getElementById('garden-slime-target')?.classList.toggle('has-selection', hasSelection);
+        const slimeTarget = document.getElementById('garden-slime-target');
+        slimeTarget?.classList.toggle('has-selection', hasSelection);
+        slimeTarget?.classList.toggle('food-focus', hasCropInHand);
+        slimeTarget?.classList.toggle('food-missed', env.slimeFoodReaction === 'missed');
+        slimeTarget?.classList.toggle('just-fed', env.slimeFoodReaction === 'fed');
+        const inventoryTarget = document.getElementById('garden-inventory-target');
+        const capacity = document.getElementById('garden-inventory-capacity');
+        const count = document.getElementById('garden-inventory-count');
+        inventoryTarget?.classList.toggle('has-selection', hasSelection);
+        inventoryTarget?.classList.toggle('is-full', inventoryCount >= CROP_INVENTORY_CAPACITY);
+        if (count) count.textContent = inventoryCount;
+        if (capacity) capacity.hidden = !hasCropInHand;
+    }
+
+    function setGardenSlimeFoodReaction(reaction = '', duration = 0) {
+        if (env.slimeFoodReactionTimer) clearTimeout(env.slimeFoodReactionTimer);
+        env.slimeFoodReactionTimer = null;
+        env.slimeFoodReaction = reaction;
+        renderGardenCompanion();
+        syncGardenCropActionState();
+        if (!reaction || duration <= 0) return;
+        env.slimeFoodReactionTimer = setTimeout(() => {
+            env.slimeFoodReactionTimer = null;
+            env.slimeFoodReaction = '';
+            renderGardenCompanion();
+            syncGardenCropActionState();
+        }, duration);
     }
 
     function sellSelectedCrop() {
         const idx = selectedReadyCropId();
         if (idx === null) {
-            showToast('Сначала выбери готовое растение', '#f1c40f');
+            openGardenSaleDialog();
             return;
         }
         harvestPlant(idx);
+        setGardenSlimeFoodReaction('missed', 1050);
     }
 
     function feedSelectedCrop() {
@@ -1497,17 +1579,747 @@ function init() {
             showToast('Выбери готовое растение для слайма', '#72db68');
             return;
         }
-        updateCompanionState();
-        if (player.companion.sleeping) {
-            showToast('Слайм сейчас спит', '#8a73df');
-            return;
-        }
         feedCompanion(idx);
     }
 
-    function openGardenInventoryStub() {
+    function handleGardenSlimeTap(event = null) {
+        if (event?.target?.closest?.('.garden-slime-ability-trigger')) {
+            activateGardenSlimeAbility();
+            return;
+        }
+        if (selectedReadyCropId() !== null) {
+            feedSelectedCrop();
+            return;
+        }
+        openGardenSlimePanel();
+    }
+
+    function activateGardenSlimeAbility() {
+        updateCompanionState();
+        const pet = player.companion;
+        const energy = Math.max(0, Math.min(100, pet.abilityEnergy || 0));
+        const cooldownLeft = Math.max(0, (pet.abilityCooldownUntil || 0) - Date.now());
+        if (energy < 100 || cooldownLeft > 0) {
+            openGardenSlimePanel();
+            return;
+        }
+        useCompanionAbility();
+    }
+
+    function openGardenSlimePanel() {
         clearHarvestSelection();
-        showToast('Инвентарь появится на следующем этапе', '#74b9ff');
+        if (!['profile', 'incubator'].includes(env.gardenSlimePanelTab)) env.gardenSlimePanelTab = 'profile';
+        renderGardenSlimePanel();
+        const dialog = document.getElementById('garden-slime-dialog');
+        if (!dialog) return;
+        dialog.classList.add('open');
+        dialog.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('garden-dialog-open');
+    }
+
+    function closeGardenSlimePanel(event = null) {
+        const dialog = document.getElementById('garden-slime-dialog');
+        if (!dialog || (event && event.target !== dialog)) return;
+        dialog.classList.remove('open');
+        dialog.setAttribute('aria-hidden', 'true');
+        document.getElementById('garden-slime-panel-content')?.replaceChildren();
+        if (!document.querySelector('.garden-dialog.open')) document.body.classList.remove('garden-dialog-open');
+    }
+
+    function selectGardenSlimePanelTab(tab) {
+        if (!['profile', 'incubator'].includes(tab) || env.gardenSlimePanelTab === tab) return;
+        env.gardenSlimePanelTab = tab;
+        decorSfx('pop', 'popitClick');
+        renderGardenSlimePanel();
+        const content = document.getElementById('garden-slime-panel-content');
+        if (content) content.scrollTop = 0;
+    }
+
+    function gardenSlimeBaseDef() {
+        return { id: 'basic', name: 'Базовый слайм', shortName: 'Базовый', rarity: 'common', role: 'Создаёт радужные мутации', face: 'happy', slime: { body: '#72db68', shade: '#35a84c', blush: '#ffc1cf', decor: 'none' } };
+    }
+
+    function gardenSlimeRarity(def) {
+        const fallback = { label: 'Обычный', color: '#58a969', stars: 1 };
+        return PET_RARITY_STYLE[def?.rarity || 'common'] || fallback;
+    }
+
+    function gardenSlimeVariantButtons(id) {
+        ensureSlimeCollection();
+        const collection = player.slimeCollection[id] || { owned: false, huge: false, gold: false, rainbow: false };
+        const activeVariant = player.companion.skin === id ? (player.companion.variant || 'normal') : 'normal';
+        return [['huge', 'H', 'Huge'], ['gold', 'G', 'Gold'], ['rainbow', 'R', 'Rainbow']].map(([variant, label, title]) => {
+            const unlocked = !!collection[variant];
+            const active = activeVariant === variant;
+            return `<button class="garden-slime-variant variant-${variant} ${unlocked ? 'unlocked' : 'locked'} ${active ? 'active' : ''}" type="button" title="${title}" onclick="selectCompanionVariant('${id}','${variant}')" ${unlocked ? '' : 'disabled'}>${label}</button>`;
+        }).join('');
+    }
+
+    function gardenSlimeSkinIds() {
+        const rarityOrder = { common: 0, rare: 1, legendary: 2, secret: 3 };
+        ensureSlimeCollection();
+        return ['basic', ...Object.keys(PET_DEFS).sort((a, b) => {
+            const rankDifference = (rarityOrder[PET_DEFS[a]?.rarity] ?? 99) - (rarityOrder[PET_DEFS[b]?.rarity] ?? 99);
+            return rankDifference || (PET_DEFS[a]?.name || '').localeCompare(PET_DEFS[b]?.name || '', 'ru');
+        })];
+    }
+
+    function renderGardenSlimeSkinCard(id) {
+        const baseDef = gardenSlimeBaseDef();
+        const def = id === 'basic' ? baseDef : PET_DEFS[id];
+        if (!def) return '';
+        const selected = player.companion.skin === id;
+        const variant = selected ? (player.companion.variant || 'normal') : 'normal';
+        const rarity = gardenSlimeRarity(def);
+        const state = player.companion.slimeLevels[id] || { level: 1, xp: 0 };
+        const owned = id === 'basic' || !!player.slimeCollection[id]?.owned;
+        if (!owned) {
+            return `<button class="garden-slime-skin-card rarity-${def.rarity || 'common'} locked" style="--skin-rarity:${rarity.color}" type="button" disabled aria-label="Неоткрытый слайм">
+                <span class="garden-slime-skin-model locked"><b>?</b></span>
+                <span class="garden-slime-skin-copy"><b>???</b><small>НЕ ОТКРЫТ</small></span>
+                <i>?</i>
+            </button>`;
+        }
+        return `<button class="garden-slime-skin-card rarity-${def.rarity || 'common'} ${selected ? 'selected' : ''}" style="--skin-color:${def.slime?.body || rarity.color};--skin-dark:${def.slime?.shade || rarity.color};--skin-rarity:${rarity.color}" type="button" onclick="selectCompanionSkin('${id}')" ${selected ? 'disabled aria-current="true"' : ''}>
+            <span class="garden-slime-skin-model">${slimeHTML(def, companionVariantPet(variant), 'inventory')}</span>
+            <span class="garden-slime-skin-copy"><b>${def.shortName || def.name}</b><small>УРОВЕНЬ <strong>${state.level}</strong></small></span>
+            <i>${selected ? '✓' : '›'}</i>
+        </button>`;
+    }
+
+    function renderGardenSlimeCollection(skins) {
+        const groups = [
+            { id: 'common', label: 'Обычные', color: '#55aa69' },
+            { id: 'rare', label: 'Редкие', color: '#4b9fe8' },
+            { id: 'legendary', label: 'Легендарные', color: '#e66a42' },
+            { id: 'secret', label: 'Секретные', color: '#8d5bd7' }
+        ];
+        const baseDef = gardenSlimeBaseDef();
+        return groups.map(group => {
+            const ids = skins.filter(id => (id === 'basic' ? baseDef : PET_DEFS[id])?.rarity === group.id);
+            const opened = ids.filter(id => id === 'basic' || player.slimeCollection[id]?.owned).length;
+            return `<section class="garden-slime-rarity-group rarity-${group.id}" style="--group-color:${group.color}">
+                <header><b>${group.label}</b><i></i><span>${opened} из ${ids.length}</span></header>
+                <div class="garden-slime-skin-grid">${ids.map(renderGardenSlimeSkinCard).join('')}</div>
+            </section>`;
+        }).join('');
+    }
+
+    function gardenSlimeHexRgb(value, fallback = [114, 219, 104]) {
+        const hex = `${value || ''}`.trim().replace('#', '');
+        if (/^[0-9a-f]{3}$/i.test(hex)) return [...hex].map(channel => parseInt(channel + channel, 16));
+        if (/^[0-9a-f]{6}$/i.test(hex)) return [0, 2, 4].map(index => parseInt(hex.slice(index, index + 2), 16));
+        return [...fallback];
+    }
+
+    function gardenSlimeRgbHex(color) {
+        return `#${color.map(channel => Math.round(Math.max(0, Math.min(255, channel))).toString(16).padStart(2, '0')).join('')}`;
+    }
+
+    function gardenSlimeMixColor(from, to, amount) {
+        return from.map((channel, index) => channel + (to[index] - channel) * amount);
+    }
+
+    function gardenSlimeColorLuminance(color) {
+        const linear = color.map(channel => {
+            const value = channel / 255;
+            return value <= .04045 ? value / 12.92 : Math.pow((value + .055) / 1.055, 2.4);
+        });
+        return linear[0] * .2126 + linear[1] * .7152 + linear[2] * .0722;
+    }
+
+    function gardenSlimeProfilePalette(def, rarity) {
+        const body = gardenSlimeHexRgb(def.slime?.body);
+        const shade = gardenSlimeHexRgb(def.slime?.shade, body);
+        const rarityColor = gardenSlimeHexRgb(rarity.color, shade);
+        const darkNeutral = [22, 24, 29];
+        const warmWhite = [255, 249, 226];
+        const bodyLuminance = gardenSlimeColorLuminance(body);
+        const cardTop = gardenSlimeMixColor(shade, darkNeutral, .5);
+        const cardBottom = gardenSlimeMixColor(body, darkNeutral, .72);
+        const stage = bodyLuminance >= .28
+            ? gardenSlimeMixColor(shade, darkNeutral, .72)
+            : gardenSlimeMixColor(body, warmWhite, .8);
+        const highlight = bodyLuminance >= .56 ? shade : gardenSlimeMixColor(body, warmWhite, .28);
+        const mutedInk = gardenSlimeMixColor(body, warmWhite, .76);
+        const panel = gardenSlimeMixColor(cardTop, warmWhite, .13);
+        const borderBase = gardenSlimeMixColor(rarityColor, shade, .42);
+        const border = gardenSlimeMixColor(borderBase, warmWhite, .18);
+        const badgeInk = gardenSlimeColorLuminance(rarityColor) >= .46 ? '#2b2118' : '#fffaf0';
+        return {
+            '--profile-card-top': gardenSlimeRgbHex(cardTop),
+            '--profile-card-bottom': gardenSlimeRgbHex(cardBottom),
+            '--profile-card-border': gardenSlimeRgbHex(border),
+            '--profile-stage': gardenSlimeRgbHex(stage),
+            '--profile-stage-edge': gardenSlimeRgbHex(highlight),
+            '--profile-panel': gardenSlimeRgbHex(panel),
+            '--profile-highlight': gardenSlimeRgbHex(highlight),
+            '--profile-muted-ink': gardenSlimeRgbHex(mutedInk),
+            '--profile-badge': rarity.color,
+            '--profile-badge-ink': badgeInk
+        };
+    }
+
+    function renderGardenSlimeProfile(def, meta) {
+        const pet = player.companion;
+        const state = syncCurrentCompanionLevel();
+        const level = Math.max(1, Math.min(15, state.level || 1));
+        const need = companionXpNeed(level);
+        const xpProgress = level >= 15 ? 100 : Math.min(100, state.xp / need * 100);
+        const rarity = gardenSlimeRarity(def);
+        const rarityLabel = def.id === 'basic' ? 'Базовый' : rarity.label;
+        const milestones = companionAbilityMilestones(def.id);
+        const tier = companionAbilityTier();
+        const tierRoman = ['I', 'II', 'III'];
+        const tierUnlockLevels = [1, 8, 15];
+        const currentMilestone = milestones[Math.max(0, Math.min(milestones.length - 1, tier - 1))]
+            || { range: '1–7', text: 'Особая способность этого слайма.' };
+        const currentTierRoman = tierRoman[Math.max(0, Math.min(tierRoman.length - 1, tier - 1))];
+        const profilePalette = gardenSlimeProfilePalette(def, rarity);
+        const profilePaletteStyle = Object.entries(profilePalette).map(([property, value]) => `${property}:${value}`).join(';');
+        const skins = gardenSlimeSkinIds();
+        return `<div class="garden-slime-profile-pane" style="--active-slime-color:${def.slime?.body || meta.color};--active-slime-dark:${def.slime?.shade || meta.dark};--active-rarity:${rarity.color}">
+            <section class="garden-slime-profile-hero rarity-${def.rarity || 'common'}" style="--profile-color:${def.slime?.body || meta.color};--profile-dark:${def.slime?.shade || meta.dark};--rarity-accent:${rarity.color};${profilePaletteStyle}">
+                <div class="garden-slime-portrait-wrap">
+                    <button class="garden-slime-edit-name" type="button" onclick="renameCompanion()"><b>${pet.name || 'Слайми'}</b><i>✎</i></button>
+                    <div class="garden-slime-portrait" role="button" tabindex="0" aria-label="Погладить слайма" onpointerdown="startGardenSlimeProfilePet(event)" onpointermove="moveGardenSlimeProfilePet(event)" onpointerup="finishGardenSlimeProfilePet(event)" onpointercancel="finishGardenSlimeProfilePet(event)" onkeydown="handleGardenSlimeProfilePetKey(event)"><span class="garden-slime-pet-model">${slimeHTML({ ...def, face: companionFaceForMood(def, companionMood()) }, companionVariantPet(pet.variant || 'normal'), 'featured')}</span></div>
+                    <div class="garden-slime-variants" aria-label="Особые версии">${gardenSlimeVariantButtons(def.id)}</div>
+                </div>
+                <div class="garden-slime-profile-copy">
+                    <div class="garden-slime-profile-type"><span class="garden-slime-rarity rarity-${def.rarity || 'common'}">${rarityLabel}</span><small>${def.name || 'Базовый слайм'}</small></div>
+                    <p>${def.role || 'Помогает выращивать редкий урожай'}</p>
+                    <div class="garden-slime-level-card">
+                        <div><span><small>УРОВЕНЬ</small><b>${level}</b></span><strong>${level >= 15 ? 'MAX' : `${Math.floor(state.xp)} / ${need} XP`}</strong></div>
+                        <i class="garden-slime-level-meter"><em style="width:${xpProgress}%"></em></i>
+                    </div>
+                </div>
+            </section>
+            <section class="garden-slime-ability-card">
+                <header class="garden-slime-ability-head">
+                    <span aria-hidden="true">${meta.symbol}</span>
+                    <div><small>СУПЕРСПОСОБНОСТЬ</small><b>${companionAbilityName()}</b></div>
+                    <em>СТУПЕНЬ ${currentTierRoman}</em>
+                </header>
+                <p>${currentMilestone.text}</p>
+                <details class="garden-slime-ability-details">
+                    <summary><b>Все ступени способности</b><span>⌄</span></summary>
+                    <div>${milestones.map((milestone, index) => {
+                        const unlocked = tier >= index + 1;
+                        const current = tier === index + 1;
+                        const unlockLabel = `${current ? 'ТЕКУЩАЯ' : unlocked ? 'ОТКРЫТО' : 'ОТКРОЕТСЯ'} · С ${tierUnlockLevels[index]} УРОВНЯ СЛАЙМА`;
+                        return `<article class="${unlocked ? 'unlocked' : 'locked'} ${tier === index + 1 ? 'current' : ''}">
+                            <span class="garden-slime-tier-mark" aria-label="Ступень ${tierRoman[index]}${unlocked ? '' : ', закрыта'}">${tierRoman[index]}${unlocked ? '' : '<i aria-hidden="true"></i>'}</span>
+                            <div><strong class="garden-slime-tier-unlock">${unlockLabel}</strong><p>${milestone.text}</p></div>
+                        </article>`;
+                    }).join('')}</div>
+                </details>
+            </section>
+            <section class="garden-slime-collection">
+                <header><div><small>КОЛЛЕКЦИЯ</small><b>Выбрать слайма</b></div><span>${skins.filter(id => id === 'basic' || player.slimeCollection[id]?.owned).length} из ${skins.length}</span></header>
+                <div class="garden-slime-rarity-list">${renderGardenSlimeCollection(skins)}</div>
+            </section>
+        </div>`;
+    }
+
+    function emitGardenSlimeProfileHeart(portrait, clientX, clientY) {
+        if (!portrait?.isConnected) return;
+        const rect = portrait.getBoundingClientRect();
+        const heart = document.createElement('span');
+        const x = Number.isFinite(clientX) ? clientX - rect.left : rect.width / 2;
+        const y = Number.isFinite(clientY) ? clientY - rect.top : rect.height * .48;
+        heart.className = 'garden-slime-pet-heart';
+        heart.textContent = '♥';
+        heart.style.left = `${Math.max(18, Math.min(rect.width - 18, x))}px`;
+        heart.style.top = `${Math.max(20, Math.min(rect.height - 18, y))}px`;
+        heart.style.setProperty('--pet-heart-x', `${Math.round((Math.random() - .5) * 54)}px`);
+        heart.style.setProperty('--pet-heart-y', `${Math.round(-38 - Math.random() * 27)}px`);
+        heart.style.setProperty('--pet-heart-rotate', `${Math.round((Math.random() - .5) * 36)}deg`);
+        portrait.appendChild(heart);
+        setTimeout(() => heart.remove(), 760);
+    }
+
+    function startGardenSlimeProfilePet(event) {
+        if (event.pointerType === 'mouse' && event.button !== 0) return;
+        const portrait = event.currentTarget;
+        if (portrait._petGesture) return;
+        event.preventDefault();
+        event.stopPropagation();
+        portrait.setPointerCapture?.(event.pointerId);
+        portrait._petGesture = {
+            pointerId: event.pointerId,
+            startX: event.clientX,
+            startY: event.clientY,
+            lastX: event.clientX,
+            lastY: event.clientY,
+            distance: 0,
+            active: false,
+            lastHeartAt: 0,
+            holdTimer: setTimeout(() => {
+                const gesture = portrait._petGesture;
+                if (!gesture || gesture.pointerId !== event.pointerId) return;
+                activateGardenSlimeProfilePetting(portrait, gesture);
+            }, 180)
+        };
+    }
+
+    function activateGardenSlimeProfilePetting(portrait, gesture) {
+        if (gesture.active) return;
+        gesture.active = true;
+        if (portrait._petTapTimer) clearTimeout(portrait._petTapTimer);
+        portrait._petTapTimer = null;
+        portrait.classList.remove('is-tapped');
+        portrait.classList.add('is-petting');
+        gesture.lastHeartAt = performance.now();
+        emitGardenSlimeProfileHeart(portrait, gesture.lastX, gesture.lastY);
+    }
+
+    function moveGardenSlimeProfilePet(event) {
+        const portrait = event.currentTarget;
+        const gesture = portrait._petGesture;
+        if (!gesture || gesture.pointerId !== event.pointerId) return;
+        event.preventDefault();
+        const step = Math.hypot(event.clientX - gesture.lastX, event.clientY - gesture.lastY);
+        gesture.distance += step;
+        gesture.lastX = event.clientX;
+        gesture.lastY = event.clientY;
+        if (gesture.distance < 7) return;
+        activateGardenSlimeProfilePetting(portrait, gesture);
+        const now = performance.now();
+        if (now - gesture.lastHeartAt >= 170) {
+            gesture.lastHeartAt = now;
+            emitGardenSlimeProfileHeart(portrait, event.clientX, event.clientY);
+        }
+    }
+
+    function finishGardenSlimeProfilePet(event) {
+        const portrait = event.currentTarget;
+        const gesture = portrait._petGesture;
+        if (!gesture || gesture.pointerId !== event.pointerId) return;
+        event.preventDefault();
+        event.stopPropagation();
+        clearTimeout(gesture.holdTimer);
+        if (portrait.hasPointerCapture?.(event.pointerId)) portrait.releasePointerCapture(event.pointerId);
+        portrait._petGesture = null;
+        portrait.classList.remove('is-petting');
+        if (event.type === 'pointercancel') return;
+        if (gesture.active) {
+            emitGardenSlimeProfileHeart(portrait, gesture.lastX, gesture.lastY);
+            sfx.play('pop', 'garden-slime-profile-pet');
+            return;
+        }
+        triggerGardenSlimeProfileTap(portrait);
+    }
+
+    function triggerGardenSlimeProfileTap(portrait) {
+        if (!portrait?.isConnected) return;
+        if (portrait._petTapTimer) clearTimeout(portrait._petTapTimer);
+        portrait.classList.remove('is-tapped');
+        void portrait.offsetWidth;
+        portrait.classList.add('is-tapped');
+        sfx.play('blop', 'garden-slime-profile-tap');
+        portrait._petTapTimer = setTimeout(() => {
+            portrait._petTapTimer = null;
+            if (portrait.isConnected) portrait.classList.remove('is-tapped');
+        }, 390);
+    }
+
+    function handleGardenSlimeProfilePetKey(event) {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        triggerGardenSlimeProfileTap(event.currentTarget);
+    }
+
+    function renderGardenSlimePanel() {
+        const dialog = document.getElementById('garden-slime-dialog');
+        const card = document.getElementById('garden-slime-card');
+        const content = document.getElementById('garden-slime-panel-content');
+        if (!dialog || !card || !content) return;
+        updateCompanionState();
+        if (env.gardenSlimePanelTab === 'incubator') ensureSeedAndShopState();
+        const def = companionSkinDef() || gardenSlimeBaseDef();
+        const meta = companionAbilityMeta();
+        card.className = 'garden-dialog-card garden-slime-card';
+        card.removeAttribute('style');
+        const profileTab = document.getElementById('garden-slime-tab-profile');
+        const incubatorTab = document.getElementById('garden-slime-tab-incubator');
+        profileTab?.classList.toggle('active', env.gardenSlimePanelTab === 'profile');
+        incubatorTab?.classList.toggle('active', env.gardenSlimePanelTab === 'incubator');
+        profileTab?.setAttribute('aria-selected', env.gardenSlimePanelTab === 'profile' ? 'true' : 'false');
+        incubatorTab?.setAttribute('aria-selected', env.gardenSlimePanelTab === 'incubator' ? 'true' : 'false');
+        syncGardenSlimeIncubatorAlert();
+        content.classList.toggle('show-incubator', env.gardenSlimePanelTab === 'incubator');
+        content.innerHTML = env.gardenSlimePanelTab === 'incubator'
+            ? `<div class="garden-slime-incubator-pane">${renderSlimeShop()}</div>`
+            : renderGardenSlimeProfile(def, meta);
+    }
+
+    function rerenderGardenSlimePanelPreservingScroll() {
+        const content = document.getElementById('garden-slime-panel-content');
+        const scrollTop = content?.scrollTop || 0;
+        renderGardenSlimePanel();
+        const updatedContent = document.getElementById('garden-slime-panel-content');
+        if (updatedContent) updatedContent.scrollTop = scrollTop;
+    }
+
+    function updateGardenSlimePanelLive() {
+        const dialog = document.getElementById('garden-slime-dialog');
+        if (!dialog?.classList.contains('open')) return;
+        syncGardenSlimeIncubatorAlert();
+        if (env.gardenSlimePanelTab === 'incubator') {
+            updateIncubatorTimerElements(document.getElementById('garden-slime-panel-content'));
+        }
+    }
+
+    function syncGardenSlimeIncubatorAlert() {
+        const tab = document.getElementById('garden-slime-tab-incubator');
+        if (!tab) return;
+        const now = Date.now();
+        const hasReadyEgg = Array.isArray(player.incubator) && player.incubator.some(item =>
+            item && !item.hatching && (TEST_HATCH_INSTANT || Number(item.readyAt) <= now)
+        );
+        tab.classList.toggle('has-ready-egg', hasReadyEgg);
+        tab.setAttribute('aria-label', hasReadyEgg ? 'Инкубатор: яйцо готово' : 'Инкубатор');
+    }
+
+    function readyGardenCropIds() {
+        return tiles.reduce((ids, tile, idx) => {
+            if (tile?.active && tile.growth >= 100 && !tile.hasWeed && isPlotUnlocked(idx)) ids.push(idx);
+            return ids;
+        }, []);
+    }
+
+    function openGardenSaleDialog() {
+        const cropIds = readyGardenCropIds();
+        if (!cropIds.length) {
+            showToast('В огороде пока нет готового урожая', '#f1c40f');
+            return;
+        }
+        const total = cropIds.reduce((sum, idx) => sum + (cropSnapshotFromTile(idx)?.value || 0), 0);
+        const dialog = document.getElementById('garden-sale-dialog');
+        const summary = document.getElementById('garden-sale-summary');
+        if (!dialog || !summary) return;
+        summary.textContent = `${cropIds.length} растений · примерно ${compactNumber(total)}$`;
+        dialog.classList.add('open');
+        dialog.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('garden-dialog-open');
+    }
+
+    function closeGardenSaleDialog(event = null) {
+        const dialog = document.getElementById('garden-sale-dialog');
+        if (!dialog || (event && event.target !== dialog)) return;
+        dialog.classList.remove('open');
+        dialog.setAttribute('aria-hidden', 'true');
+        if (!document.querySelector('.garden-dialog.open')) document.body.classList.remove('garden-dialog-open');
+    }
+
+    function confirmSellAllGarden() {
+        const cropIds = readyGardenCropIds();
+        closeGardenSaleDialog();
+        if (!cropIds.length) return;
+        clearHarvestSelection();
+        let total = 0;
+        cropIds.forEach(idx => { total += harvestPlant(idx, { deferUI: true, quiet: true }); });
+        updateUI();
+        decorSfx('coin', 'popitHarvest');
+        showToast(`Продано ${cropIds.length} растений: +${compactNumber(total)}$`, '#f1c40f');
+        saveGame();
+    }
+
+    function useGardenInventory() {
+        const idx = selectedReadyCropId();
+        if (idx !== null) {
+            if (storeCropInInventory(idx)) setGardenSlimeFoodReaction('missed', 1050);
+            return;
+        }
+        openGardenInventory();
+    }
+
+    function storeCropInInventory(idx) {
+        ensureCropInventoryState();
+        if (player.cropInventory.length >= CROP_INVENTORY_CAPACITY) {
+            showToast('Инвентарь заполнен', '#ff7675');
+            sfx.play('error');
+            return false;
+        }
+        const crop = cropSnapshotFromTile(idx);
+        if (!crop) {
+            showToast('Это растение ещё нельзя убрать', '#ff7675');
+            return false;
+        }
+        crop.uid = `crop-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+        player.cropInventory.push(crop);
+        clearTile(idx);
+        decorSfx('pop', 'popitClick');
+        showToast(`${PLANTS[crop.plantId].name} в инвентаре`, '#74b9ff');
+        updateUI();
+        saveGame();
+        return true;
+    }
+
+    function openGardenInventory() {
+        ensureCropInventoryState();
+        clearHarvestSelection();
+        renderGardenInventory();
+        const dialog = document.getElementById('garden-inventory-dialog');
+        if (!dialog) return;
+        dialog.classList.add('open');
+        dialog.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('garden-dialog-open');
+    }
+
+    function closeGardenInventory(event = null) {
+        const dialog = document.getElementById('garden-inventory-dialog');
+        if (!dialog || (event && event.target !== dialog)) return;
+        dialog.classList.remove('open');
+        dialog.setAttribute('aria-hidden', 'true');
+        closeGardenCropMenu();
+        document.getElementById('garden-inventory-list')?.replaceChildren();
+        if (!document.querySelector('.garden-dialog.open')) document.body.classList.remove('garden-dialog-open');
+    }
+
+    function renderGardenInventory() {
+        ensureCropInventoryState();
+        const title = document.getElementById('garden-inventory-title');
+        if (title) title.textContent = 'Инвентарь';
+        renderGardenInventoryStorage();
+    }
+
+    function gardenCropSizeLabel(crop) {
+        return ({ small: 'Маленький', normal: 'Обычный', big: 'Большой', huge: 'Огромный', titanic: 'Титанический' })[crop?.sizeTier] || 'Обычный';
+    }
+
+    function renderGardenInventoryStorage() {
+        const list = document.getElementById('garden-inventory-list');
+        if (!list) return;
+        const overviewCount = document.getElementById('garden-inventory-overview-count');
+        const overviewFill = document.getElementById('garden-inventory-overview-fill');
+        if (overviewCount) overviewCount.textContent = `${player.cropInventory.length}/${CROP_INVENTORY_CAPACITY}`;
+        if (overviewFill) overviewFill.style.width = `${Math.min(100, player.cropInventory.length / CROP_INVENTORY_CAPACITY * 100)}%`;
+        const visibleSlots = Math.max(CROP_INVENTORY_CAPACITY, player.cropInventory.length);
+        list.innerHTML = Array.from({ length: visibleSlots }, (_, index) => {
+            const crop = player.cropInventory[index];
+            if (!crop) return `<div class="garden-inventory-item empty"><span class="garden-inventory-empty-mark">+</span><small>Свободное место</small></div>`;
+            const plant = PLANTS[crop.plantId];
+            const sizeLabel = gardenCropSizeLabel(crop);
+            return `<button class="garden-inventory-item filled size-${crop.sizeTier || 'normal'}" type="button" onclick="openGardenCropMenu('inventory', ${index})" aria-label="${plant.name}, ${sizeLabel}">
+                <div class="garden-inventory-bed">${gardenInventoryCropHTML(crop)}</div>
+                <div class="garden-inventory-info">
+                    <div><b>${plant.name}</b><em>↗ ${sizeLabel}</em></div>
+                    <span><small class="garden-inventory-weight">${formatInspectWeight(crop.weight)}</small><strong class="garden-inventory-price">${compactNumber(crop.value)}$</strong></span>
+                </div>
+            </button>`;
+        }).join('');
+        syncShowcasePreviewVisuals(list);
+    }
+
+    function gardenInventoryCropHTML(crop) {
+        const sizeScales = { small: .86, normal: .96, big: 1.05, huge: 1.13, titanic: 1.2 };
+        return showcaseCropHTML(crop, { modelScale: sizeScales[crop?.sizeTier] || 1, stageScale: .72 });
+    }
+
+    // inactive-showcase: saved showcase data and helpers stay intact for a future return.
+    function renderGardenInventoryShowcase() {
+        const slots = document.getElementById('garden-showcase-slots');
+        const rate = document.getElementById('garden-showcase-rate');
+        const bank = document.getElementById('garden-showcase-bank');
+        const claim = document.getElementById('garden-showcase-claim');
+        if (!slots || !rate || !bank || !claim) return;
+        updateGardenShowcaseStatus();
+        slots.innerHTML = player.showcase.map((crop, slot) => {
+            if (!isShowcaseUnlocked(slot)) {
+                return `<div class="garden-showcase-slot locked"><span class="showcase-lock-icon small"></span><b>Слот ${slot + 1}</b><small>ур. ${getShowcaseUnlockLevel(slot)}</small></div>`;
+            }
+            if (!crop || !PLANTS[crop.plantId]) {
+                const selected = env.gardenShowcaseTargetSlot === slot;
+                return `<button class="garden-showcase-slot empty${selected ? ' selected' : ''}" type="button" onclick="chooseGardenShowcaseCrop(${slot})"><span>${selected ? '✓' : '+'}</span><small>${selected ? 'Выбери растение ниже' : 'Свободное место'}</small></button>`;
+            }
+            const plant = PLANTS[crop.plantId];
+            return `<button class="garden-showcase-slot filled" type="button" onclick="openGardenCropMenu('showcase', ${slot})" aria-label="${plant.name} на витрине">
+                <div class="garden-inventory-bed">${gardenInventoryCropHTML(crop)}</div>
+                <div class="garden-showcase-info"><b>${plant.name}</b><small>${formatWeightLabel(crop.weight)} · +${compactNumber(showcaseIncome(crop))}/ч</small></div>
+            </button>`;
+        }).join('');
+        syncShowcasePreviewVisuals(slots);
+    }
+
+    function updateGardenShowcaseStatus() {
+        const rate = document.getElementById('garden-showcase-rate');
+        const bank = document.getElementById('garden-showcase-bank');
+        const claim = document.getElementById('garden-showcase-claim');
+        if (rate) rate.textContent = `+${compactNumber(totalShowcaseIncome())}/ч`;
+        if (bank) bank.textContent = `${compactNumber(player.bank || 0)}$`;
+        if (claim) {
+            claim.disabled = (player.bank || 0) <= 0;
+            claim.textContent = (player.bank || 0) > 0 ? `Забрать ${compactNumber(player.bank)}$` : 'Копится...';
+        }
+    }
+
+    function chooseGardenShowcaseCrop(slot) {
+        if (!isShowcaseUnlocked(slot)) return;
+        env.gardenShowcaseTargetSlot = env.gardenShowcaseTargetSlot === slot ? null : slot;
+        renderGardenInventoryShowcase();
+        if (env.gardenShowcaseTargetSlot !== null) showToast(`Теперь выбери растение для слота ${slot + 1}`, '#f1c40f');
+    }
+
+    function openGardenCropMenu(source, index) {
+        ensureCropInventoryState();
+        const crop = player.cropInventory[index];
+        const plant = crop && PLANTS[crop.plantId];
+        const menu = document.getElementById('garden-crop-menu');
+        if (!crop || !plant || !menu) return;
+        env.gardenCropMenu = { source: 'inventory', index };
+        const mutationCount = crop.mutations?.length || 0;
+        document.getElementById('garden-crop-menu-icon').textContent = plant.icon || '🌱';
+        document.getElementById('garden-crop-menu-title').textContent = plant.name;
+        document.getElementById('garden-crop-menu-details').textContent = `${gardenCropSizeLabel(crop)} · ${formatInspectWeight(crop.weight)} · ${mutationCount ? `${mutationCount} мут.` : 'без мутаций'}`;
+        const sellButton = document.getElementById('garden-crop-menu-sell');
+        if (sellButton) sellButton.textContent = `💰 Продать за ${compactNumber(crop.value)}$`;
+        menu.classList.add('open');
+        menu.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeGardenCropMenu(event = null) {
+        const menu = document.getElementById('garden-crop-menu');
+        if (!menu || (event && event.target !== menu)) return;
+        menu.classList.remove('open');
+        menu.setAttribute('aria-hidden', 'true');
+        env.gardenCropMenu = null;
+    }
+
+    function useGardenCropMenuPrimary() {
+        const action = env.gardenCropMenu ? { ...env.gardenCropMenu } : null;
+        if (!action) return;
+        closeGardenCropMenu();
+        if (action.source === 'showcase') moveShowcaseCropToInventory(action.index);
+        else moveInventoryCropToShowcase(action.index);
+    }
+
+    function keepGardenCropMenuPlant() {
+        closeGardenCropMenu();
+    }
+
+    function sellGardenCropMenuPlant() {
+        const action = env.gardenCropMenu ? { ...env.gardenCropMenu } : null;
+        if (!action) return;
+        closeGardenCropMenu();
+        sellInventoryCrop(action.index);
+    }
+
+    function moveInventoryCropToShowcase(index) {
+        ensureCropInventoryState();
+        if (!isShowcaseUnlocked()) {
+            showToast(`Витрина откроется на ${getShowcaseUnlockLevel()} уровне`, '#a29bfe');
+            return;
+        }
+        const crop = player.cropInventory[index];
+        if (!crop) return;
+        const preferred = Number.isInteger(env.gardenShowcaseTargetSlot) ? env.gardenShowcaseTargetSlot : -1;
+        const slot = preferred >= 0 && isShowcaseUnlocked(preferred) && !player.showcase[preferred]
+            ? preferred
+            : player.showcase.findIndex((item, slotIndex) => !item && isShowcaseUnlocked(slotIndex));
+        if (slot < 0) {
+            showToast('В открытых слотах витрины нет места', '#ff7675');
+            return;
+        }
+        player.cropInventory.splice(index, 1);
+        if (!crop.traitsRecorded) recordCropStats(crop, 0, true);
+        crop.traitsRecorded = true;
+        player.showcase[slot] = crop;
+        env.gardenShowcaseTargetSlot = null;
+        sfx.play('coin');
+        showToast(`Растение поставлено в слот ${slot + 1}`, '#f1c40f');
+        updateUI();
+        renderGardenInventory();
+        saveGame();
+    }
+
+    function moveShowcaseCropToInventory(slot) {
+        ensureCropInventoryState();
+        const crop = player.showcase?.[slot];
+        if (!crop) return;
+        if (player.cropInventory.length >= CROP_INVENTORY_CAPACITY) {
+            showToast('В инвентаре нет свободного места', '#ff7675');
+            return;
+        }
+        crop.uid = crop.uid || `crop-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+        crop.traitsRecorded = true;
+        player.cropInventory.push(crop);
+        player.showcase[slot] = null;
+        decorSfx('pop', 'popitClick');
+        showToast('Растение возвращено в инвентарь', '#74b9ff');
+        updateUI();
+        renderGardenInventory();
+        saveGame();
+    }
+
+    function sellGardenShowcaseCrop(slot) {
+        sellShowcaseCrop(slot);
+        renderGardenInventory();
+    }
+
+    function claimGardenShowcaseBank() {
+        claimBank();
+        renderGardenInventory();
+    }
+
+    function grantInventoryCropSale(crop, quiet = false) {
+        if (!crop || !PLANTS[crop.plantId]) return 0;
+        const plant = PLANTS[crop.plantId];
+        const reward = Math.max(1, Math.floor(Number(crop.value) || 0));
+        const xp = Math.floor(reward * BALANCE.xpRewardRate);
+        const questOptions = { quiet, deferUI: quiet };
+        (crop.mutations || []).forEach(id => {
+            updateQuest('find_mut', 1, questOptions);
+            if (id === 'gold') updateQuest('find_gold', 1, questOptions);
+        });
+        if (crop.traitsRecorded) {
+            ensureStats();
+            player.stats.totalEarned += reward;
+            player.stats.bestSale = Math.max(player.stats.bestSale, reward);
+            player.stats.maxWeight = Math.max(player.stats.maxWeight, Number(crop.weight) || 0);
+        } else {
+            recordCropStats(crop, reward, true, { quiet });
+        }
+        player.coins += reward;
+        player.xp += xp;
+        while (player.xp >= player.xpNeed) {
+            player.lvl++;
+            player.xp -= player.xpNeed;
+            player.xpNeed = Math.floor(player.xpNeed * (BALANCE.xpNeedMult || 1.5));
+            if (!quiet) showToast(`УРОВЕНЬ ${player.lvl}! 🎉`, '#a29bfe');
+            if (!quiet && Object.values(PLOT_UNLOCK_LEVELS).includes(player.lvl)) showToast('Доступна новая грядка!', '#55efc4');
+        }
+        if (plant.id === 'carrot') updateQuest('grow_carrot', 1, questOptions);
+        updateQuest('harvest_any', 1, questOptions);
+        updateQuest('earn_coins', reward, questOptions);
+        updateQuest('earn_big', reward, questOptions);
+        if ((plant.lvl || 0) >= 7) updateQuest('harvest_rare', 1, questOptions);
+        return reward;
+    }
+
+    function sellInventoryCrop(index) {
+        ensureCropInventoryState();
+        const crop = player.cropInventory[index];
+        if (!crop) return;
+        const reward = grantInventoryCropSale(crop);
+        player.cropInventory.splice(index, 1);
+        decorSfx('coin', 'popitHarvest');
+        showToast(`+${compactNumber(reward)}$`, '#f1c40f');
+        renderGardenInventory();
+        updateUI();
+        saveGame();
+    }
+
+    function sellAllInventoryCrops() {
+        ensureCropInventoryState();
+        const crops = player.cropInventory.splice(0);
+        if (!crops.length) return;
+        const total = crops.reduce((sum, crop) => sum + grantInventoryCropSale(crop, true), 0);
+        decorSfx('coin', 'popitHarvest');
+        showToast(`Инвентарь продан: +${compactNumber(total)}$`, '#f1c40f');
+        renderGardenInventory();
+        updateUI();
+        saveGame();
     }
 
     function renderGardenCompanion() {
@@ -1520,14 +2332,36 @@ function init() {
         const mood = companionMood();
         const face = companionFaceForMood(def, mood);
         const variant = player.companion.variant || 'normal';
+        const energy = Math.round(Math.max(0, Math.min(100, player.companion.abilityEnergy || 0)));
+        const cooldownLeft = Math.max(0, (player.companion.abilityCooldownUntil || 0) - Date.now());
+        const abilityReady = energy >= 100 && cooldownLeft <= 0;
+        const abilityMeta = companionAbilityMeta();
+        const foodFocus = selectedReadyCropId() !== null || !!env.cropDrag;
         const signature = `${def.id}|${mood}|${face}|${variant}|${env.companionAbilitySpecial || ''}`;
         if (stage.dataset.renderSignature !== signature) {
             stage.innerHTML = slimeHTML({ ...def, face }, companionVariantPet(variant), 'medium');
             stage.dataset.renderSignature = signature;
         }
-        const targetClassName = `garden-slime-target garden-crop-action skin-${def.id} mood-${mood} variant-${variant}${target.classList.contains('has-selection') ? ' has-selection' : ''}${target.classList.contains('is-drop-active') ? ' is-drop-active' : ''}`;
+        const targetClassName = `garden-slime-target garden-crop-action skin-${def.id} mood-${mood} variant-${variant}${target.classList.contains('has-selection') ? ' has-selection' : ''}${target.classList.contains('is-drop-active') ? ' is-drop-active' : ''}${foodFocus ? ' food-focus' : ''}${env.slimeFoodReaction === 'missed' ? ' food-missed' : ''}${env.slimeFoodReaction === 'fed' ? ' just-fed' : ''}${env.companionAbilitySpecial ? ` ability-active ability-${env.companionAbilitySpecial}` : ''}${abilityReady ? ' is-ability-ready' : ''}`;
         if (target.className !== targetClassName) target.className = targetClassName;
-        document.getElementById('garden-slime-name').textContent = player.companion.name || 'Слайми';
+        target.style.setProperty('--garden-ability-color', abilityMeta.color);
+        target.style.setProperty('--garden-ability-dark', abilityMeta.dark);
+        const chargeFill = document.getElementById('garden-slime-charge-fill');
+        if (chargeFill) chargeFill.style.strokeDashoffset = `${100 - energy}`;
+        const chargeValue = document.getElementById('garden-slime-charge-value');
+        const chargeLabel = document.getElementById('garden-slime-charge-label');
+        const quickIcon = document.getElementById('garden-slime-quick-icon');
+        if (quickIcon) quickIcon.textContent = abilityMeta.symbol;
+        if (chargeValue) chargeValue.textContent = cooldownLeft > 0
+            ? formatCompanionAbilityCooldown(Math.ceil(cooldownLeft / 1000))
+            : (abilityReady ? 'ГОТОВО' : `${energy}%`);
+        if (chargeLabel) chargeLabel.textContent = cooldownLeft > 0 ? 'ПЕРЕЗАРЯДКА' : (abilityReady ? 'НАЖМИ' : 'ЗАРЯД');
+        const displayName = player.companion.name || 'Слайми';
+        target.setAttribute('aria-label', target.classList.contains('has-selection')
+            ? 'Покормить слайма выбранным растением'
+            : `${displayName}: ${abilityReady ? 'способность готова' : `заряд ${energy}%`}`);
+        const name = document.getElementById('garden-slime-name');
+        if (name && name.textContent !== displayName) name.textContent = displayName;
     }
 
     function isReadyCropDragCandidate(idx) {
@@ -1551,7 +2385,7 @@ function init() {
 
     function resolveCropDropTarget(x, y) {
         const element = document.elementFromPoint(x, y);
-        return element?.closest('#garden-sell-target,#garden-slime-target') || null;
+        return element?.closest('#garden-sell-target,#garden-slime-target,#garden-inventory-target') || null;
     }
 
     function setCropDropTarget(target) {
@@ -1606,6 +2440,7 @@ function init() {
         };
         env.cropDrag = state;
         document.body.classList.add('crop-dragging');
+        syncGardenCropActionState();
         ghost.style.transform = cropDragTransform(state, state.x, state.y, 0.94);
         requestAnimationFrame(() => {
             if (env.cropDrag === state) ghost.style.transform = cropDragTransform(state, state.x, state.y);
@@ -1622,6 +2457,7 @@ function init() {
         state.ghost?.remove();
         document.body.classList.remove('crop-dragging');
         if (env.cropDrag === state) env.cropDrag = null;
+        syncGardenCropActionState();
     }
 
     function animateCropDragTo(state, rect, scale) {
@@ -1658,21 +2494,25 @@ function init() {
         setCropDropTarget(dropTarget);
         let action = '';
         if (dropTarget?.id === 'garden-sell-target') action = 'sell';
-        if (dropTarget?.id === 'garden-slime-target') {
-            updateCompanionState();
-            if (player.companion.sleeping) showToast('Слайм сейчас спит', '#8a73df');
-            else action = 'feed';
+        if (dropTarget?.id === 'garden-slime-target') action = 'feed';
+        if (dropTarget?.id === 'garden-inventory-target') {
+            ensureCropInventoryState();
+            if (player.cropInventory.length >= CROP_INVENTORY_CAPACITY) showToast('Инвентарь заполнен', '#ff7675');
+            else action = 'store';
         }
         const destination = action ? dropTarget.getBoundingClientRect() : state.sourceRect;
         await animateCropDragTo(state, destination, action ? 0.62 : 1);
         cleanupCropDrag(state);
+        if (!cancelled && action !== 'feed') setGardenSlimeFoodReaction('missed', 950);
         if (!tiles[state.idx]?.active || tiles[state.idx].growth < 100) return;
         if (action === 'sell') harvestPlant(state.idx);
         else if (action === 'feed') feedCompanion(state.idx);
+        else if (action === 'store') storeCropInInventory(state.idx);
     }
 
     function bindTilePointerInteractions(tileElement, idx) {
         let gesture = null;
+        tileElement.addEventListener('dragstart', event => event.preventDefault());
         tileElement.addEventListener('pointerdown', event => {
             if (event.pointerType === 'mouse' && event.button !== 0) return;
             gesture = {
@@ -1687,7 +2527,8 @@ function init() {
         });
         tileElement.addEventListener('pointermove', event => {
             if (!gesture || gesture.pointerId !== event.pointerId) return;
-            if (!gesture.dragging && gesture.dragCandidate && Math.hypot(event.clientX - gesture.startX, event.clientY - gesture.startY) >= 8) {
+            const dragThreshold = event.pointerType === 'mouse' ? 5 : 8;
+            if (!gesture.dragging && gesture.dragCandidate && Math.hypot(event.clientX - gesture.startX, event.clientY - gesture.startY) >= dragThreshold) {
                 gesture.dragging = startCropDrag(idx, event);
             }
             if (gesture.dragging) {
@@ -1699,6 +2540,7 @@ function init() {
             if (!gesture || gesture.pointerId !== event.pointerId) return;
             const wasDragging = gesture.dragging;
             gesture = null;
+            if (tileElement.hasPointerCapture?.(event.pointerId)) tileElement.releasePointerCapture(event.pointerId);
             if (wasDragging) {
                 moveCropDrag(event.clientX, event.clientY);
                 finishCropDrag(false);
@@ -1709,6 +2551,7 @@ function init() {
             if (!gesture || gesture.pointerId !== event.pointerId) return;
             const wasDragging = gesture.dragging;
             gesture = null;
+            if (tileElement.hasPointerCapture?.(event.pointerId)) tileElement.releasePointerCapture(event.pointerId);
             if (wasDragging) finishCropDrag(true);
         });
     }
@@ -1716,7 +2559,11 @@ function init() {
     function handleInteract(idx) {
         const t = tiles[idx];
         const canUseHarvestSelection = !currentTool || currentTool === 'harvest' || !!PLANTS[currentTool];
-        if (env.harvestSelectedTile !== null && env.harvestSelectedTile !== idx) clearHarvestSelection();
+        if (env.harvestSelectedTile !== null && env.harvestSelectedTile !== idx) {
+            const keepsFoodSelected = canUseHarvestSelection && t.active && t.growth >= 100 && !t.hasWeed;
+            clearHarvestSelection();
+            if (!keepsFoodSelected) setGardenSlimeFoodReaction('missed', 950);
+        }
         if (!canUseHarvestSelection) clearHarvestSelection();
         if (!isPlotLevelUnlocked(idx)) {
             showToast(`Нужен уровень ${getPlotUnlockLevel(idx)}`, '#a29bfe');
@@ -1742,6 +2589,7 @@ function init() {
         if (canUseHarvestSelection && t.active && t.growth >= 100) {
             if (env.harvestSelectedTile === idx) {
                 clearHarvestSelection(idx);
+                setGardenSlimeFoodReaction('missed', 950);
             } else {
                 selectHarvestTile(idx);
             }
@@ -1804,9 +2652,13 @@ function init() {
         element.classList.toggle('slime-watered', tile.slimeWater > 0);
     }
 
-    function harvestPlant(idx) {
+    function harvestPlant(idx, options = {}) {
+        const { deferUI = false, quiet = false } = options;
+        const questOptions = { deferUI, quiet };
         clearHarvestSelection(idx);
-        const t = tiles[idx]; const p = PLANTS[t.plantId];
+        const t = tiles[idx];
+        const p = t && PLANTS[t.plantId];
+        if (!t?.active || t.growth < 100 || !p) return 0;
         let buffs = getBuffs();
 
         let totalMult = 1; 
@@ -1818,8 +2670,8 @@ function init() {
                 if (!m) return;
                 totalMult *= m.mult;
                 highestColor = m.color;
-                updateQuest('find_mut', 1);
-                if (mId === 'gold') updateQuest('find_gold', 1);
+                updateQuest('find_mut', 1, questOptions);
+                if (mId === 'gold') updateQuest('find_gold', 1, questOptions);
             });
         }
 
@@ -1848,35 +2700,38 @@ function init() {
             value: finalReward
         };
 
-        recordCropStats(cropRecord, finalReward, true);
+        recordCropStats(cropRecord, finalReward, true, { quiet });
         player.coins += finalReward; player.xp += xp;
         while (player.xp >= player.xpNeed) {
             player.lvl++; player.xp -= player.xpNeed; player.xpNeed = Math.floor(player.xpNeed * (BALANCE.xpNeedMult || 1.5));
-            showToast(`УРОВЕНЬ ${player.lvl}! 🎉`, "#a29bfe");
-            if (Object.values(PLOT_UNLOCK_LEVELS).includes(player.lvl)) {
+            if (!quiet) showToast(`УРОВЕНЬ ${player.lvl}! 🎉`, "#a29bfe");
+            if (!quiet && Object.values(PLOT_UNLOCK_LEVELS).includes(player.lvl)) {
                 showToast('Доступна новая грядка!', '#55efc4');
             }
-            renderSeeds();
-            tiles.forEach((_, tileIdx) => updateTileDOM(tileIdx));
+            if (!deferUI) {
+                renderSeeds();
+                tiles.forEach((_, tileIdx) => updateTileDOM(tileIdx));
+            }
         }
 
-        if (!isGhostEchoSale) {
+        if (!quiet && !isGhostEchoSale) {
             playHarvestSfx(harvestSizeTier);
             showHarvestSizeEffect(idx, harvestSizeTier);
         }
-        floatText(idx, `+${compactNumber(finalReward)}$`, highestColor);
-        if (p.id === 'carrot') updateQuest('grow_carrot', 1);
-        updateQuest('harvest_any', 1);
-        updateQuest('earn_coins', finalReward);
-        updateQuest('earn_big', finalReward);
-        if ((p.lvl || 0) >= 7) updateQuest('harvest_rare', 1);
-        clearTile(idx); updateUI();
-        if (isGhostEchoSale) {
+        if (!quiet) floatText(idx, `+${compactNumber(finalReward)}$`, highestColor);
+        if (p.id === 'carrot') updateQuest('grow_carrot', 1, questOptions);
+        updateQuest('harvest_any', 1, questOptions);
+        updateQuest('earn_coins', finalReward, questOptions);
+        updateQuest('earn_big', finalReward, questOptions);
+        if ((p.lvl || 0) >= 7) updateQuest('harvest_rare', 1, questOptions);
+        clearTile(idx, { deferDOM: deferUI });
+        if (!deferUI) updateUI();
+        if (!quiet && isGhostEchoSale) {
             spawnGhostMarkFX(idx);
             sfx.play('ghostEcho', 'ghost-echo-sale');
         }
         if (shouldCreateGhostEcho) {
-            spawnGhostDepartureFX(idx);
+            if (!quiet) spawnGhostDepartureFX(idx);
             Object.assign(tiles[idx], {
                 id: idx,
                 active: true,
@@ -1898,11 +2753,14 @@ function init() {
                 ghostEcho: true,
                 ghostValue: 0
             });
-            updateTileDOM(idx);
-            spawnGhostMarkFX(idx);
-            sfx.play('ghostEcho', 'ghost-echo-copy');
-            floatText(idx, ghostMutations.length ? `копия: ${ghostMutations.length} мут.` : 'серая копия', '#cfd6df');
+            if (!deferUI) updateTileDOM(idx);
+            if (!quiet) {
+                spawnGhostMarkFX(idx);
+                sfx.play('ghostEcho', 'ghost-echo-copy');
+                floatText(idx, ghostMutations.length ? `копия: ${ghostMutations.length} мут.` : 'серая копия', '#cfd6df');
+            }
         }
+        return finalReward;
     }
 
     function playHarvestSfx(sizeTier) {
@@ -1936,10 +2794,10 @@ function init() {
         setTimeout(() => burst.remove(), sizeTier === 'titanic' ? 1650 : (sizeTier === 'huge' ? 1100 : 850));
     }
 
-    function clearTile(idx) {
+    function clearTile(idx, options = {}) {
         clearHarvestSelection(idx);
         tiles[idx].active = false; tiles[idx].plantId = null; tiles[idx].growth = 0; tiles[idx].water = 0; tiles[idx].slimeWater = 0; tiles[idx].slimeWaterMult = 1; tiles[idx].hasWeed = false; tiles[idx].mutations = []; tiles[idx].scale = .4; tiles[idx].weight = 1; tiles[idx].weightMult = 1; tiles[idx].sizeTier = 'small'; tiles[idx].beeLock = 0; tiles[idx].ghostEchoPercent = 0; tiles[idx].ghostMarked = false; tiles[idx].ghostCopyMutationCount = 0; tiles[idx].ghostEcho = false; tiles[idx].ghostValue = 0;
-        updateTileDOM(idx);
+        if (!options.deferDOM) updateTileDOM(idx);
     }
 
     function getEventIndicatorLabel(type) {
@@ -4068,7 +4926,6 @@ function init() {
         } else if (surface === 'menu') {
             renderQuests();
             renderActiveStatusStrip();
-            renderCompanion();
             if (env.openMenuSections?.showcase) renderShowcase();
             if (env.openMenuSections?.diary) renderDiary();
             if (env.openMenuSections?.rewards) renderRewards();
@@ -4084,13 +4941,8 @@ function init() {
         if (surface === 'garden') {
             renderGardenCompanion();
             updateStateIndicator();
-        } else if (surface === 'menu') {
-            const now = performance.now();
-            if (now - env.lastCompanionVitalsAt >= 1000) {
-                env.lastCompanionVitalsAt = now;
-                renderCompanionVitals();
-            }
-        } else {
+            updateGardenSlimePanelLive();
+        } else if (surface !== 'menu') {
             updateOpenShopTimer();
         }
     }
@@ -4262,6 +5114,11 @@ function init() {
         </div>`;
     }
 
+    function refreshSlimeCollectionSurfaces() {
+        if (document.getElementById('garden-slime-dialog')?.classList.contains('open')) rerenderGardenSlimePanelPreservingScroll();
+        if (document.getElementById('shop-modal')?.classList.contains('open') && env.shopTab === 'slimes') renderShop();
+    }
+
     function renderShop() {
         updateShopState();
         const modal = document.getElementById('shop-modal');
@@ -4396,7 +5253,7 @@ function init() {
         sfx.play('coin');
         showToast(`${egg.label} яйцо в инкубаторе`, egg.color);
         updateUI();
-        renderShop();
+        refreshSlimeCollectionSurfaces();
         saveGame();
     }
 
@@ -4478,6 +5335,7 @@ function init() {
             return;
         }
         item.hatching = true;
+        syncGardenSlimeIncubatorAlert();
         const slotElement = document.querySelector(`.slime-incubator-slot[onclick="hatchIncubatorEgg(${slot})"]`);
         if (slotElement) {
             slotElement.classList.add('hatching');
@@ -4488,6 +5346,7 @@ function init() {
             player.incubator[slot] = null;
             showPetReveal(pet, true);
             env.pendingSlimeShopRefresh = true;
+            refreshSlimeCollectionSurfaces();
             saveGame();
         });
     }
@@ -4496,7 +5355,7 @@ function init() {
         ensureSeedAndShopState();
         if (player.shop.adEggUnlocked || env.rewardedEggAdBusy) return;
         env.rewardedEggAdBusy = true;
-        renderShop();
+        refreshSlimeCollectionSurfaces();
         let result = null;
         try {
             result = await window.YandexGames?.showRewardedVideo?.();
@@ -4507,19 +5366,19 @@ function init() {
         }
         if (!result?.available) {
             showToast('Реклама доступна на платформе Яндекс Игр', '#a29bfe');
-            renderShop();
+            refreshSlimeCollectionSurfaces();
             return;
         }
         if (!result.rewarded) {
             showToast('Просмотр не был засчитан', '#ff7675');
-            renderShop();
+            refreshSlimeCollectionSurfaces();
             return;
         }
         player.shop.adEggViews = Math.min(10, (player.shop.adEggViews || 0) + 1);
         player.shop.adEggUnlocked = player.shop.adEggViews >= 10;
         sfx.play(player.shop.adEggUnlocked ? 'mut' : 'pop');
         showToast(player.shop.adEggUnlocked ? 'Секретное яйцо открыто!' : `Реклама ${player.shop.adEggViews}/10`, '#a29bfe');
-        renderShop();
+        refreshSlimeCollectionSurfaces();
         saveGame();
     }
 
@@ -4527,7 +5386,7 @@ function init() {
         const defaults = defaultCompanionState();
         if (!player.companion || typeof player.companion !== 'object') player.companion = defaults;
         player.companion = { ...defaults, ...player.companion };
-        const savedCompanionName = String(player.companion.name || 'Слайми').trim().slice(0, 14) || 'Слайми';
+        const savedCompanionName = String(player.companion.name || 'Слайми').trim().slice(0, 12) || 'Слайми';
         player.companion.name = savedCompanionName === 'Лайм' ? 'Слайми' : savedCompanionName;
         if (!player.companion.slimeLevels || typeof player.companion.slimeLevels !== 'object') player.companion.slimeLevels = {};
         ['basic', ...Object.keys(PET_DEFS)].forEach(id => {
@@ -4598,52 +5457,9 @@ function init() {
 
     function updateCompanionState() {
         ensureCompanionState();
-        const pet = player.companion;
-        const now = Date.now();
-        const previousUpdate = pet.lastUpdate;
-        const elapsed = Math.max(0, Math.min(21600, (now - previousUpdate) / 1000));
-        if (elapsed <= 0) return;
-
-        pet.hungerClock += elapsed;
-        const hungerSteps = Math.floor(pet.hungerClock / 4);
-        if (hungerSteps > 0) {
-            pet.hunger = Math.max(0, pet.hunger - hungerSteps);
-            pet.hungerClock %= 4;
-        }
-
-        const cleanElapsed = now <= pet.cleanGraceUntil
-            ? 0
-            : Math.max(0, (now - Math.max(previousUpdate, pet.cleanGraceUntil)) / 1000);
-        if (cleanElapsed > 0) {
-            pet.cleanClock += cleanElapsed;
-            const cleanSteps = Math.floor(pet.cleanClock / 2);
-            if (cleanSteps > 0) {
-                pet.clean = Math.max(0, pet.clean - cleanSteps);
-                pet.cleanClock %= 2;
-            }
-        } else {
-            pet.cleanClock = 0;
-        }
-
-        // Every sleep tick restores a fixed 5 energy and gives 3 ability charge.
-        const energyElapsed = pet.sleeping ? Math.min(elapsed, 20) : elapsed;
-        pet.energyClock += energyElapsed;
-        const energyInterval = 2;
-        const energySteps = Math.floor(pet.energyClock / energyInterval);
-        if (energySteps > 0) {
-            const beforeEnergy = pet.energy;
-            const energyDelta = energySteps * (pet.sleeping ? 5 : 1);
-            pet.energy = pet.sleeping ? Math.min(100, pet.energy + energyDelta) : Math.max(0, pet.energy - energyDelta);
-            if (pet.sleeping && pet.energy > beforeEnergy) {
-                const restored = pet.energy - beforeEnergy;
-                const sleepTicks = Math.ceil(restored / 5);
-                chargeCompanionAbility(sleepTicks * 3);
-                grantCompanionProgress(restored);
-            }
-            pet.energyClock %= energyInterval;
-        }
-        pet.lastUpdate = now;
-        if (pet.sleeping && pet.energy >= 100) pet.sleeping = false;
+        // companion-care-v1 inactive: feeding is now the only source of level XP and ability charge.
+        player.companion.sleeping = false;
+        player.companion.lastUpdate = Date.now();
     }
 
     function chargeCompanionAbility(amount) {
@@ -4661,17 +5477,13 @@ function init() {
     }
 
     function companionMoodScore() {
-        const pet = player.companion;
-        return Math.round(Math.max(0, Math.min(100, pet.hunger * 0.35 + pet.clean * 0.35 + pet.energy * 0.30)));
+        return env.slimeFoodReaction === 'missed' ? 15 : 100;
     }
 
     function companionMood() {
+        if (env.slimeFoodReaction === 'missed') return 'sad';
+        if (env.slimeFoodReaction === 'fed') return 'joyful';
         if (env.companionAbilitySpecial === 'dewdrop' || env.companionAbilitySpecial === 'sproutslime' || env.companionAbilitySpecial === 'coinblob' || env.companionAbilitySpecial === 'wavegum' || env.companionAbilitySpecial === 'nectar' || env.companionAbilitySpecial === 'sunpudding' || env.companionAbilitySpecial === 'stargum') return 'happy';
-        if (player.companion.sleeping) return 'sleeping';
-        const score = companionMoodScore();
-        if (score < 25) return 'sad';
-        if (score < 50) return 'neutral';
-        if (score < 75) return 'joyful';
         return 'happy';
     }
 
@@ -4689,6 +5501,7 @@ function init() {
         if (env.companionAbilitySpecial === 'stargum') return 'happy';
         if (env.companionAbilitySpecial === 'moonmelt') return 'sleepy';
         if (mood === 'sleeping') return 'sleepy';
+        if (mood === 'sad') return 'sad';
         const id = def?.id || 'basic';
         const generic = { sad: 'sad', neutral: 'blank', joyful: 'happy', happy: 'cute' };
         const unique = {
@@ -4817,6 +5630,7 @@ function init() {
         env.companionAbilitySpecial = type;
         env.companionAbilityPayload = payload || null;
         syncCompanionSpecialClasses();
+        renderGardenCompanion();
         if (type === 'coinblob') emitCompanionCoinBurst(payload.midas || {});
         env.companionAbilitySpecialTimer = setTimeout(() => {
             clearEmbergooMagmaTimers();
@@ -4824,7 +5638,7 @@ function init() {
             env.companionAbilityPayload = null;
             env.companionAbilitySpecialTimer = null;
             syncCompanionSpecialClasses();
-            renderCompanionVitals();
+            renderGardenCompanion();
         }, duration);
     }
 
@@ -4862,17 +5676,7 @@ function init() {
 
     function scheduleCompanionSpecial() {
         if (env.companionSpecialTimer) clearTimeout(env.companionSpecialTimer);
-        env.companionSpecialTimer = setTimeout(() => {
-            env.companionSpecialTimer = null;
-            if (activeSurface() !== 'menu' || document.hidden) {
-                scheduleCompanionSpecial();
-                return;
-            }
-            const id = player.companion.skin;
-            const special = id === 'voidpuddle' ? 'levitating' : '';
-            if (special && !player.companion.sleeping && !env.companionPetting && Math.random() < 0.55) startCompanionSpecial(special);
-            else scheduleCompanionSpecial();
-        }, player.companion.skin === 'voidpuddle' ? 40000 : (25000 + Math.random() * 10000));
+        env.companionSpecialTimer = null;
     }
 
     function companionStatHTML(type, label, value, color, symbol, actionLabel, actionIcon, actionFn, actionId = '') {
@@ -5047,11 +5851,7 @@ function init() {
         const now = Date.now();
         const wasFullyClean = player.companion.clean >= 100;
         const cleanGain = Math.random() < 0.65 ? 1 : 2;
-        const beforeClean = player.companion.clean;
         player.companion.clean = Math.min(100, player.companion.clean + cleanGain);
-        const restored = player.companion.clean - beforeClean;
-        chargeCompanionAbility(restored * 0.55);
-        grantCompanionProgress(restored);
         if (!wasFullyClean && player.companion.clean >= 100) {
             player.companion.cleanGraceUntil = now + 5000;
             player.companion.cleanClock = 0;
@@ -5401,29 +6201,34 @@ function init() {
         `;
     }
 
+    function updateIncubatorTimerElements(root) {
+        if (!root) return;
+        const now = Date.now();
+        player.incubator.forEach((item, slot) => {
+            const slotEl = root.querySelector(`#incubator-slot-${slot}`);
+            if (!item || !slotEl || !EGG_RARITIES[item.rarity]) return;
+            const egg = EGG_RARITIES[item.rarity];
+            const durationMs = Math.max(1, Number(item.duration || egg.hatchSeconds) * 1000);
+            const readyAt = Number(item.readyAt) || now;
+            const ready = TEST_HATCH_INSTANT || readyAt <= now;
+            if (ready !== slotEl.classList.contains('ready')) {
+                slotEl.outerHTML = renderIncubatorSlot(item, slot, now);
+                return;
+            }
+            if (ready) return;
+            const timer = slotEl.querySelector('small');
+            const fill = slotEl.querySelector('.slime-incubator-progress i');
+            const remaining = Math.max(0, readyAt - now);
+            const progress = Math.min(100, ((durationMs - remaining) / durationMs) * 100);
+            const label = formatTime(remaining);
+            if (timer && timer.textContent !== label) timer.textContent = label;
+            if (fill) fill.style.width = `${progress.toFixed(1)}%`;
+        });
+    }
+
     function updateOpenShopTimer() {
         if (env.shopTab === 'slimes') {
-            const now = Date.now();
-            player.incubator.forEach((item, slot) => {
-                const slotEl = document.getElementById(`incubator-slot-${slot}`);
-                if (!item || !slotEl || !EGG_RARITIES[item.rarity]) return;
-                const egg = EGG_RARITIES[item.rarity];
-                const durationMs = Math.max(1, Number(item.duration || egg.hatchSeconds) * 1000);
-                const readyAt = Number(item.readyAt) || now;
-                const ready = readyAt <= now;
-                if (ready !== slotEl.classList.contains('ready')) {
-                    slotEl.outerHTML = renderIncubatorSlot(item, slot, now);
-                    return;
-                }
-                if (ready) return;
-                const timer = slotEl.querySelector('small');
-                const fill = slotEl.querySelector('.slime-incubator-progress i');
-                const remaining = Math.max(0, readyAt - now);
-                const progress = Math.min(100, ((durationMs - remaining) / durationMs) * 100);
-                const label = formatTime(remaining);
-                if (timer && timer.textContent !== label) timer.textContent = label;
-                if (fill) fill.style.width = `${progress.toFixed(1)}%`;
-            });
+            updateIncubatorTimerElements(document.getElementById('shop-content'));
             return;
         }
         if (env.shopTab !== 'seeds' && env.shopTab !== 'merchant') return;
@@ -5451,24 +6256,22 @@ function init() {
 
     function feedCompanion(tileId) {
         updateCompanionState();
-        if (player.companion.sleeping) return;
         const crop = cropSnapshotFromTile(tileId);
         if (!crop) {
             showToast('Этот урожай уже недоступен', '#ff7675');
-            renderCompanion();
             return;
         }
-        const food = companionFoodValue(crop);
-        const xpGain = Math.max(8, Math.min(42, Math.round(Math.log10((crop.value || 0) + 10) * 11)));
-        const beforeHunger = player.companion.hunger;
-        player.companion.hunger = Math.min(100, player.companion.hunger + food);
-        chargeCompanionAbility((player.companion.hunger - beforeHunger) * 0.5 + Math.min(8, food * 0.08));
+        const quality = Math.log10((crop.value || 0) + 10);
+        const xpGain = Math.max(8, Math.min(42, Math.round(quality * 11)));
+        const chargeGain = chargeCompanionAbility(Math.max(12, Math.min(28, Math.round(8 + quality * 6))));
         grantCompanionProgress(xpGain);
         recordCropStats(crop, 0, true);
         clearTile(tileId);
         env.companionDrawer = '';
         sfx.play('pop');
         updateUI();
+        setGardenSlimeFoodReaction('fed', 850);
+        showToast(`+${xpGain} XP · заряд +${Math.round(chargeGain)}%`, '#72db68');
         saveGame();
     }
 
@@ -5643,7 +6446,7 @@ function init() {
     function submitCompanionRename() {
         const input = document.getElementById('companion-name-input');
         if (!input) return;
-        const name = input.value.trim().slice(0, 14);
+        const name = input.value.trim().slice(0, 12);
         if (!name) {
             showToast('Введите имя', '#ff7675');
             input.focus();
@@ -5652,7 +6455,8 @@ function init() {
         player.companion.name = name;
         closeCompanionRename();
         sfx.play('pop');
-        renderCompanion();
+        renderGardenCompanion();
+        if (document.getElementById('garden-slime-dialog')?.classList.contains('open')) rerenderGardenSlimePanelPreservingScroll();
         saveGame();
     }
 
@@ -5664,8 +6468,8 @@ function init() {
         player.companion.variant = 'normal';
         syncCurrentCompanionLevel();
         sfx.play('pop');
-        renderCompanion(false);
-        updateCompanionVariantCards();
+        renderGardenCompanion();
+        if (document.getElementById('garden-slime-dialog')?.classList.contains('open')) rerenderGardenSlimePanelPreservingScroll();
         scheduleCompanionSpecial();
         saveGame();
     }
@@ -5680,8 +6484,8 @@ function init() {
         player.companion.variant = alreadyActive ? 'normal' : variant;
         syncCurrentCompanionLevel();
         sfx.play('pop');
-        renderCompanion(false);
-        updateCompanionVariantCards();
+        renderGardenCompanion();
+        if (document.getElementById('garden-slime-dialog')?.classList.contains('open')) rerenderGardenSlimePanelPreservingScroll();
         scheduleCompanionSpecial();
         saveGame();
     }
@@ -5986,6 +6790,7 @@ function init() {
             return;
         }
         recordCropStats(crop, 0, true);
+        crop.traitsRecorded = true;
         player.showcase[slot] = crop;
         clearTile(tileId);
         closeShowcasePicker();
@@ -6413,7 +7218,8 @@ function init() {
         player.companion.abilityEnergy = 100;
         player.companion.abilityCooldownUntil = 0;
         showToast('Слайм: уровень 15, заряд 100%', '#72db68');
-        renderCompanion();
+        renderGardenCompanion();
+        if (document.getElementById('garden-slime-dialog')?.classList.contains('open')) rerenderGardenSlimePanelPreservingScroll();
         saveGame();
     }
 
@@ -6425,7 +7231,8 @@ function init() {
         syncCurrentCompanionLevel();
         sfx.play('pop');
         showToast('Слайм: уровень сброшен до 8', '#72db68');
-        renderCompanion();
+        renderGardenCompanion();
+        if (document.getElementById('garden-slime-dialog')?.classList.contains('open')) rerenderGardenSlimePanelPreservingScroll();
         saveGame();
     }
 
@@ -6588,6 +7395,7 @@ function init() {
         if (env.companionSpecialTimer) clearTimeout(env.companionSpecialTimer);
         if (env.companionSpecialEndTimer) clearTimeout(env.companionSpecialEndTimer);
         if (env.companionAbilitySpecialTimer) clearTimeout(env.companionAbilitySpecialTimer);
+        if (env.slimeFoodReactionTimer) clearTimeout(env.slimeFoodReactionTimer);
         clearEmbergooMagmaTimers();
         clearStargumCometFinale();
         clearMoonmeltLunarFinale();
@@ -6599,7 +7407,7 @@ function init() {
             pets: [], petLevels: {}, petInventory: [], equippedPets: [null, null, null], unlockedPetSlots: 1, slimeCollection: {},
             incubator: [null, null, null], quests: [], lastSaved: Date.now(), bank: 0, showcasePayoutAt: Date.now() + SHOWCASE_PAYOUT_INTERVAL, showcasePayoutRemainder: 0,
             plotStyle: 'default', ownedDecor: ['default'], decorPaintColor: '#ff7675', roomStyle: 'cozy', ownedRoomDecor: ['cozy'], purchasedPlots: defaultPurchasedPlots(),
-            seedInventory: defaultSeedInventory(),
+            seedInventory: defaultSeedInventory(), cropInventory: [],
             shop: defaultShopState(),
             showcase: [null, null, null],
             companion: defaultCompanionState(),
@@ -6628,6 +7436,7 @@ function init() {
             companionAbilitySpecial: '', companionAbilitySpecialTimer: null, companionAbilityPayload: null, companionGiftTimers: [], embergooMagmaTimers: [], stargumCometTimers: [], stargumCometFrames: [], stargumCometFinale: false, moonmeltLunarTimers: [], moonmeltLunarFinale: false, nightDawnTimer: null, nightDawnActive: false, nightPaletteFrame: null, nightPalette: null, nightPalettePhase: 'day',
             companionSpecialAnchorX: 0, companionSpecialAnchorY: 0,
             companionCoinBurstAt: 0,
+            gardenSlimePanelTab: 'profile', slimeFoodReaction: '', slimeFoodReactionTimer: null,
             openMenuSections: { showcase: false, diary: false, decor: false, rewards: false, admin: false },
             backroomsLampTimer: null, backroomsLampEndTimer: null, shopTab: 'seeds', decorShopTab: 'room', pendingPlotPurchase: null, abilityFloodTimer: null, sunpuddingEclipseTimer: null, sunpuddingEclipseDarkTimer: null,
             lastCompanionVitalsAt: 0, rewardsRenderSignature: '', eventVisualFrame: null,
@@ -6738,13 +7547,15 @@ function init() {
         }
     }
     
-    function updateQuest(type, amount) {
+    function updateQuest(type, amount, options = {}) {
         let q = player.quests.find(x => x.id === type && !x.claimed);
         if (q && q.current < q.target) {
             q.current += amount;
-            if (q.current >= q.target) { sfx.play('pop'); showToast("Задание выполнено!", "#f1c40f"); }
-            updateHeaderUI();
-            if (activeSurface() === 'menu') renderQuests();
+            if (q.current >= q.target && !options.quiet) { sfx.play('pop'); showToast("Задание выполнено!", "#f1c40f"); }
+            if (!options.deferUI) {
+                updateHeaderUI();
+                if (activeSurface() === 'menu') renderQuests();
+            }
         }
     }
 
@@ -7323,6 +8134,7 @@ function init() {
     function normalizePetState() {
         ensureStats();
         ensureSeedAndShopState();
+        ensureCropInventoryState();
         ensurePlotPurchaseState();
         ensureRewardsState();
         ensureCompanionState();

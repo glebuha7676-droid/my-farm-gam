@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Grow a Farm: Mobile Edition</title>
-    <link rel="stylesheet" href="css/styles.css?v=20260722a">
+    <link rel="stylesheet" href="css/styles.css?v=20260723i">
 </head>
 <body>
     <div class="game-loader" id="game-loader" role="status" aria-live="polite" aria-label="Загрузка игры">
@@ -66,19 +66,27 @@
 
     <section class="garden-command-bar" id="garden-command-bar" aria-label="Действия с урожаем">
         <button class="garden-crop-action crop-sell-target" id="garden-sell-target" type="button" onclick="sellSelectedCrop()">
-            <span class="crop-action-icon" aria-hidden="true">💰</span>
+            <span class="crop-action-icon" aria-hidden="true"><i>💰</i></span>
             <b>Продать</b>
-            <small>урожай</small>
+            <small class="crop-action-hint">урожай</small>
         </button>
-        <button class="garden-slime-target garden-crop-action" id="garden-slime-target" type="button" onclick="feedSelectedCrop()" aria-label="Покормить слайма выбранным растением">
+        <button class="garden-slime-target garden-crop-action" id="garden-slime-target" type="button" onclick="handleGardenSlimeTap(event)" aria-label="Открыть карточку слайма">
+            <strong class="garden-slime-name" id="garden-slime-name">Слайми</strong>
             <span class="garden-slime-stage" id="garden-slime-model" aria-hidden="true"></span>
-            <small id="garden-slime-name">Слайми</small>
+            <span class="garden-slime-ability-trigger" aria-hidden="true">
+                <svg class="garden-slime-charge" viewBox="0 0 116 64">
+                    <path class="garden-slime-charge-track" pathLength="100" d="M8 34 Q58 67 108 34"></path>
+                    <path class="garden-slime-charge-fill" id="garden-slime-charge-fill" pathLength="100" d="M8 34 Q58 67 108 34"></path>
+                </svg>
+                <span class="garden-slime-quick-icon" id="garden-slime-quick-icon">🌈</span>
+                <span class="garden-slime-charge-status"><small id="garden-slime-charge-label">ЗАРЯД</small><b id="garden-slime-charge-value">0%</b></span>
+            </span>
             <i>Кормить</i>
         </button>
-        <button class="garden-crop-action crop-inventory-target" id="garden-inventory-target" type="button" onclick="openGardenInventoryStub()" aria-label="Инвентарь">
-            <span class="crop-action-icon" aria-hidden="true">🎒</span>
+        <button class="garden-crop-action crop-inventory-target" id="garden-inventory-target" type="button" onclick="useGardenInventory()" aria-label="Инвентарь">
+            <span class="crop-action-icon" aria-hidden="true"><i>🎒</i></span>
             <b>Инвентарь</b>
-            <small>скоро</small>
+            <small class="crop-action-hint">растения</small>
         </button>
     </section>
     
@@ -109,6 +117,56 @@
 
     <div class="plant-inspect-card" id="plant-inspect-card" hidden></div>
 
+    <div class="garden-dialog garden-sale-dialog" id="garden-sale-dialog" onclick="closeGardenSaleDialog(event)" aria-hidden="true">
+        <article class="garden-dialog-card" role="dialog" aria-modal="true" aria-labelledby="garden-sale-title">
+            <button class="garden-dialog-close" type="button" onclick="closeGardenSaleDialog()" aria-label="Закрыть">✕</button>
+            <span class="garden-dialog-icon" aria-hidden="true">💰</span>
+            <b id="garden-sale-title">Продать весь урожай?</b>
+            <small id="garden-sale-summary"></small>
+            <div class="garden-dialog-actions">
+                <button class="garden-dialog-secondary" type="button" onclick="closeGardenSaleDialog()">Отмена</button>
+                <button class="garden-dialog-primary sell-all" type="button" onclick="confirmSellAllGarden()">Продать всё</button>
+            </div>
+        </article>
+    </div>
+
+    <div class="garden-dialog garden-inventory-dialog" id="garden-inventory-dialog" onclick="closeGardenInventory(event)" aria-hidden="true">
+        <article class="garden-dialog-card inventory-card" role="dialog" aria-modal="true" aria-labelledby="garden-inventory-title">
+            <header class="garden-inventory-header">
+                <div class="garden-inventory-title"><b id="garden-inventory-title">Инвентарь</b><small>Готовые растения</small></div>
+                <div class="garden-inventory-capacity-meter">
+                    <div><small>МЕСТА</small><b id="garden-inventory-overview-count">0/8</b></div>
+                    <i><em id="garden-inventory-overview-fill"></em></i>
+                </div>
+                <button class="garden-dialog-close" type="button" onclick="closeGardenInventory()" aria-label="Закрыть">✕</button>
+            </header>
+            <div class="garden-inventory-content">
+                <p class="garden-inventory-hint"><span aria-hidden="true">👆</span>Нажми на растение, чтобы выбрать действие</p>
+                <div class="garden-inventory-list" id="garden-inventory-list"></div>
+            </div>
+            <div class="garden-crop-menu" id="garden-crop-menu" onclick="closeGardenCropMenu(event)" aria-hidden="true">
+                <section class="garden-crop-menu-card">
+                    <header><span id="garden-crop-menu-icon" aria-hidden="true">🌱</span><div><small>ГОТОВОЕ РАСТЕНИЕ</small><b id="garden-crop-menu-title">Растение</b><p id="garden-crop-menu-details"></p></div></header>
+                    <button class="garden-crop-menu-sell" id="garden-crop-menu-sell" type="button" onclick="sellGardenCropMenuPlant()">💰 Продать</button>
+                    <button class="garden-crop-menu-keep" type="button" onclick="keepGardenCropMenuPlant()">Оставить</button>
+                </section>
+            </div>
+        </article>
+    </div>
+
+    <div class="garden-dialog garden-slime-dialog" id="garden-slime-dialog" onclick="closeGardenSlimePanel(event)" aria-hidden="true">
+        <article class="garden-dialog-card garden-slime-card" id="garden-slime-card" role="dialog" aria-modal="true" aria-label="Слаймы">
+            <header class="garden-slime-dialog-head">
+                <nav class="garden-slime-tabs" aria-label="Разделы слаймов">
+                    <button id="garden-slime-tab-profile" type="button" onclick="selectGardenSlimePanelTab('profile')"><span class="garden-slime-tab-icon tab-icon-slime" aria-hidden="true"></span><b>Слайм</b></button>
+                    <button id="garden-slime-tab-incubator" type="button" onclick="selectGardenSlimePanelTab('incubator')"><span class="garden-slime-tab-icon tab-icon-egg" aria-hidden="true"></span><b>Инкубатор</b></button>
+                </nav>
+                <button class="garden-dialog-close" type="button" onclick="closeGardenSlimePanel()" aria-label="Закрыть">✕</button>
+            </header>
+            <div class="garden-slime-panel-content" id="garden-slime-panel-content"></div>
+        </article>
+    </div>
+
     <div class="side-menu" id="side-menu">
         <div class="menu-header">
             <div>
@@ -122,7 +180,8 @@
                 <div class="active-status-head"><span>✨</span><strong>Активные бонусы</strong></div>
                 <div class="active-status-list" id="active-status-list"></div>
             </section>
-            <section class="menu-panel companion-panel" id="companion-panel">
+            <!-- legacy-ui-disabled: care room retained only for rollback after the feeding redesign. -->
+            <section class="menu-panel companion-panel legacy-ui-disabled" id="companion-panel" data-legacy-ui="companion-care-v1" aria-hidden="true">
                 <div class="companion-topline">
                     <button class="companion-name" id="companion-name" type="button" onclick="renameCompanion()">Лайм <span aria-hidden="true">✎</span></button>
                     <button class="companion-level" id="companion-level-trigger" type="button" onclick="toggleCompanionLevelCard()">
@@ -269,7 +328,7 @@
             <div class="companion-name-badge">✎</div>
             <b>Имя слайма</b>
             <small>Придумай короткое и милое имя для своего помощника</small>
-            <input id="companion-name-input" class="companion-name-input" type="text" maxlength="14" placeholder="Например, Лайм" onkeydown="handleCompanionRenameKey(event)">
+            <input id="companion-name-input" class="companion-name-input" type="text" maxlength="12" placeholder="Например, Лайм" onkeydown="handleCompanionRenameKey(event)">
             <div class="companion-name-actions">
                 <button class="companion-name-btn ghost" type="button" onclick="closeCompanionRename()">Отмена</button>
                 <button class="companion-name-btn save" type="button" onclick="submitCompanionRename()">Сохранить</button>
@@ -295,6 +354,6 @@
     <script src="js/yandex-sdk.js?v=20260718b" defer></script>
     <script src="js/data.js?v=20260719c" defer></script>
     <script src="js/audio.js?v=20260719b" defer></script>
-    <script src="js/game.js?v=20260722a" defer></script>
+    <script src="js/game.js?v=20260723i" defer></script>
 </body>
 </html>
