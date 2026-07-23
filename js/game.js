@@ -35,6 +35,7 @@
     const NORMAL_WEIGHT_MAX = 50;
     const WATER_DURATION = 15;
     const CROP_INVENTORY_CAPACITY = 8;
+    const CROP_SALE_ABILITY_CHARGE = 5;
     const COMPANION_ABILITY_DEFAULT_COOLDOWN_MS = 3 * 60 * 1000;
     const MATERIAL_MUTATIONS = new Set(['gold', 'rainbow', 'diamond']);
     const EVENT_BODY_CLASSES = ['rain', 'storm', 'toxic', 'starfall', 'holy', 'hell', 'candy', 'bee', 'alien', 'night', 'cosmic'].map(type => `event-${type}`);
@@ -667,7 +668,8 @@
             const m = MUTATIONS[mId];
             if (m) mutationMult *= m.mult;
         });
-        return Math.floor(p.reward * mutationMult * (1 + coinMult) * getWeightMultiplier(weight, sizeTier));
+        const weightMult = parseFloat(getWeightMultiplier(weight, sizeTier).toFixed(1));
+        return Math.floor(p.reward * mutationMult * (1 + coinMult) * weightMult);
     }
 
     function showcaseIncome(crop) {
@@ -1701,11 +1703,49 @@ function init() {
         return tile?.active && tile.growth >= 100 && !tile.hasWeed ? idx : null;
     }
 
+    function companionCropFeedRewards(crop) {
+        if (!crop) return { xpGain: 0, chargeGain: 0 };
+        const quality = Math.log10((crop.value || 0) + 10);
+        return {
+            xpGain: Math.max(8, Math.min(42, Math.round(quality * 11))),
+            chargeGain: Math.max(12, Math.min(28, Math.round(8 + quality * 6)))
+        };
+    }
+
+    function syncGardenSlimeFoodPreview(crop = null) {
+        const preview = document.getElementById('garden-slime-food-preview');
+        const xpElement = document.getElementById('garden-slime-food-xp');
+        const chargeElement = document.getElementById('garden-slime-food-charge');
+        const active = !!crop;
+        preview?.classList.toggle('visible', active);
+        preview?.setAttribute('aria-hidden', `${!active}`);
+        if (!active) return;
+        const rewards = companionCropFeedRewards(crop);
+        const currentCharge = Math.max(0, Math.min(100, Number(player.companion?.abilityEnergy) || 0));
+        const visibleChargeGain = Math.min(rewards.chargeGain, 100 - currentCharge);
+        if (xpElement) xpElement.textContent = `+${rewards.xpGain}`;
+        if (chargeElement) chargeElement.textContent = `+${visibleChargeGain}%`;
+    }
+
     function syncGardenCropActionState() {
-        const hasSelection = selectedReadyCropId() !== null;
-        const hasCropInHand = hasSelection || !!env.cropDrag;
+        const selectedCropId = selectedReadyCropId();
+        const selectedCrop = selectedCropId === null ? null : cropSnapshotFromTile(selectedCropId);
+        const dragState = env.cropDrag;
+        const cropInHand = dragState?.crop || selectedCrop;
+        const hasCropInHand = !!cropInHand;
+        const selectedMode = !!selectedCrop && !dragState;
+        const activeDropTargetId = dragState?.dropTarget?.id || '';
+        const showSellInfo = selectedMode || activeDropTargetId === 'garden-sell-target';
+        const showSlimeInfo = selectedMode || activeDropTargetId === 'garden-slime-target';
+        const showInventoryInfo = selectedMode || activeDropTargetId === 'garden-inventory-target';
         const inventoryCount = Array.isArray(player.cropInventory) ? player.cropInventory.length : 0;
-        document.getElementById('garden-sell-target')?.classList.toggle('has-selection', hasSelection);
+        const sellTarget = document.getElementById('garden-sell-target');
+        sellTarget?.classList.toggle('has-selection', showSellInfo);
+        sellTarget?.setAttribute('aria-label', hasCropInHand
+            ? `Продать растение за ${compactNumber(cropInHand.value)} монет`
+            : 'Продать урожай');
+        syncGardenSellPreview(showSellInfo ? cropInHand?.value || 0 : 0);
+        syncGardenSlimeFoodPreview(showSlimeInfo ? cropInHand : null);
         const slimeTarget = document.getElementById('garden-slime-target');
         slimeTarget?.classList.remove('has-selection');
         slimeTarget?.classList.toggle('food-focus', hasCropInHand);
@@ -1714,10 +1754,12 @@ function init() {
         const inventoryTarget = document.getElementById('garden-inventory-target');
         const capacity = document.getElementById('garden-inventory-capacity');
         const count = document.getElementById('garden-inventory-count');
-        inventoryTarget?.classList.toggle('has-selection', hasSelection);
+        const fill = document.getElementById('garden-inventory-mini-fill');
+        inventoryTarget?.classList.toggle('has-selection', showInventoryInfo);
         inventoryTarget?.classList.toggle('is-full', inventoryCount >= CROP_INVENTORY_CAPACITY);
         if (count) count.textContent = inventoryCount;
-        if (capacity) capacity.hidden = !hasCropInHand;
+        if (fill) fill.style.width = `${Math.min(100, inventoryCount / CROP_INVENTORY_CAPACITY * 100)}%`;
+        if (capacity) capacity.hidden = !showInventoryInfo;
     }
 
     function setGardenSlimeFoodReaction(reaction = '', duration = 0) {
@@ -2455,6 +2497,7 @@ function init() {
         }
         player.coins += reward;
         player.xp += xp;
+        chargeCompanionAbility(CROP_SALE_ABILITY_CHARGE);
         while (player.xp >= player.xpNeed) {
             player.lvl++;
             player.xp -= player.xpNeed;
@@ -2522,6 +2565,9 @@ function init() {
         const abilityButton = document.getElementById('garden-slime-ability-trigger');
         abilityButton?.style.setProperty('--garden-ability-color', abilityMeta.color);
         abilityButton?.style.setProperty('--garden-ability-dark', abilityMeta.dark);
+        const foodPreview = document.getElementById('garden-slime-food-preview');
+        foodPreview?.style.setProperty('--garden-ability-color', abilityMeta.color);
+        foodPreview?.style.setProperty('--garden-ability-dark', abilityMeta.dark);
         abilityButton?.classList.toggle('is-ready', abilityReady);
         abilityButton?.classList.toggle('is-cooldown', cooldownLeft > 0);
         document.querySelectorAll('.garden-ability-arc-fill').forEach(path => {
@@ -2561,7 +2607,22 @@ function init() {
 
     function resolveCropDropTarget(x, y) {
         const element = document.elementFromPoint(x, y);
-        return element?.closest('#garden-sell-target,#garden-slime-target,#garden-inventory-target') || null;
+        const directTarget = element?.closest('#garden-sell-target,#garden-slime-target,#garden-inventory-target');
+        if (directTarget) return directTarget;
+        let closestTarget = null;
+        let closestDistance = 28;
+        ['garden-sell-target', 'garden-slime-target', 'garden-inventory-target'].forEach(id => {
+            const target = document.getElementById(id);
+            if (!target) return;
+            const rect = target.getBoundingClientRect();
+            const nearestX = Math.max(rect.left, Math.min(x, rect.right));
+            const nearestY = Math.max(rect.top, Math.min(y, rect.bottom));
+            const distance = Math.hypot(x - nearestX, y - nearestY);
+            if (distance >= closestDistance) return;
+            closestDistance = distance;
+            closestTarget = target;
+        });
+        return closestTarget;
     }
 
     function setCropDropTarget(target) {
@@ -2570,7 +2631,7 @@ function init() {
         state.dropTarget?.classList.remove('is-drop-active');
         state.dropTarget = target;
         state.dropTarget?.classList.add('is-drop-active');
-        syncGardenSellPreview(target?.id === 'garden-sell-target' ? state.saleValue : 0);
+        syncGardenCropActionState();
     }
 
     function syncGardenSellPreview(value = 0) {
@@ -2619,7 +2680,7 @@ function init() {
             sourceRect: rect,
             width: rect.width,
             height: rect.height,
-            saleValue: crop.value,
+            crop,
             x: event.clientX,
             y: event.clientY,
             frame: null,
@@ -2641,7 +2702,6 @@ function init() {
         if (!state) return;
         if (state.frame) cancelAnimationFrame(state.frame);
         state.dropTarget?.classList.remove('is-drop-active');
-        syncGardenSellPreview(0);
         state.source?.classList.remove('crop-drag-source');
         state.ghost?.remove();
         document.body.classList.remove('crop-dragging');
@@ -2922,6 +2982,85 @@ function init() {
         element.classList.toggle('slime-watered', tile.slimeWater > 0);
     }
 
+    function grantCompanionAbilityChargeWithFX(amount, options = {}) {
+        const requested = Math.max(0, Math.round(Number(amount) || 0));
+        if (!requested) return 0;
+        const current = Math.max(0, Math.min(100, Number(player.companion?.abilityEnergy) || 0));
+        const possibleGain = Math.min(requested, 100 - current);
+        if (!possibleGain) return 0;
+
+        const source = options.sourceElement || document.getElementById('garden-sell-target');
+        const destination = document.getElementById('garden-slime-quick-icon');
+        const canAnimate = options.animate !== false
+            && activeSurface() === 'garden'
+            && !document.hidden
+            && source?.isConnected
+            && destination?.isConnected
+            && typeof destination.animate === 'function'
+            && !window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+
+        const commit = () => {
+            const gained = chargeCompanionAbility(requested);
+            if (!gained) return;
+            if (!options.deferRender && activeSurface() === 'garden') {
+                renderGardenCompanion();
+                syncGardenCropActionState();
+            }
+            if (canAnimate) {
+                destination?.classList.remove('charge-received');
+                if (destination) void destination.offsetWidth;
+                destination?.classList.add('charge-received');
+                setTimeout(() => destination?.classList.remove('charge-received'), 380);
+                decorSfx('pop', 'popitClick');
+            }
+            if (!options.deferSave) saveGame();
+        };
+
+        if (!canAnimate) {
+            commit();
+            return possibleGain;
+        }
+
+        const from = source.getBoundingClientRect();
+        const to = destination.getBoundingClientRect();
+        const variant = options.variant === 'feed' ? 'feed' : 'sale';
+        const startX = from.left + from.width / 2;
+        const startY = variant === 'feed'
+            ? from.top + from.height * .5
+            : from.top + Math.min(10, from.height * .25);
+        const endX = to.left + to.width / 2;
+        const endY = to.top + to.height / 2;
+        const dx = endX - startX;
+        const dy = endY - startY;
+        const stream = document.createElement('span');
+        stream.className = `garden-ability-orb-stream ${variant}`;
+        const orbCount = variant === 'feed' ? 6 : 5;
+        document.body.appendChild(stream);
+        for (let index = 0; index < orbCount; index++) {
+            const particle = document.createElement('i');
+            const spread = (index - (orbCount - 1) / 2) * 8;
+            particle.style.left = `${startX}px`;
+            particle.style.top = `${startY}px`;
+            stream.appendChild(particle);
+            const delay = index * 40;
+            const duration = 430 + index * 18;
+            particle.animate([
+                { opacity: .35, transform: `translate3d(${spread * .12}px,3px,0) scale(.7)` },
+                { opacity: 1, transform: `translate3d(${spread}px,-10px,0) scale(1.12)`, offset: .18 },
+                { opacity: 1, transform: `translate3d(${dx * .54 + spread}px,${dy * .5 - 20 - Math.abs(spread) * .2}px,0) scale(1)`, offset: .6 },
+                { opacity: .9, transform: `translate3d(${dx}px,${dy}px,0) scale(.58)` }
+            ], {
+                duration,
+                delay,
+                easing: 'cubic-bezier(.25,.7,.25,1)',
+                fill: 'forwards'
+            });
+        }
+        setTimeout(commit, variant === 'feed' ? 620 : 590);
+        setTimeout(() => stream.remove(), 880);
+        return possibleGain;
+    }
+
     function harvestPlant(idx, options = {}) {
         const { deferUI = false, quiet = false, feedbackElement = null } = options;
         const questOptions = { deferUI, quiet };
@@ -2972,6 +3111,13 @@ function init() {
 
         recordCropStats(cropRecord, finalReward, true, { quiet });
         player.coins += finalReward; player.xp += xp;
+        grantCompanionAbilityChargeWithFX(CROP_SALE_ABILITY_CHARGE, {
+            animate: !quiet && !deferUI,
+            deferSave: quiet || deferUI,
+            deferRender: quiet || deferUI,
+            variant: 'sale',
+            sourceElement: feedbackElement || document.getElementById('garden-sell-target')
+        });
         while (player.xp >= player.xpNeed) {
             player.lvl++; player.xp -= player.xpNeed; player.xpNeed = Math.floor(player.xpNeed * (BALANCE.xpNeedMult || 1.5));
             if (!quiet) showToast(`УРОВЕНЬ ${player.lvl}! 🎉`, "#a29bfe");
@@ -2986,7 +3132,7 @@ function init() {
 
         if (!quiet && !isGhostEchoSale) {
             playHarvestSfx(harvestSizeTier);
-            showHarvestSizeEffect(idx, harvestSizeTier);
+            showHarvestSizeEffect(idx, harvestSizeTier, feedbackElement);
         }
         if (!quiet) {
             const feedbackText = `+${compactNumber(finalReward)}$`;
@@ -3044,28 +3190,19 @@ function init() {
         else decorSfx('coin', 'popitHarvest');
     }
 
-    function showHarvestSizeEffect(idx, sizeTier) {
+    function showHarvestSizeEffect(idx, sizeTier, feedbackElement = null) {
         if (sizeTier !== 'huge' && sizeTier !== 'titanic') return;
         const tileEl = document.getElementById(`tile-${idx}`);
-        if (!tileEl) return;
-        const rect = tileEl.getBoundingClientRect();
+        const anchor = feedbackElement || document.getElementById('garden-sell-target') || tileEl;
+        if (!anchor) return;
+        const rect = anchor.getBoundingClientRect();
         const burst = document.createElement('div');
         burst.className = `harvest-size-burst ${sizeTier}`;
-        if (sizeTier === 'titanic') {
-            burst.innerHTML = 'ТИТАНИЧЕСКИЙ!'.split('').map((ch, index) => `<span style="--glyph-index:${index}">${ch === ' ' ? '&nbsp;' : ch}</span>`).join('');
-        } else burst.textContent = 'ОГРОМНЫЙ!';
+        burst.innerHTML = `<span>${sizeTier === 'titanic' ? 'ТИТАНИЧЕСКИЙ' : 'ОГРОМНЫЙ'}</span><i></i><i></i><i></i>`;
         burst.style.left = `${rect.left + rect.width / 2}px`;
-        burst.style.top = `${rect.top + rect.height / 2}px`;
+        burst.style.top = `${rect.top - 54}px`;
         document.body.appendChild(burst);
-        if (sizeTier === 'huge' || sizeTier === 'titanic') {
-            document.body.classList.toggle('titanic-harvest-flash', sizeTier === 'titanic');
-            document.body.classList.add('huge-harvest-flash');
-            setTimeout(() => {
-                document.body.classList.remove('huge-harvest-flash');
-                document.body.classList.remove('titanic-harvest-flash');
-            }, sizeTier === 'titanic' ? 760 : 520);
-        }
-        setTimeout(() => burst.remove(), sizeTier === 'titanic' ? 1650 : (sizeTier === 'huge' ? 1100 : 850));
+        setTimeout(() => burst.remove(), sizeTier === 'titanic' ? 1450 : 1120);
     }
 
     function clearTile(idx, options = {}) {
@@ -3133,18 +3270,25 @@ function init() {
         if (!indicator) return;
         let signature = '';
         let markup = '';
+        let ariaLabel = '';
+        let mode = 'timer';
         if (env.currentEvent === 'day' || (env.eventTimer <= 0 && !hasActiveEventFinale())) {
             const nextTimer = Math.max(0, Math.ceil(Number(env.nextEventTimer) || 0));
             const time = nextTimer > 0 ? formatEventTimer(nextTimer) : '0с';
             signature = `timer:${time}`;
-            markup = `<span class="state-timer">${time}</span>`;
+            markup = `<span class="state-caption">СОБЫТИЕ</span><span class="state-timer">${time}</span>`;
+            ariaLabel = `До следующего события ${time}`;
         } else {
             const label = getEventIndicatorLabel(env.currentEvent);
             signature = `event:${label}`;
-            markup = `<span class="state-label">${label}</span>`;
+            markup = `<span class="state-live-dot" aria-hidden="true"></span><span class="state-label">${label}</span>`;
+            ariaLabel = `Сейчас идёт событие ${label}`;
+            mode = 'event';
         }
         if (indicator.dataset.renderSignature === signature) return;
         indicator.dataset.renderSignature = signature;
+        indicator.dataset.mode = mode;
+        indicator.setAttribute('aria-label', ariaLabel);
         indicator.innerHTML = markup;
     }
 
@@ -5221,13 +5365,33 @@ function init() {
         }
     }
 
-    function toggleMenu() {
+    function syncMenuDrawerState(menu, isOpen) {
+        if (!menu) return;
+        const backdrop = document.getElementById('menu-backdrop');
+        const menuButton = document.getElementById('menu-btn');
+        menu.classList.toggle('open', isOpen);
+        menu.setAttribute('aria-hidden', `${!isOpen}`);
+        backdrop?.classList.toggle('open', isOpen);
+        backdrop?.setAttribute('aria-hidden', `${!isOpen}`);
+        if (backdrop) backdrop.tabIndex = isOpen ? 0 : -1;
+        menuButton?.setAttribute('aria-expanded', `${isOpen}`);
+        document.body.classList.toggle('menu-drawer-open', isOpen);
+    }
+
+    function toggleMenu(force) {
         toggleShop(false);
         const menu = document.getElementById('side-menu');
-        menu.classList.toggle('open');
-        if (!menu.classList.contains('open')) releaseInactiveMenuDom();
+        if (!menu) return;
+        const shouldOpen = typeof force === 'boolean' ? force : !menu.classList.contains('open');
+        syncMenuDrawerState(menu, shouldOpen);
+        if (!shouldOpen) releaseInactiveMenuDom();
         syncActiveSurfaceState();
         updateUI();
+    }
+
+    function closeMenuFromBackdrop(event) {
+        if (event && event.target !== event.currentTarget) return;
+        toggleMenu(false);
     }
 
     function releaseInactiveMenuDom() {
@@ -5254,7 +5418,7 @@ function init() {
         if (shouldOpen) {
             const sideMenu = document.getElementById('side-menu');
             if (sideMenu?.classList.contains('open')) {
-                sideMenu.classList.remove('open');
+                syncMenuDrawerState(sideMenu, false);
                 releaseInactiveMenuDom();
             }
             syncActiveSurfaceState();
@@ -6535,9 +6699,12 @@ function init() {
             showToast('Этот урожай уже недоступен', '#ff7675');
             return;
         }
-        const quality = Math.log10((crop.value || 0) + 10);
-        const xpGain = Math.max(8, Math.min(42, Math.round(quality * 11)));
-        const chargeGain = chargeCompanionAbility(Math.max(12, Math.min(28, Math.round(8 + quality * 6))));
+        const rewards = companionCropFeedRewards(crop);
+        const xpGain = rewards.xpGain;
+        const chargeGain = grantCompanionAbilityChargeWithFX(rewards.chargeGain, {
+            variant: 'feed',
+            sourceElement: document.getElementById('garden-slime-target')
+        });
         grantCompanionProgress(xpGain);
         recordCropStats(crop, 0, true);
         clearTile(tileId);
@@ -7719,7 +7886,7 @@ function init() {
         eventActions = [];
         currentTool = null;
         startEvent('day');
-        document.getElementById('side-menu').classList.remove('open');
+        syncMenuDrawerState(document.getElementById('side-menu'), false);
         document.getElementById('shop-modal').classList.remove('open');
         syncActiveSurfaceState();
         document.getElementById('plot-buy-modal')?.classList.remove('active');

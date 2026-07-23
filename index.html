@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Grow a Farm: Mobile Edition</title>
-    <link rel="stylesheet" href="css/styles.css?v=20260723x">
+    <link rel="stylesheet" href="css/styles.css?v=20260723zb">
 </head>
 <body>
     <div class="game-loader" id="game-loader" role="status" aria-live="polite" aria-label="Загрузка игры">
@@ -46,14 +46,14 @@
 
     <div class="top-bar">
         <div class="stat-group">
-            <div class="stat stat-coins">💰 <span id="ui-coins">50</span></div>
+            <div class="stat stat-coins"><span class="hud-stat-icon" aria-hidden="true">💰</span><span id="ui-coins">50</span></div>
             <div class="level-stat">
-                <div class="stat stat-level">⭐ <span id="ui-lvl">1</span></div>
+                <div class="stat stat-level"><span class="hud-stat-icon" aria-hidden="true">⭐</span><small>УР.</small><span id="ui-lvl">1</span></div>
                 <div class="xp-mini-bar" aria-hidden="true"><div id="ui-xp-fill"></div></div>
             </div>
         </div>
-        <div class="state-indicator" id="state-indicator">1:15</div>
-        <button id="menu-btn" class="btn-icon" type="button" onclick="toggleMenu()">📋 Меню <span id="menu-badge" class="menu-badge"></span></button>
+        <div class="state-indicator" id="state-indicator" aria-live="polite"><span class="state-caption">СОБЫТИЕ</span><span class="state-timer">1:15</span></div>
+        <button id="menu-btn" class="btn-icon top-menu-button" type="button" onclick="toggleMenu()" aria-controls="side-menu" aria-expanded="false">Меню<span id="menu-badge" class="menu-badge"></span></button>
     </div>
     <!-- legacy-ui-disabled: old main shop launcher retained for rollback during the mobile redesign. -->
     <div class="shop-launchbar legacy-ui-disabled" data-legacy-ui="shop-launch-v1" aria-hidden="true">
@@ -68,9 +68,13 @@
             <span class="crop-action-icon" aria-hidden="true"><i>💰</i></span>
             <b>Продать</b>
             <small class="crop-action-hint">урожай</small>
-            <span class="garden-sell-preview" id="garden-sell-preview" aria-hidden="true"><small>ПРОДАСТСЯ ЗА</small><b id="garden-sell-preview-value">💰 0</b></span>
+            <span class="garden-sell-preview" id="garden-sell-preview" aria-hidden="true"><b id="garden-sell-preview-value">💰 0</b></span>
         </button>
         <div class="garden-slime-command">
+            <span class="garden-slime-food-preview" id="garden-slime-food-preview" aria-hidden="true">
+                <span class="garden-food-xp"><b id="garden-slime-food-xp">+0</b><small>XP</small></span>
+                <span class="garden-food-charge"><b id="garden-slime-food-charge">+0%</b><small>заряд</small></span>
+            </span>
             <button class="garden-slime-target garden-crop-action" id="garden-slime-target" type="button" onclick="handleGardenSlimeTap(event)" aria-label="Открыть карточку слайма">
                 <span class="garden-slime-stage" id="garden-slime-model" aria-hidden="true"></span>
             </button>
@@ -88,6 +92,11 @@
             <span class="crop-action-icon" aria-hidden="true"><i>🎒</i></span>
             <b>Инвентарь</b>
             <small class="crop-action-hint">растения</small>
+            <span class="garden-inventory-capacity" id="garden-inventory-capacity" hidden aria-hidden="true">
+                <small>РЮКЗАК</small>
+                <b><span id="garden-inventory-count">0</span><i>/8</i></b>
+                <em><i id="garden-inventory-mini-fill"></i></em>
+            </span>
         </button>
     </section>
     
@@ -169,13 +178,14 @@
         </article>
     </div>
 
-    <div class="side-menu" id="side-menu">
+    <button class="menu-backdrop" id="menu-backdrop" type="button" onclick="closeMenuFromBackdrop(event)" aria-label="Закрыть меню" aria-hidden="true" tabindex="-1"></button>
+    <div class="side-menu" id="side-menu" aria-hidden="true">
         <div class="menu-header">
             <div>
                 <span>Садовая книжка</span>
                 <small>Урожай, задания и помощники</small>
             </div>
-            <button class="menu-close" onclick="toggleMenu()">✕</button>
+            <button class="menu-close" type="button" onclick="toggleMenu(false)" aria-label="Закрыть меню">✕</button>
         </div>
         <div class="menu-content">
             <section class="menu-panel active-status-panel" id="active-status-panel" style="display:none;">
@@ -356,6 +366,6 @@
     <script src="js/yandex-sdk.js?v=20260718b" defer></script>
     <script src="js/data.js?v=20260719c" defer></script>
     <script src="js/audio.js?v=20260719b" defer></script>
-    <script src="js/game.js?v=20260723t" defer></script>
+    <script src="js/game.js?v=20260723w" defer></script>
 </body>
 </html>
