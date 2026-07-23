@@ -80,7 +80,7 @@
     const EMBERGOO_MAGMA_FINALE_TIER2_CHANCE = 0.35;
     const EMBERGOO_MAGMA_SURGE_LEAD_MS = 3600;
     const EMBERGOO_MAGMA_COOLDOWN_MS = 1900;
-    const TILE_TRANSIENT_EFFECT_CLASSES = new Set(['planting', 'sprout-emerge', 'sprout-mut-hit', 'strike', 'star-hit', 'candy-hit', 'toxic-hit', 'holy-hit', 'eclipse-hit', 'hell-hit', 'alien-hit', 'lava-hit', 'comet-hit', 'lunar-hit', 'bloodmoon-hit', 'slime-water-hit', 'slime-water-fade', 'midas-coin-hit', 'midas-diamond-hit', 'wave-rise-hit', 'ability-flooded', 'nectar-grow-hit', 'nectar-titanic-charge', 'nectar-titanic-flash', 'nectar-titanic-growing', 'crop-drag-source']);
+    const TILE_TRANSIENT_EFFECT_CLASSES = new Set(['planting', 'sprout-emerge', 'sprout-mut-hit', 'strike', 'star-hit', 'candy-hit', 'toxic-hit', 'holy-hit', 'eclipse-hit', 'hell-hit', 'alien-hit', 'lava-hit', 'comet-hit', 'lunar-hit', 'bloodmoon-hit', 'slime-water-hit', 'slime-water-fade', 'midas-coin-hit', 'midas-diamond-hit', 'wave-rise-hit', 'ability-flooded', 'nectar-grow-hit', 'nectar-titanic-charge', 'nectar-titanic-flash', 'nectar-titanic-growing', 'crop-drag-source', 'seed-drop-ready', 'seed-quick-planted']);
     const TEST_MUTATION_SEQUENCE = ['hell', 'toxic', 'electric', 'stellar', 'holy', 'candy', 'honey', 'alien', 'lava', 'meteor', 'lunar', 'bloodmoon', 'gold', 'rainbow', 'diamond', 'eclipse'];
     const REMOVED_MUTATION_IDS = new Set(['void', 'phantom']);
     const TEST_MUTATION_HITS = {
@@ -626,6 +626,11 @@
 
     function seedIcon(id, extraClass = '') {
         return `<span class="seed-icon-art seed-${id} ${extraClass}" aria-hidden="true"></span>`;
+    }
+
+    function seedPlantPreview(id, extraClass = '') {
+        const classes = ['seed-plant-art', extraClass].filter(Boolean).join(' ');
+        return `<span class="${classes}" aria-hidden="true"><span class="seed-plant-scale"><i class="model model-${id} visible"></i></span></span>`;
     }
 
     function compactNumber(value) {
@@ -1396,11 +1401,16 @@ function init() {
             el.className = `seed-packet ${empty ? 'empty needs-purchase' : ''} ${affordable ? '' : 'cant-afford'} ${currentTool === p.id ? 'active' : ''}`;
             el.dataset.seed = p.id;
             el.style.setProperty('--pkt-color', p.color);
-            el.onclick = () => {
-                if (getSeedOwned(p.id) <= 0) { showToast('Нажми на цену, чтобы купить семечко', '#f1c40f'); return; }
-                selectAction(p.id);
-            };
-            el.innerHTML = `<div class="pkt-top"></div><div class="pkt-bg"></div><div class="seed-name">${p.name}</div><div class="seed-icon">${seedIcon(p.id)}</div><button class="seed-price" type="button" ${affordable ? '' : 'disabled'}>${compactNumber(p.cost)}$</button><div class="seed-stock">x${amount}</div>`;
+            el.tabIndex = 0;
+            el.setAttribute('role', 'button');
+            el.setAttribute('aria-label', `${p.name}, семян ${amount}. Нажать для выбора, удерживать для быстрой посадки`);
+            el.innerHTML = `<div class="pkt-top"></div><div class="pkt-bg"></div><div class="seed-name">${p.name}</div><div class="seed-icon">${seedPlantPreview(p.id)}</div><button class="seed-price" type="button" aria-label="Купить ${p.name} за ${compactNumber(p.cost)}$" aria-disabled="${affordable ? 'false' : 'true'}"><b>${compactNumber(p.cost)}$</b></button><div class="seed-stock">×${amount}</div>`;
+            bindSeedPacketInteractions(el, p.id);
+            el.addEventListener('keydown', event => {
+                if (event.key !== 'Enter' && event.key !== ' ') return;
+                event.preventDefault();
+                selectSeedFromPacket(p.id);
+            });
             el.querySelector('.seed-price').addEventListener('click', event => {
                 event.stopPropagation();
                 buySeedFromQuickPanel(p.id);
@@ -1490,10 +1500,172 @@ function init() {
             return;
         }
         const amount = getSeedOwned(seedId);
+        const plant = PLANTS[seedId];
+        const affordable = !!plant && player.coins >= plant.cost;
         packet.classList.toggle('empty', amount <= 0);
         packet.classList.toggle('needs-purchase', amount <= 0);
-        packet.querySelector('.seed-stock').textContent = `x${Math.max(0, amount)}`;
+        packet.classList.toggle('cant-afford', !affordable);
+        packet.querySelector('.seed-stock').textContent = `×${Math.max(0, amount)}`;
+        packet.querySelector('.seed-price')?.setAttribute('aria-disabled', affordable ? 'false' : 'true');
+        packet.setAttribute('aria-label', `${plant?.name || seedId}, семян ${amount}. Нажать для выбора, удерживать для быстрой посадки`);
+        container.querySelectorAll('.seed-packet').forEach(node => node.classList.toggle('active', node.dataset.seed === currentTool));
         container.dataset.renderSignature = getSeedRenderSignature();
+    }
+
+    function selectSeedFromPacket(seedId) {
+        const plant = PLANTS[seedId];
+        if (!plant) return;
+        if (getSeedOwned(seedId) <= 0) {
+            showToast('Сначала купи семечко', '#f1c40f');
+            return;
+        }
+        selectAction(seedId);
+    }
+
+    function bindSeedPacketInteractions(packet, seedId) {
+        packet.addEventListener('dragstart', event => event.preventDefault());
+        packet.addEventListener('contextmenu', event => event.preventDefault());
+        packet.addEventListener('pointerdown', event => {
+            if (event.target.closest('.seed-price')) return;
+            if (event.pointerType === 'mouse' && event.button !== 0) return;
+            cleanupSeedPacketGesture(true);
+            const state = {
+                seedId,
+                packet,
+                pointerId: event.pointerId,
+                startX: event.clientX,
+                startY: event.clientY,
+                x: event.clientX,
+                y: event.clientY,
+                dragging: false,
+                cancelled: false,
+                planted: false,
+                ghost: null,
+                hoverTile: null,
+                frame: null,
+                holdTimer: null
+            };
+            env.seedPacketGesture = state;
+            state.holdTimer = setTimeout(() => startSeedPacketDrag(state), 150);
+            document.addEventListener('pointermove', handleSeedPacketPointerMove, { passive: false });
+            document.addEventListener('pointerup', handleSeedPacketPointerUp);
+            document.addEventListener('pointercancel', handleSeedPacketPointerCancel);
+        });
+    }
+
+    function startSeedPacketDrag(state) {
+        if (env.seedPacketGesture !== state || state.cancelled || state.dragging) return false;
+        if (getSeedOwned(state.seedId) <= 0) return false;
+        if (state.holdTimer) clearTimeout(state.holdTimer);
+        state.holdTimer = null;
+        const ghost = document.createElement('div');
+        ghost.className = 'seed-drag-ghost';
+        ghost.innerHTML = seedIcon(state.seedId, 'seed-drag-seed');
+        document.body.appendChild(ghost);
+        state.ghost = ghost;
+        state.dragging = true;
+        state.packet.classList.add('seed-drag-source');
+        document.body.classList.add('seed-packet-dragging');
+        if (navigator.vibrate) navigator.vibrate(8);
+        moveSeedPacketDrag(state.x, state.y);
+        return true;
+    }
+
+    function moveSeedPacketDrag(x, y) {
+        const state = env.seedPacketGesture;
+        if (!state?.dragging) return;
+        state.x = x;
+        state.y = y;
+        tryPlantSeedDragAtPoint(state, x, y);
+        if (!state.frame) state.frame = requestAnimationFrame(flushSeedPacketDrag);
+    }
+
+    function flushSeedPacketDrag() {
+        const state = env.seedPacketGesture;
+        if (!state?.dragging) return;
+        state.frame = null;
+        state.ghost.style.transform = `translate3d(${state.x}px,${state.y - 30}px,0) translate(-50%,-50%)`;
+    }
+
+    function tryPlantSeedDragAtPoint(state, x, y) {
+        if (env.seedPacketGesture !== state || !state.dragging) return;
+        const tileElement = document.elementFromPoint(x, y)?.closest('.tile');
+        if (state.hoverTile !== tileElement) {
+            state.hoverTile?.classList.remove('seed-drop-ready');
+            state.hoverTile = tileElement || null;
+            state.hoverTile?.classList.toggle('seed-drop-ready', canPlantSeedInTile(state.seedId, Number(state.hoverTile.id.replace('tile-', ''))));
+        }
+        if (!tileElement) return;
+        const idx = Number(tileElement.id.replace('tile-', ''));
+        if (!canPlantSeedInTile(state.seedId, idx)) return;
+        if (!plantSeedInTile(state.seedId, idx, { continuous: true })) return;
+        state.planted = true;
+        tileElement.classList.remove('seed-drop-ready');
+        tileElement.classList.add('seed-quick-planted');
+        setTimeout(() => tileElement.classList.remove('seed-quick-planted'), 280);
+        const stock = state.ghost.querySelector('b');
+        if (stock) stock.textContent = `×${getSeedOwned(state.seedId)}`;
+        state.ghost.classList.toggle('is-empty', getSeedOwned(state.seedId) <= 0);
+    }
+
+    function handleSeedPacketPointerMove(event) {
+        const state = env.seedPacketGesture;
+        if (!state || state.pointerId !== event.pointerId) return;
+        state.x = event.clientX;
+        state.y = event.clientY;
+        if (state.dragging) {
+            event.preventDefault();
+            moveSeedPacketDrag(event.clientX, event.clientY);
+            return;
+        }
+        const dx = event.clientX - state.startX;
+        const dy = event.clientY - state.startY;
+        if (Math.abs(dx) > 7 && Math.abs(dx) > Math.abs(dy)) {
+            state.cancelled = true;
+            cleanupSeedPacketGesture(true);
+            return;
+        }
+        if (dy < -6 && Math.hypot(dx, dy) > 8 && startSeedPacketDrag(state)) {
+            event.preventDefault();
+            moveSeedPacketDrag(event.clientX, event.clientY);
+        }
+    }
+
+    function handleSeedPacketPointerUp(event) {
+        const state = env.seedPacketGesture;
+        if (!state || state.pointerId !== event.pointerId) return;
+        const wasDragging = state.dragging;
+        const wasCancelled = state.cancelled;
+        const seedId = state.seedId;
+        cleanupSeedPacketGesture(false);
+        if (wasDragging) {
+            if (state.planted) saveGame();
+            return;
+        }
+        if (!wasCancelled) selectSeedFromPacket(seedId);
+    }
+
+    function handleSeedPacketPointerCancel(event) {
+        const state = env.seedPacketGesture;
+        if (!state || state.pointerId !== event.pointerId) return;
+        cleanupSeedPacketGesture(false);
+        if (state.planted) saveGame();
+    }
+
+    function cleanupSeedPacketGesture(skipRender = false) {
+        const state = env.seedPacketGesture;
+        if (!state) return;
+        if (state.holdTimer) clearTimeout(state.holdTimer);
+        if (state.frame) cancelAnimationFrame(state.frame);
+        state.hoverTile?.classList.remove('seed-drop-ready');
+        state.packet?.classList.remove('seed-drag-source');
+        state.ghost?.remove();
+        document.body.classList.remove('seed-packet-dragging');
+        document.removeEventListener('pointermove', handleSeedPacketPointerMove);
+        document.removeEventListener('pointerup', handleSeedPacketPointerUp);
+        document.removeEventListener('pointercancel', handleSeedPacketPointerCancel);
+        env.seedPacketGesture = null;
+        if (!skipRender && state.dragging) renderSeeds();
     }
 
     function clearHarvestSelection(expectedTileId = null) {
@@ -1535,7 +1707,7 @@ function init() {
         const inventoryCount = Array.isArray(player.cropInventory) ? player.cropInventory.length : 0;
         document.getElementById('garden-sell-target')?.classList.toggle('has-selection', hasSelection);
         const slimeTarget = document.getElementById('garden-slime-target');
-        slimeTarget?.classList.toggle('has-selection', hasSelection);
+        slimeTarget?.classList.remove('has-selection');
         slimeTarget?.classList.toggle('food-focus', hasCropInHand);
         slimeTarget?.classList.toggle('food-missed', env.slimeFoodReaction === 'missed');
         slimeTarget?.classList.toggle('just-fed', env.slimeFoodReaction === 'fed');
@@ -1569,7 +1741,7 @@ function init() {
             openGardenSaleDialog();
             return;
         }
-        harvestPlant(idx);
+        harvestPlant(idx, { feedbackElement: document.getElementById('garden-sell-target') });
         setGardenSlimeFoodReaction('missed', 1050);
     }
 
@@ -1583,10 +1755,6 @@ function init() {
     }
 
     function handleGardenSlimeTap(event = null) {
-        if (event?.target?.closest?.('.garden-slime-ability-trigger')) {
-            activateGardenSlimeAbility();
-            return;
-        }
         if (selectedReadyCropId() !== null) {
             feedSelectedCrop();
             return;
@@ -1600,7 +1768,12 @@ function init() {
         const energy = Math.max(0, Math.min(100, pet.abilityEnergy || 0));
         const cooldownLeft = Math.max(0, (pet.abilityCooldownUntil || 0) - Date.now());
         if (energy < 100 || cooldownLeft > 0) {
-            openGardenSlimePanel();
+            const button = document.getElementById('garden-slime-ability-trigger');
+            button?.classList.remove('not-ready-tap');
+            if (button) void button.offsetWidth;
+            button?.classList.add('not-ready-tap');
+            setTimeout(() => button?.classList.remove('not-ready-tap'), 360);
+            decorSfx('pop', 'popitClick');
             return;
         }
         useCompanionAbility();
@@ -2342,26 +2515,29 @@ function init() {
             stage.innerHTML = slimeHTML({ ...def, face }, companionVariantPet(variant), 'medium');
             stage.dataset.renderSignature = signature;
         }
-        const targetClassName = `garden-slime-target garden-crop-action skin-${def.id} mood-${mood} variant-${variant}${target.classList.contains('has-selection') ? ' has-selection' : ''}${target.classList.contains('is-drop-active') ? ' is-drop-active' : ''}${foodFocus ? ' food-focus' : ''}${env.slimeFoodReaction === 'missed' ? ' food-missed' : ''}${env.slimeFoodReaction === 'fed' ? ' just-fed' : ''}${env.companionAbilitySpecial ? ` ability-active ability-${env.companionAbilitySpecial}` : ''}${abilityReady ? ' is-ability-ready' : ''}`;
+        const targetClassName = `garden-slime-target garden-crop-action skin-${def.id} mood-${mood} variant-${variant}${target.classList.contains('is-drop-active') ? ' is-drop-active' : ''}${foodFocus ? ' food-focus' : ''}${env.slimeFoodReaction === 'missed' ? ' food-missed' : ''}${env.slimeFoodReaction === 'fed' ? ' just-fed' : ''}${env.companionAbilitySpecial ? ` ability-active ability-${env.companionAbilitySpecial}` : ''}`;
         if (target.className !== targetClassName) target.className = targetClassName;
         target.style.setProperty('--garden-ability-color', abilityMeta.color);
         target.style.setProperty('--garden-ability-dark', abilityMeta.dark);
-        const chargeFill = document.getElementById('garden-slime-charge-fill');
-        if (chargeFill) chargeFill.style.strokeDashoffset = `${100 - energy}`;
-        const chargeValue = document.getElementById('garden-slime-charge-value');
-        const chargeLabel = document.getElementById('garden-slime-charge-label');
+        const abilityButton = document.getElementById('garden-slime-ability-trigger');
+        abilityButton?.style.setProperty('--garden-ability-color', abilityMeta.color);
+        abilityButton?.style.setProperty('--garden-ability-dark', abilityMeta.dark);
+        abilityButton?.classList.toggle('is-ready', abilityReady);
+        abilityButton?.classList.toggle('is-cooldown', cooldownLeft > 0);
+        document.querySelectorAll('.garden-ability-arc-fill').forEach(path => {
+            path.style.strokeDasharray = `${energy} 100`;
+        });
         const quickIcon = document.getElementById('garden-slime-quick-icon');
+        const chargeValue = document.getElementById('garden-slime-charge-value');
         if (quickIcon) quickIcon.textContent = abilityMeta.symbol;
-        if (chargeValue) chargeValue.textContent = cooldownLeft > 0
-            ? formatCompanionAbilityCooldown(Math.ceil(cooldownLeft / 1000))
-            : (abilityReady ? 'ГОТОВО' : `${energy}%`);
-        if (chargeLabel) chargeLabel.textContent = cooldownLeft > 0 ? 'ПЕРЕЗАРЯДКА' : (abilityReady ? 'НАЖМИ' : 'ЗАРЯД');
+        if (chargeValue) chargeValue.textContent = `${energy}%`;
+        abilityButton?.setAttribute('aria-label', abilityReady
+            ? 'Суперспособность готова'
+            : `Суперспособность заряжена на ${energy}%`);
         const displayName = player.companion.name || 'Слайми';
-        target.setAttribute('aria-label', target.classList.contains('has-selection')
+        target.setAttribute('aria-label', foodFocus
             ? 'Покормить слайма выбранным растением'
-            : `${displayName}: ${abilityReady ? 'способность готова' : `заряд ${energy}%`}`);
-        const name = document.getElementById('garden-slime-name');
-        if (name && name.textContent !== displayName) name.textContent = displayName;
+            : `Открыть карточку слайма ${displayName}`);
     }
 
     function isReadyCropDragCandidate(idx) {
@@ -2394,6 +2570,15 @@ function init() {
         state.dropTarget?.classList.remove('is-drop-active');
         state.dropTarget = target;
         state.dropTarget?.classList.add('is-drop-active');
+        syncGardenSellPreview(target?.id === 'garden-sell-target' ? state.saleValue : 0);
+    }
+
+    function syncGardenSellPreview(value = 0) {
+        const target = document.getElementById('garden-sell-target');
+        const valueElement = document.getElementById('garden-sell-preview-value');
+        const active = Number(value) > 0;
+        target?.classList.toggle('has-price-preview', active);
+        if (valueElement && active) valueElement.textContent = `💰 ${compactNumber(value)}`;
     }
 
     function flushCropDragFrame() {
@@ -2416,6 +2601,8 @@ function init() {
         if (env.cropDrag || !isReadyCropDragCandidate(idx)) return false;
         const source = document.getElementById(`tile-${idx}`);
         if (!source) return false;
+        const crop = cropSnapshotFromTile(idx);
+        if (!crop) return false;
         clearHarvestSelection();
         const rect = source.getBoundingClientRect();
         const ghost = source.cloneNode(true);
@@ -2432,6 +2619,7 @@ function init() {
             sourceRect: rect,
             width: rect.width,
             height: rect.height,
+            saleValue: crop.value,
             x: event.clientX,
             y: event.clientY,
             frame: null,
@@ -2453,6 +2641,7 @@ function init() {
         if (!state) return;
         if (state.frame) cancelAnimationFrame(state.frame);
         state.dropTarget?.classList.remove('is-drop-active');
+        syncGardenSellPreview(0);
         state.source?.classList.remove('crop-drag-source');
         state.ghost?.remove();
         document.body.classList.remove('crop-dragging');
@@ -2501,13 +2690,94 @@ function init() {
             else action = 'store';
         }
         const destination = action ? dropTarget.getBoundingClientRect() : state.sourceRect;
+        let soldImmediately = false;
+        if (action === 'sell' && tiles[state.idx]?.active && tiles[state.idx].growth >= 100) {
+            harvestPlant(state.idx, { feedbackElement: dropTarget });
+            soldImmediately = true;
+        }
         await animateCropDragTo(state, destination, action ? 0.62 : 1);
         cleanupCropDrag(state);
         if (!cancelled && action !== 'feed') setGardenSlimeFoodReaction('missed', 950);
+        if (soldImmediately) return;
         if (!tiles[state.idx]?.active || tiles[state.idx].growth < 100) return;
-        if (action === 'sell') harvestPlant(state.idx);
-        else if (action === 'feed') feedCompanion(state.idx);
+        if (action === 'feed') feedCompanion(state.idx);
         else if (action === 'store') storeCropInInventory(state.idx);
+    }
+
+    function canPlantSeedInTile(seedId, idx) {
+        const tile = tiles[idx];
+        return !!(
+            PLANTS[seedId]
+            && tile
+            && !tile.active
+            && !tile.hasWeed
+            && isPlotLevelUnlocked(idx)
+            && isPlotUnlocked(idx)
+            && getSeedOwned(seedId) > 0
+        );
+    }
+
+    function plantSeedInTile(seedId, idx, options = {}) {
+        const plant = PLANTS[seedId];
+        const tile = tiles[idx];
+        const continuous = !!options.continuous;
+        if (!plant || !tile || tile.active || tile.hasWeed) return false;
+        if (!isPlotLevelUnlocked(idx) || !isPlotUnlocked(idx)) return false;
+        if (getSeedOwned(seedId) <= 0) {
+            if (!continuous) {
+                showToast('Семена закончились', '#ff7675');
+                sfx.play('error');
+            }
+            updateSeedPacketDOM(seedId);
+            return false;
+        }
+
+        player.seedInventory[seedId] = Math.max(0, getSeedOwned(seedId) - 1);
+        const cropWeight = rollCropWeight();
+        Object.assign(tile, {
+            active: true,
+            plantId: seedId,
+            growth: 0,
+            water: 0,
+            slimeWater: 0,
+            slimeWaterMult: 1,
+            hasWeed: false,
+            mutations: [],
+            scale: cropWeight.scale,
+            weight: cropWeight.weight,
+            weightMult: cropWeight.weightMult,
+            sizeTier: cropWeight.tier,
+            beeLock: 0,
+            ghostEchoPercent: 0,
+            ghostMarked: false,
+            ghostCopyMutationCount: 0,
+            ghostEcho: false,
+            ghostValue: 0
+        });
+        const starterMutation = rollPlantingMaterialMutation();
+        if (starterMutation) commitTileMutation(idx, starterMutation);
+        ensureSelectedSeedAvailable();
+
+        const now = performance.now();
+        if (!continuous || now - (env.lastSeedPlantSfxAt || 0) >= 70) {
+            decorSfx('pop', 'popitClick');
+            env.lastSeedPlantSfxAt = now;
+        }
+        if (!continuous) floatText(idx, `-1 ${plant.name}`, '#74b9ff');
+        updateSeedPacketDOM(seedId);
+        updateTileDOM(idx);
+        const plantedTile = document.getElementById(`tile-${idx}`);
+        plantedTile?.classList.add('planting');
+        setTimeout(() => plantedTile?.classList.remove('planting'), 760);
+        return true;
+    }
+
+    function plantSeedAtPoint(seedId, x, y) {
+        const tileElement = document.elementFromPoint(x, y)?.closest('.tile');
+        if (!tileElement) return false;
+        const idx = Number(tileElement.id.replace('tile-', ''));
+        if (!canPlantSeedInTile(seedId, idx)) return false;
+        return plantSeedInTile(seedId, idx, { continuous: true });
     }
 
     function bindTilePointerInteractions(tileElement, idx) {
@@ -2515,18 +2785,28 @@ function init() {
         tileElement.addEventListener('dragstart', event => event.preventDefault());
         tileElement.addEventListener('pointerdown', event => {
             if (event.pointerType === 'mouse' && event.button !== 0) return;
+            const selectedSeedId = PLANTS[currentTool] ? currentTool : '';
+            const seedPainting = canPlantSeedInTile(selectedSeedId, idx);
             gesture = {
                 pointerId: event.pointerId,
                 startX: event.clientX,
                 startY: event.clientY,
                 dragCandidate: isReadyCropDragCandidate(idx),
-                dragging: false
+                dragging: false,
+                seedPainting,
+                seedId: seedPainting ? selectedSeedId : ''
             };
             tileElement.setPointerCapture?.(event.pointerId);
+            if (seedPainting) plantSeedInTile(selectedSeedId, idx, { continuous: true });
             event.preventDefault();
         });
         tileElement.addEventListener('pointermove', event => {
             if (!gesture || gesture.pointerId !== event.pointerId) return;
+            if (gesture.seedPainting) {
+                plantSeedAtPoint(gesture.seedId, event.clientX, event.clientY);
+                event.preventDefault();
+                return;
+            }
             const dragThreshold = event.pointerType === 'mouse' ? 5 : 8;
             if (!gesture.dragging && gesture.dragCandidate && Math.hypot(event.clientX - gesture.startX, event.clientY - gesture.startY) >= dragThreshold) {
                 gesture.dragging = startCropDrag(idx, event);
@@ -2539,20 +2819,25 @@ function init() {
         tileElement.addEventListener('pointerup', event => {
             if (!gesture || gesture.pointerId !== event.pointerId) return;
             const wasDragging = gesture.dragging;
+            const wasSeedPainting = gesture.seedPainting;
             gesture = null;
             if (tileElement.hasPointerCapture?.(event.pointerId)) tileElement.releasePointerCapture(event.pointerId);
             if (wasDragging) {
                 moveCropDrag(event.clientX, event.clientY);
                 finishCropDrag(false);
+            } else if (wasSeedPainting) {
+                saveGame();
             } else handleInteract(idx);
             event.preventDefault();
         });
         tileElement.addEventListener('pointercancel', event => {
             if (!gesture || gesture.pointerId !== event.pointerId) return;
             const wasDragging = gesture.dragging;
+            const wasSeedPainting = gesture.seedPainting;
             gesture = null;
             if (tileElement.hasPointerCapture?.(event.pointerId)) tileElement.releasePointerCapture(event.pointerId);
             if (wasDragging) finishCropDrag(true);
+            else if (wasSeedPainting) saveGame();
         });
     }
 
@@ -2625,22 +2910,7 @@ function init() {
 
         if (PLANTS[currentTool]) {
             if (t.active) { decorSfx('pop', 'popitClick'); return; }
-            const p = PLANTS[currentTool];
-            if (getSeedOwned(p.id) <= 0) { showToast('Семена закончились', '#ff7675'); sfx.play('error'); renderSeeds(); return; }
-            player.seedInventory[p.id] = Math.max(0, getSeedOwned(p.id) - 1);
-            const cropWeight = rollCropWeight();
-            t.active = true; t.plantId = p.id; t.growth = 0; t.water = 0; t.hasWeed = false; t.mutations = []; t.beeLock = 0;
-            t.weight = cropWeight.weight; t.weightMult = cropWeight.weightMult; t.sizeTier = cropWeight.tier; t.scale = cropWeight.scale;
-            const starterMutation = rollPlantingMaterialMutation();
-            if (starterMutation) commitTileMutation(idx, starterMutation);
-            ensureSelectedSeedAvailable();
-            decorSfx('pop', 'popitClick'); floatText(idx, `-1 ${p.name}`, "#74b9ff");
-            if (getSeedOwned(p.id) <= 0 || currentTool !== p.id) renderSeeds();
-            else updateSeedPacketDOM(p.id);
-            updateTileDOM(idx);
-            const plantedTile = document.getElementById(`tile-${idx}`);
-            plantedTile.classList.add('planting');
-            setTimeout(() => plantedTile.classList.remove('planting'), 760);
+            plantSeedInTile(currentTool, idx);
         }
     }
 
@@ -2653,7 +2923,7 @@ function init() {
     }
 
     function harvestPlant(idx, options = {}) {
-        const { deferUI = false, quiet = false } = options;
+        const { deferUI = false, quiet = false, feedbackElement = null } = options;
         const questOptions = { deferUI, quiet };
         clearHarvestSelection(idx);
         const t = tiles[idx];
@@ -2718,7 +2988,11 @@ function init() {
             playHarvestSfx(harvestSizeTier);
             showHarvestSizeEffect(idx, harvestSizeTier);
         }
-        if (!quiet) floatText(idx, `+${compactNumber(finalReward)}$`, highestColor);
+        if (!quiet) {
+            const feedbackText = `+${compactNumber(finalReward)}$`;
+            if (feedbackElement) floatActionText(feedbackElement, feedbackText, '#ffe16a');
+            else floatText(idx, feedbackText, highestColor);
+        }
         if (p.id === 'carrot') updateQuest('grow_carrot', 1, questOptions);
         updateQuest('harvest_any', 1, questOptions);
         updateQuest('earn_coins', finalReward, questOptions);
@@ -6268,9 +6542,9 @@ function init() {
         recordCropStats(crop, 0, true);
         clearTile(tileId);
         env.companionDrawer = '';
-        sfx.play('pop');
+        sfx.play('blop', 'garden-slime-eat');
         updateUI();
-        setGardenSlimeFoodReaction('fed', 850);
+        setGardenSlimeFoodReaction('fed', 1000);
         showToast(`+${xpGain} XP · заряд +${Math.round(chargeGain)}%`, '#72db68');
         saveGame();
     }
@@ -7473,8 +7747,22 @@ function init() {
         setTimeout(() => f.remove(), 1200);
     }
 
+    function floatActionText(anchor, text, color) {
+        if (!anchor?.isConnected) return;
+        anchor.querySelector(':scope > .garden-action-float')?.remove();
+        const feedback = document.createElement('span');
+        feedback.className = 'garden-action-float';
+        feedback.style.setProperty('--action-float-color', color);
+        feedback.textContent = text;
+        anchor.appendChild(feedback);
+        setTimeout(() => feedback.remove(), 1050);
+    }
+
     function showToast(msg, color) {
         const c = document.getElementById('toasts'); const t = document.createElement('div');
+        if (!c) return;
+        const visible = c.querySelectorAll(':scope > .toast');
+        if (visible.length >= 2) visible[0].remove();
         t.className = 'toast'; t.style.border = `2px solid ${color}`; t.innerText = msg;
         c.appendChild(t); setTimeout(() => { t.style.opacity=0; setTimeout(()=>t.remove(),300) }, 2000);
     }

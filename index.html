@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Grow a Farm: Mobile Edition</title>
-    <link rel="stylesheet" href="css/styles.css?v=20260723i">
+    <link rel="stylesheet" href="css/styles.css?v=20260723w">
 </head>
 <body>
     <div class="game-loader" id="game-loader" role="status" aria-live="polite" aria-label="Загрузка игры">
@@ -28,7 +28,6 @@
         <div class="night-sky-layer"></div>
         <div class="bg-emitters" id="bg-emitters"></div>
     </div>
-    <div class="toast-container" id="toasts"></div>
     <button class="fps-meter" id="fps-meter" type="button" onclick="togglePerfPanel()" aria-label="Текущая частота кадров. Нажмите, чтобы открыть отчёт производительности">FPS <b id="fps-value">--</b></button>
     <div class="perf-panel" id="perf-panel" hidden>
         <b>Диагностика плавности</b>
@@ -69,20 +68,22 @@
             <span class="crop-action-icon" aria-hidden="true"><i>💰</i></span>
             <b>Продать</b>
             <small class="crop-action-hint">урожай</small>
+            <span class="garden-sell-preview" id="garden-sell-preview" aria-hidden="true"><small>ПРОДАСТСЯ ЗА</small><b id="garden-sell-preview-value">💰 0</b></span>
         </button>
-        <button class="garden-slime-target garden-crop-action" id="garden-slime-target" type="button" onclick="handleGardenSlimeTap(event)" aria-label="Открыть карточку слайма">
-            <strong class="garden-slime-name" id="garden-slime-name">Слайми</strong>
-            <span class="garden-slime-stage" id="garden-slime-model" aria-hidden="true"></span>
-            <span class="garden-slime-ability-trigger" aria-hidden="true">
-                <svg class="garden-slime-charge" viewBox="0 0 116 64">
-                    <path class="garden-slime-charge-track" pathLength="100" d="M8 34 Q58 67 108 34"></path>
-                    <path class="garden-slime-charge-fill" id="garden-slime-charge-fill" pathLength="100" d="M8 34 Q58 67 108 34"></path>
+        <div class="garden-slime-command">
+            <button class="garden-slime-target garden-crop-action" id="garden-slime-target" type="button" onclick="handleGardenSlimeTap(event)" aria-label="Открыть карточку слайма">
+                <span class="garden-slime-stage" id="garden-slime-model" aria-hidden="true"></span>
+            </button>
+            <button class="garden-slime-ability-trigger" id="garden-slime-ability-trigger" type="button" onclick="activateGardenSlimeAbility()" aria-label="Суперспособность слайма, 0%">
+                <svg class="garden-main-ability-meter" viewBox="0 0 112 36" preserveAspectRatio="none" aria-hidden="true">
+                    <path class="garden-ability-arc-track" d="M 6 4 Q 56 34 106 4"></path>
+                    <path class="garden-ability-arc-fill garden-ability-arc-left" pathLength="100" d="M 6 4 Q 31 19 56 19"></path>
+                    <path class="garden-ability-arc-fill garden-ability-arc-right" pathLength="100" d="M 106 4 Q 81 19 56 19"></path>
                 </svg>
                 <span class="garden-slime-quick-icon" id="garden-slime-quick-icon">🌈</span>
-                <span class="garden-slime-charge-status"><small id="garden-slime-charge-label">ЗАРЯД</small><b id="garden-slime-charge-value">0%</b></span>
-            </span>
-            <i>Кормить</i>
-        </button>
+                <span class="garden-slime-charge-value" id="garden-slime-charge-value">0%</span>
+            </button>
+        </div>
         <button class="garden-crop-action crop-inventory-target" id="garden-inventory-target" type="button" onclick="useGardenInventory()" aria-label="Инвентарь">
             <span class="crop-action-icon" aria-hidden="true"><i>🎒</i></span>
             <b>Инвентарь</b>
@@ -91,6 +92,7 @@
     </section>
     
     <div class="game-area">
+        <div class="toast-container" id="toasts" role="status" aria-live="polite"></div>
         <div class="view-content active" id="view-garden">
             <div class="garden" id="garden"></div>
         </div>
@@ -107,11 +109,11 @@
             </button>
         </div>
         <div class="seeds-carousel">
-            <button class="nav-arrow disabled" id="btn-left" onclick="scrollSeeds(-1)">&#10094;</button>
+            <button class="nav-arrow disabled" id="btn-left" type="button" onclick="scrollSeeds(-1)" aria-label="Предыдущие семена"><span aria-hidden="true">‹</span></button>
             <div class="seeds-window" id="seeds-window">
                 <div class="seeds-track" id="seeds-track"></div>
             </div>
-            <button class="nav-arrow" id="btn-right" onclick="scrollSeeds(1)">&#10095;</button>
+            <button class="nav-arrow" id="btn-right" type="button" onclick="scrollSeeds(1)" aria-label="Следующие семена"><span aria-hidden="true">›</span></button>
         </div>
     </div>
 
@@ -354,6 +356,6 @@
     <script src="js/yandex-sdk.js?v=20260718b" defer></script>
     <script src="js/data.js?v=20260719c" defer></script>
     <script src="js/audio.js?v=20260719b" defer></script>
-    <script src="js/game.js?v=20260723i" defer></script>
+    <script src="js/game.js?v=20260723t" defer></script>
 </body>
 </html>
